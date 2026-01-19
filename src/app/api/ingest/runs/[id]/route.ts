@@ -1,10 +1,11 @@
+import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const DEFAULT_LIMIT = 200;
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } },
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
@@ -29,9 +30,10 @@ export async function GET(
     return new Response("User profile not found", { status: 403 });
   }
 
+  const { id } = await context.params;
   const url = new URL(request.url);
   const pathParts = url.pathname.split("/").filter(Boolean);
-  const runId = context.params?.id || pathParts[pathParts.length - 1];
+  const runId = id || pathParts[pathParts.length - 1];
   if (!runId) {
     return new Response("Missing import run id", { status: 400 });
   }
