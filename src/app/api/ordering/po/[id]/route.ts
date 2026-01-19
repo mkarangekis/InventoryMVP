@@ -6,7 +6,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  const url = new URL(request.url);
+  const requestUrl = request.url;
+  const url = new URL(requestUrl);
   const tokenParam = url.searchParams.get("token");
   const authHeader = request.headers.get("authorization");
   const token = tokenParam ?? authHeader?.replace("Bearer ", "");
