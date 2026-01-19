@@ -1,0 +1,3 @@
+pos_item_id,pos_order_id,pos_menu_item_id,item_name,quantity,price_each
+item_2001,order_1001,menu_3001,Old Fashioned,2,12.00
+item_2002,order_1002,menu_3002,Margarita,2,12.00

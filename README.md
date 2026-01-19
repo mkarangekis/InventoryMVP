@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bar Monetization & Automation System (MVP)
 
-## Getting Started
+## Prerequisites
+- Node.js 20+ (tested with 24.x)
+- pnpm
+- Docker Desktop
+- Supabase CLI (local)
 
-First, run the development server:
+## Local setup
+```powershell
+cd "C:\Users\mitch\Bar Optimization"
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
+# Start Supabase
+C:\Users\mitch\scoop\apps\supabase\current\supabase.exe start
+
+# Install deps
+pnpm install
+
+# Start app
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
+Copy values from `.env.local` (created by Supabase) or create it manually:
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+DATABASE_URL=
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Seed demo data
+```powershell
+pnpm seed:demo
+```
+Demo credentials:
+- email: `demo@bar.local`
+- password: `Password123!`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## CSV ingestion
+Sample CSVs live in `seed/csv/`:
+- `orders.csv`
+- `order_items.csv`
+- `modifiers.csv`
+- `voids_comps.csv`
 
-## Learn More
+Upload via API:
+```powershell
+$token = "<access_token>"
+$locationId = "<location_id>"
 
-To learn more about Next.js, take a look at the following resources:
+curl -X POST "http://localhost:3000/api/ingest/csv" `
+  -H "Authorization: Bearer $token" `
+  -F "location_id=$locationId" `
+  -F "orders=@seed/csv/orders.csv" `
+  -F "order_items=@seed/csv/order_items.csv" `
+  -F "modifiers=@seed/csv/modifiers.csv" `
+  -F "voids_comps=@seed/csv/voids_comps.csv"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Import runs:
+- `GET /api/ingest/runs`
+- `GET /api/ingest/runs/:id`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Jobs
+```powershell
+pnpm job:usage --from=2026-01-10 --to=2026-01-10
+pnpm job:variance
+pnpm job:forecast --date=2026-01-18
+pnpm job:ordering --date=2026-01-18
+pnpm job:import
+pnpm job:import:node
+```
 
-## Deploy on Vercel
+## App pages
+- `/dashboard` - Leak & Variance
+- `/inventory` - Quick Count
+- `/ingest` - POS CSV ingestion + runs
+- `/ordering` - Draft POs + Approve
+- `/profit` - Menu Profit Ranking
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment (later)
+- Supabase: create project, push migrations, set RLS policies
+- Vercel: deploy Next.js app, set env vars
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Cron scheduling (cheapest)
+- Use GitHub Actions or Vercel Cron to hit job endpoints
+- Example: schedule `/api/jobs/usage`
+- Available endpoints:
+  - `POST /api/jobs/usage`
+  - `POST /api/jobs/forecast`
+  - `POST /api/jobs/variance`
+  - `POST /api/jobs/ordering`
+  - `POST /api/jobs/import`
