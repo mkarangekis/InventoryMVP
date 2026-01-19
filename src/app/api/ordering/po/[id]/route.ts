@@ -1,9 +1,11 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { NextRequest } from "next/server";
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } },
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await context.params;
   const url = new URL(request.url);
   const tokenParam = url.searchParams.get("token");
   const authHeader = request.headers.get("authorization");
@@ -21,7 +23,7 @@ export async function GET(
   }
 
   const userId = userData.user.id;
-  const poId = context.params.id || fallbackId;
+  const poId = id || fallbackId;
   if (!poId) {
     return new Response("Missing purchase order id", { status: 400 });
   }
