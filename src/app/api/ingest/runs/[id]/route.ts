@@ -4,7 +4,7 @@ const DEFAULT_LIMIT = 200;
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } },
+  context: { params: { id: string } },
 ) {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
@@ -31,7 +31,7 @@ export async function GET(
 
   const url = new URL(request.url);
   const pathParts = url.pathname.split("/").filter(Boolean);
-  const runId = params?.id || pathParts[pathParts.length - 1];
+  const runId = context.params?.id || pathParts[pathParts.length - 1];
   if (!runId) {
     return new Response("Missing import run id", { status: 400 });
   }
