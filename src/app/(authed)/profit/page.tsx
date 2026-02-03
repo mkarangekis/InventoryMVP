@@ -49,6 +49,7 @@ export default function ProfitPage() {
     { ingredientId: string; ounces: string }[]
   >([{ ingredientId: "", ounces: "" }]);
   const [status, setStatus] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -91,9 +92,11 @@ export default function ProfitPage() {
     if (profitRes.ok) {
       const payload = (await profitRes.json()) as { items: ProfitRow[] };
       setItems(payload.items);
+      setErrorMessage(null);
     } else {
-      const message = await profitRes.text();
-      setStatus(`Profit data error: ${message}`);
+      setErrorMessage(
+        "Unable to load profit data. Please check your connection and try again.",
+      );
     }
     if (menuRes.ok) {
       const payload = (await menuRes.json()) as { items: MenuItem[] };
@@ -183,8 +186,9 @@ export default function ProfitPage() {
     });
 
     if (!response.ok) {
-      const message = await response.text();
-      setStatus(`Error: ${message}`);
+      setStatus(
+        "Unable to save spec right now. Please check your connection and try again.",
+      );
       return;
     }
 
@@ -262,10 +266,14 @@ export default function ProfitPage() {
           </div>
         </div>
         <div className="app-card-body">
-          {status ? (
-            <p className="text-sm text-[var(--color-status-danger-text)]">
-              {status}
-            </p>
+          {errorMessage ? (
+            <div className="app-empty">
+              <div className="app-empty-title">Unable to load profit data</div>
+              <p className="app-empty-desc">
+                Please check your connection and try again, or contact support
+                if the issue persists.
+              </p>
+            </div>
           ) : null}
 
           {loading ? (
