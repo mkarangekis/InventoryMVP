@@ -110,54 +110,65 @@ export default function VariancePage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
-        <h2 className="enterprise-heading text-2xl font-semibold">
-          Variance & Shrink
-        </h2>
-        <p className="text-sm text-[var(--enterprise-muted)]">
-          Weekly variance flags by inventory item.
-        </p>
-      </div>
-
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
-        {loading ? (
-          <p className="text-sm text-[var(--enterprise-muted)]">
-            Loading variance...
-          </p>
-        ) : flags.length === 0 ? (
-          <p className="text-sm text-[var(--enterprise-muted)]">
-            No variance flags yet.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-            <table className="app-table w-full text-left text-sm">
-              <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-                <tr>
-                  <th className="px-3 py-2">Item</th>
-                  <th className="px-3 py-2">Week</th>
-                  <th className="px-3 py-2">Expected</th>
-                  <th className="px-3 py-2">Actual</th>
-                  <th className="px-3 py-2">Variance</th>
-                  <th className="px-3 py-2">Severity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {flags.map((flag) => (
-                  <tr key={flag.id} className="border-t">
-                    <td className="px-3 py-2">{flag.item_name}</td>
-                    <td className="px-3 py-2">
-                      {new Date(flag.week_start_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-3 py-2">{flag.expected_remaining_oz}</td>
-                    <td className="px-3 py-2">{flag.actual_remaining_oz}</td>
-                    <td className="px-3 py-2">{flag.variance_oz}</td>
-                    <td className="px-3 py-2 font-semibold">{flag.severity}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h2 className="enterprise-heading text-2xl font-semibold">
+              Variance & Shrink
+            </h2>
+            <p className="app-card-subtitle">
+              Weekly variance flags by inventory item.
+            </p>
           </div>
-        )}
+        </div>
+        <div className="app-card-body">
+          {loading ? (
+            <p className="text-sm text-[var(--enterprise-muted)]">
+              Loading variance...
+            </p>
+          ) : flags.length === 0 ? (
+            <div className="app-empty">
+              <div className="app-empty-title">No Variance Flags Yet</div>
+              <p className="app-empty-desc">
+                Connect your POS and complete inventory counts to surface
+                variance signals.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
+              <table className="app-table w-full text-left text-sm">
+                <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
+                  <tr>
+                    <th className="px-3 py-2">Item</th>
+                    <th className="px-3 py-2">Week</th>
+                    <th className="px-3 py-2">Expected</th>
+                    <th className="px-3 py-2">Actual</th>
+                    <th className="px-3 py-2">Variance</th>
+                    <th className="px-3 py-2">Severity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {flags.map((flag) => (
+                    <tr key={flag.id} className="border-t">
+                      <td className="px-3 py-2">{flag.item_name}</td>
+                      <td className="px-3 py-2">
+                        {new Date(flag.week_start_date).toLocaleDateString()}
+                      </td>
+                      <td className="px-3 py-2">
+                        {flag.expected_remaining_oz}
+                      </td>
+                      <td className="px-3 py-2">{flag.actual_remaining_oz}</td>
+                      <td className="px-3 py-2">{flag.variance_oz}</td>
+                      <td className="px-3 py-2 font-semibold">
+                        {flag.severity}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

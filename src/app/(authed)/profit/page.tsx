@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
 type ProfitRow = {
@@ -48,6 +49,12 @@ export default function ProfitPage() {
     { ingredientId: string; ounces: string }[]
   >([{ ingredientId: "", ounces: "" }]);
   const [status, setStatus] = useState<string | null>(null);
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2,
+    }).format(value);
 
   const loadProfit = async () => {
     const { data } = await supabaseBrowser.auth.getSession();
@@ -184,172 +191,262 @@ export default function ProfitPage() {
     setStatus("Spec saved");
   };
 
+  const totalRevenue = items.reduce(
+    (sum, row) => sum + (row.revenue || 0),
+    0,
+  );
+  const totalCost = items.reduce(
+    (sum, row) => sum + (row.cost_per_serv || 0) * (row.qty_sold || 0),
+    0,
+  );
+  const totalProfit = items.reduce(
+    (sum, row) => sum + (row.profit_per_serv || 0) * (row.qty_sold || 0),
+    0,
+  );
+  const marginPct = totalRevenue
+    ? ((totalProfit / totalRevenue) * 100).toFixed(1)
+    : "—";
+
   return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-semibold">Menu Profit Ranking</h1>
-      <p className="text-sm text-gray-600">
-        Ranked by profit per serving with margin and recommendations.
-      </p>
-      {status ? <p className="text-sm text-red-600">{status}</p> : null}
-
-      {loading ? (
-        <p className="text-sm text-[var(--enterprise-muted)]">
-          Loading profit ranking...
-        </p>
-      ) : items.length === 0 ? (
-        <p className="text-sm text-[var(--enterprise-muted)]">
-          No sales data yet.
-        </p>
-      ) : (
-        <div className="overflow-hidden rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)]">
-          <table className="app-table w-full text-left text-sm">
-            <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-              <tr>
-                <th className="px-3 py-2">Drink</th>
-                <th className="px-3 py-2">Sold</th>
-                <th className="px-3 py-2">Price</th>
-                <th className="px-3 py-2">Cost</th>
-                <th className="px-3 py-2">Profit</th>
-                <th className="px-3 py-2">Margin</th>
-                <th className="px-3 py-2">Rec</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row) => (
-                <tr key={row.menu_item_id} className="border-t">
-                  <td className="px-3 py-2">{row.name}</td>
-                  <td className="px-3 py-2">{row.qty_sold}</td>
-                  <td className="px-3 py-2">${row.price_each}</td>
-                  <td className="px-3 py-2">${row.cost_per_serv}</td>
-                  <td className="px-3 py-2">${row.profit_per_serv}</td>
-                  <td className="px-3 py-2">{row.margin_pct}%</td>
-                  <td className="px-3 py-2">
-                    {row.recommendations.join(", ") || "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <section className="space-y-6">
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h2 className="enterprise-heading text-2xl font-semibold">
+              Profit Intelligence
+            </h2>
+            <p className="app-card-subtitle">
+              Ranked by profit per serving with margin and recommendations.
+            </p>
+          </div>
         </div>
-      )}
-
-      <div className="rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-4">
-        <h2 className="text-lg font-semibold">Create Drink Spec</h2>
-        <p className="text-sm text-gray-600">
-          Add a new versioned spec for a menu item.
-        </p>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="text-sm text-gray-700">
-            Location
-            <select
-              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-              value={selectedLocation}
-              onChange={(event) => setSelectedLocation(event.target.value)}
-            >
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm text-gray-700">
-            Menu item
-            <select
-              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-              value={selectedMenuItem}
-              onChange={(event) => setSelectedMenuItem(event.target.value)}
-            >
-              <option value="">Select menu item</option>
-              {menuItems
-                .filter((item) =>
-                  selectedLocation ? item.location_id === selectedLocation : true,
-                )
-                .map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label className="text-sm text-gray-700">
-            Glass type
-            <input
-              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-              value={glassType}
-              onChange={(event) => setGlassType(event.target.value)}
-            />
-          </label>
-          <label className="text-sm text-gray-700">
-            Ice type
-            <input
-              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-              value={iceType}
-              onChange={(event) => setIceType(event.target.value)}
-            />
-          </label>
-          <label className="text-sm text-gray-700">
-            Target pour (oz)
-            <input
-              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-              value={targetPourOz}
-              onChange={(event) => setTargetPourOz(event.target.value)}
-            />
-          </label>
-          <label className="text-sm text-gray-700">
-            Notes
-            <input
-              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-            />
-          </label>
+        <div className="app-card-body">
+          <div className="app-kpi-grid">
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Revenue</p>
+              <p className="app-kpi-value">
+                {loading ? "—" : formatCurrency(totalRevenue)}
+              </p>
+              <p className="app-kpi-meta">This period</p>
+            </div>
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Pour Cost</p>
+              <p className="app-kpi-value">
+                {loading ? "—" : formatCurrency(totalCost)}
+              </p>
+              <p className="app-kpi-meta">Based on specs</p>
+            </div>
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Profit</p>
+              <p className="app-kpi-value">
+                {loading ? "—" : formatCurrency(totalProfit)}
+              </p>
+              <p className="app-kpi-meta">Gross margin</p>
+            </div>
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Margin</p>
+              <p className="app-kpi-value">{loading ? "—" : `${marginPct}%`}</p>
+              <p className="app-kpi-meta">Avg across menu</p>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="mt-4 space-y-2">
-          {lines.map((line, index) => (
-            <div key={`line-${index}`} className="flex gap-2">
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h3 className="app-card-title">Menu Profit Ranking</h3>
+            <p className="app-card-subtitle">
+              Prioritize high-margin items and review low performers.
+            </p>
+          </div>
+        </div>
+        <div className="app-card-body">
+          {status ? (
+            <p className="text-sm text-[var(--color-status-danger-text)]">
+              {status}
+            </p>
+          ) : null}
+
+          {loading ? (
+            <p className="text-sm text-[var(--enterprise-muted)]">
+              Loading profit ranking...
+            </p>
+          ) : items.length === 0 ? (
+            <div className="app-empty">
+              <div className="app-empty-title">No Sales Data Yet</div>
+              <p className="app-empty-desc">
+                Once sales data is ingested, margin intelligence appears here.
+              </p>
+              <div className="app-empty-actions">
+                <Link className="btn-primary btn-sm" href="/ingest">
+                  Connect POS
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface)]">
+              <table className="app-table w-full text-left text-sm">
+                <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
+                  <tr>
+                    <th className="px-3 py-2">Drink</th>
+                    <th className="px-3 py-2">Sold</th>
+                    <th className="px-3 py-2">Price</th>
+                    <th className="px-3 py-2">Cost</th>
+                    <th className="px-3 py-2">Profit</th>
+                    <th className="px-3 py-2">Margin</th>
+                    <th className="px-3 py-2">Rec</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => (
+                    <tr key={row.menu_item_id} className="border-t">
+                      <td className="px-3 py-2">{row.name}</td>
+                      <td className="px-3 py-2">{row.qty_sold}</td>
+                      <td className="px-3 py-2">
+                        {formatCurrency(row.price_each)}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatCurrency(row.cost_per_serv)}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatCurrency(row.profit_per_serv)}
+                      </td>
+                      <td className="px-3 py-2">{row.margin_pct}%</td>
+                      <td className="px-3 py-2">
+                        {row.recommendations.join(", ") || "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h3 className="app-card-title">Create Drink Spec</h3>
+            <p className="app-card-subtitle">
+              Add a new versioned spec for a menu item.
+            </p>
+          </div>
+        </div>
+        <div className="app-card-body">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-sm text-gray-700">
+              Location
               <select
-                className="w-2/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                value={line.ingredientId}
-                onChange={(event) =>
-                  handleLineChange(index, "ingredientId", event.target.value)
-                }
+                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                value={selectedLocation}
+                onChange={(event) => setSelectedLocation(event.target.value)}
               >
-                <option value="">Select ingredient</option>
-                {ingredients.map((ingredient) => (
-                  <option key={ingredient.id} value={ingredient.id}>
-                    {ingredient.name}
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
                   </option>
                 ))}
               </select>
+            </label>
+            <label className="text-sm text-gray-700">
+              Menu item
+              <select
+                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                value={selectedMenuItem}
+                onChange={(event) => setSelectedMenuItem(event.target.value)}
+              >
+                <option value="">Select menu item</option>
+                {menuItems
+                  .filter((item) =>
+                    selectedLocation
+                      ? item.location_id === selectedLocation
+                      : true,
+                  )
+                  .map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label className="text-sm text-gray-700">
+              Glass type
               <input
-                className="w-1/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                placeholder="oz"
-                value={line.ounces}
-                onChange={(event) =>
-                  handleLineChange(index, "ounces", event.target.value)
-                }
+                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                value={glassType}
+                onChange={(event) => setGlassType(event.target.value)}
               />
-            </div>
-          ))}
-          <button
-            className="rounded border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-2 py-1 text-xs"
-            onClick={handleAddLine}
-          >
-            Add ingredient line
+            </label>
+            <label className="text-sm text-gray-700">
+              Ice type
+              <input
+                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                value={iceType}
+                onChange={(event) => setIceType(event.target.value)}
+              />
+            </label>
+            <label className="text-sm text-gray-700">
+              Target pour (oz)
+              <input
+                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                value={targetPourOz}
+                onChange={(event) => setTargetPourOz(event.target.value)}
+              />
+            </label>
+            <label className="text-sm text-gray-700">
+              Notes
+              <input
+                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {lines.map((line, index) => (
+              <div key={`line-${index}`} className="flex gap-2">
+                <select
+                  className="w-2/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                  value={line.ingredientId}
+                  onChange={(event) =>
+                    handleLineChange(index, "ingredientId", event.target.value)
+                  }
+                >
+                  <option value="">Select ingredient</option>
+                  {ingredients.map((ingredient) => (
+                    <option key={ingredient.id} value={ingredient.id}>
+                      {ingredient.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="w-1/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                  placeholder="oz"
+                  value={line.ounces}
+                  onChange={(event) =>
+                    handleLineChange(index, "ounces", event.target.value)
+                  }
+                />
+              </div>
+            ))}
+            <button className="btn-ghost btn-sm" onClick={handleAddLine}>
+              Add ingredient line
+            </button>
+          </div>
+
+          <button className="btn-primary btn-sm mt-4" onClick={handleSubmitSpec}>
+            Save spec
           </button>
+
+          {status ? (
+            <p className="mt-2 text-sm text-[var(--enterprise-muted)]">
+              {status}
+            </p>
+          ) : null}
         </div>
-
-        <button
-          className="mt-4 rounded bg-[var(--app-accent)] px-3 py-2 text-xs font-semibold text-white"
-          onClick={handleSubmitSpec}
-        >
-          Save spec
-        </button>
-
-        {status ? <p className="mt-2 text-sm text-gray-700">{status}</p> : null}
       </div>
     </section>
   );

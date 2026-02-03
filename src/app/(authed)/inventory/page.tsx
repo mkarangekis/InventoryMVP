@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 
@@ -244,13 +245,13 @@ export default function InventoryPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="app-card">
+        <div className="app-card-header">
           <div>
             <h2 className="enterprise-heading text-2xl font-semibold">
               Inventory Health
             </h2>
-            <p className="text-sm text-[var(--enterprise-muted)]">
+            <p className="app-card-subtitle">
               Capture actual ounces to keep forecasts and ordering accurate.
             </p>
           </div>
@@ -258,112 +259,129 @@ export default function InventoryPage() {
             <label className="text-xs text-[var(--enterprise-muted)]">
               Snapshot date
               <input
-                className="ml-2 rounded border border-[var(--enterprise-border)] px-2 py-1 text-sm"
+                className="ml-2 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm"
                 type="date"
                 value={snapshotDate}
                 onChange={(event) => setSnapshotDate(event.target.value)}
               />
             </label>
-            <button
-              className="rounded-full bg-[var(--app-accent)] px-4 py-2 text-xs font-semibold text-white"
-              onClick={handleSubmit}
-            >
+            <button className="btn-primary btn-sm" onClick={handleSubmit}>
               Save snapshot
             </button>
           </div>
         </div>
-
-        <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-[var(--enterprise-muted)]">
-          <button
-            className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
-            onClick={prefillEmptyWithFull}
-          >
-            Prefill empty = full
-          </button>
-          <button
-            className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
-            onClick={() =>
-              setAllCounts(String(items[0]?.container_size_oz ?? 0))
-            }
-          >
-            Set all = full
-          </button>
-          <button
-            className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
-            onClick={() => setAllCounts("0")}
-          >
-            Set all = 0
-          </button>
-          <label className="flex items-center gap-2">
-            <span>Set all to</span>
-            <input
-              className="w-24 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--enterprise-ink)]"
-              type="number"
-              step="0.1"
-              value={bulkValue}
-              onChange={(event) => setBulkValue(event.target.value)}
-            />
+        <div className="app-card-body">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--enterprise-muted)]">
             <button
-              className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
-              onClick={applyBulkValue}
+              className="btn-secondary btn-sm"
+              onClick={prefillEmptyWithFull}
             >
-              Apply
+              Prefill empty = full
             </button>
-          </label>
+            <button
+              className="btn-secondary btn-sm"
+              onClick={() =>
+                setAllCounts(String(items[0]?.container_size_oz ?? 0))
+              }
+            >
+              Set all = full
+            </button>
+            <button
+              className="btn-secondary btn-sm"
+              onClick={() => setAllCounts("0")}
+            >
+              Set all = 0
+            </button>
+            <label className="flex items-center gap-2">
+              <span>Set all to</span>
+              <input
+                className="w-24 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--enterprise-ink)]"
+                type="number"
+                step="0.1"
+                value={bulkValue}
+                onChange={(event) => setBulkValue(event.target.value)}
+              />
+              <button className="btn-ghost btn-sm" onClick={applyBulkValue}>
+                Apply
+              </button>
+            </label>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
-        {loading ? (
-          <p className="text-sm text-[var(--enterprise-muted)]">
-            Loading inventory...
-          </p>
-        ) : items.length === 0 ? (
-          <p className="text-sm text-[var(--enterprise-muted)]">
-            No inventory items found.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-            <table className="app-table w-full text-left text-sm">
-              <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-                <tr>
-                  <th className="px-3 py-2">Item</th>
-                  <th className="px-3 py-2">Container</th>
-                  <th className="px-3 py-2">Remaining (oz)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id} className="border-t">
-                    <td className="px-3 py-2">{item.name}</td>
-                    <td className="px-3 py-2">
-                      {item.container_type} ({item.container_size_oz} oz)
-                    </td>
-                    <td className="px-3 py-2">
-                      <input
-                        className="w-24 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                        value={counts[item.id] ?? ""}
-                        placeholder={String(item.container_size_oz)}
-                        onChange={(event) =>
-                          setCounts((prev) => ({
-                            ...prev,
-                            [item.id]: event.target.value,
-                          }))
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h3 className="app-card-title">Quick Count</h3>
+            <p className="app-card-subtitle">
+              Record remaining ounces for each item.
+            </p>
           </div>
-        )}
+        </div>
+        <div className="app-card-body">
+          {loading ? (
+            <p className="text-sm text-[var(--enterprise-muted)]">
+              Loading inventory...
+            </p>
+          ) : items.length === 0 ? (
+            <div className="app-empty">
+              <div className="app-empty-title">No Inventory Items Yet</div>
+              <p className="app-empty-desc">
+                Start building your inventory by importing from your POS data or
+                uploading a CSV.
+              </p>
+              <div className="app-empty-actions">
+                <Link className="btn-primary btn-sm" href="/ingest">
+                  Import from POS
+                </Link>
+                <Link className="btn-secondary btn-sm" href="/ingest">
+                  Upload CSV
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
+              <table className="app-table w-full text-left text-sm">
+                <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
+                  <tr>
+                    <th className="px-3 py-2">Item</th>
+                    <th className="px-3 py-2">Container</th>
+                    <th className="px-3 py-2">Remaining (oz)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} className="border-t">
+                      <td className="px-3 py-2">{item.name}</td>
+                      <td className="px-3 py-2">
+                        {item.container_type} ({item.container_size_oz} oz)
+                      </td>
+                      <td className="px-3 py-2">
+                        <input
+                          className="w-24 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                          value={counts[item.id] ?? ""}
+                          placeholder={String(item.container_size_oz)}
+                          onChange={(event) =>
+                            setCounts((prev) => ({
+                              ...prev,
+                              [item.id]: event.target.value,
+                            }))
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        {status ? (
-          <p className="mt-3 text-sm text-[var(--enterprise-muted)]">
-            {status}
-          </p>
-        ) : null}
+          {status ? (
+            <p className="mt-3 text-sm text-[var(--enterprise-muted)]">
+              {status}
+            </p>
+          ) : null}
+        </div>
       </div>
     </section>
   );

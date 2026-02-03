@@ -42,45 +42,45 @@ export default function DashboardPage() {
   const nextForecast = sortedForecast[0];
   const latestVarianceWeek = flags[0]?.week_start_date ?? "";
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabaseBrowser.auth.getSession();
-      const token = data.session?.access_token;
+  const load = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
 
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      const locationId =
-        typeof window !== "undefined"
-          ? window.localStorage.getItem("barops.locationId")
-          : null;
-      const query = locationId ? `?locationId=${locationId}` : "";
-
-      const [varianceRes, forecastRes] = await Promise.all([
-        fetch(`/api/variance${query}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`/api/forecast${query}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-      ]);
-
-      if (varianceRes.ok) {
-        const payload = (await varianceRes.json()) as { flags: VarianceFlag[] };
-        setFlags(payload.flags);
-      }
-      if (forecastRes.ok) {
-        const payload = (await forecastRes.json()) as {
-          forecast: ForecastRow[];
-        };
-        setForecast(payload.forecast);
-      }
-
+    if (!token) {
       setLoading(false);
-    };
+      return;
+    }
 
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const [varianceRes, forecastRes] = await Promise.all([
+      fetch(`/api/variance${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`/api/forecast${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
+
+    if (varianceRes.ok) {
+      const payload = (await varianceRes.json()) as { flags: VarianceFlag[] };
+      setFlags(payload.flags);
+    }
+    if (forecastRes.ok) {
+      const payload = (await forecastRes.json()) as {
+        forecast: ForecastRow[];
+      };
+      setForecast(payload.forecast);
+    }
+
+    setLoading(false);
+  };
+
+  useEffect(() => {
     void load();
 
     const handleLocationChange = () => {
@@ -159,154 +159,188 @@ export default function DashboardPage() {
     );
   }
 
+  const varianceTotalOz = flags.reduce((sum, flag) => {
+    const value = Number.parseFloat(flag.variance_oz);
+    return sum + (Number.isNaN(value) ? 0 : Math.abs(value));
+  }, 0);
+  const trackedItems = new Set(
+    forecast.map((row) => row.inventory_item_id),
+  ).size;
+
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="app-card">
+        <div className="app-card-header">
           <div>
             <h2 className="enterprise-heading text-2xl font-semibold">
-              Overview
+              Leak & Variance Dashboard
             </h2>
-            <p className="text-sm text-[var(--enterprise-muted)]">
-              Variance flags and demand signals for the next two weeks.
+            <p className="app-card-subtitle">
+              Latest variance flags across your locations.
             </p>
           </div>
-          <div className="rounded-2xl bg-[var(--enterprise-accent-soft)] px-4 py-3 text-sm text-[var(--app-accent-strong)]">
-            {loading ? "Syncing variance + forecast..." : "Live from POS runs"}
+          <div className="flex flex-wrap items-center gap-2">
+            <Link className="btn-secondary btn-sm" href="/variance">
+              Export
+            </Link>
+            <button
+              className="btn-primary btn-sm"
+              onClick={() => {
+                setLoading(true);
+                void load();
+              }}
+            >
+              {loading ? "Syncing..." : "Sync now"}
+            </button>
           </div>
         </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4">
-            <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
-              Flagged items
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {loading ? "—" : flags.length}
-            </p>
-            <p className="text-xs text-[var(--enterprise-muted)]">
-              Latest variance week{" "}
-              {latestVarianceWeek
-                ? new Date(latestVarianceWeek).toLocaleDateString()
-                : "—"}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4">
-            <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
-              Next forecast date
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {nextForecast
-                ? new Date(nextForecast.forecast_date).toLocaleDateString()
-                : "—"}
-            </p>
-            <p className="text-xs text-[var(--enterprise-muted)]">
-              {nextForecast
-                ? `${nextForecast.forecast_usage_oz} oz expected`
-                : "No forecast data yet"}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4">
-            <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
-              Forecast rows
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {loading ? "—" : forecast.length}
-            </p>
-            <p className="text-xs text-[var(--enterprise-muted)]">
-              Demand horizon: 14 days
-            </p>
+        <div className="app-card-body">
+          <div className="app-kpi-grid">
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Variance This Week</p>
+              <p className="app-kpi-value">
+                {loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`}
+              </p>
+              <p className="app-kpi-meta">
+                {latestVarianceWeek
+                  ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString()}`
+                  : "No variance week yet"}
+              </p>
+            </div>
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Active Flags</p>
+              <p className="app-kpi-value">{loading ? "—" : flags.length}</p>
+              <p className="app-kpi-meta">Awaiting review</p>
+            </div>
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Items Tracked</p>
+              <p className="app-kpi-value">
+                {loading ? "—" : trackedItems || "—"}
+              </p>
+              <p className="app-kpi-meta">Forecast coverage</p>
+            </div>
+            <div className="app-kpi-card">
+              <p className="app-kpi-label">Next Forecast</p>
+              <p className="app-kpi-value">
+                {nextForecast
+                  ? new Date(nextForecast.forecast_date).toLocaleDateString()
+                  : "—"}
+              </p>
+              <p className="app-kpi-meta">
+                {nextForecast
+                  ? `${nextForecast.forecast_usage_oz} oz expected`
+                  : "Building forecast"}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
-          <div className="flex items-center justify-between">
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="app-card">
+          <div className="app-card-header">
             <div>
-              <h3 className="enterprise-heading text-lg font-semibold">
-                Variance flags
-              </h3>
-              <p className="text-sm text-[var(--enterprise-muted)]">
-                Weekly shrink signals across locations.
+              <h3 className="app-card-title">Variance flags</h3>
+              <p className="app-card-subtitle">
+                Potential shrink and over-pours to review.
               </p>
             </div>
-            <Link
-              href="/variance"
-              className="text-xs font-semibold text-[var(--enterprise-accent)]"
-            >
-              View full variance
+            <Link className="btn-ghost btn-sm" href="/variance">
+              View all
             </Link>
           </div>
-
-          {loading ? (
-            <p className="mt-4 text-sm text-[var(--enterprise-muted)]">
-              Loading variance...
-            </p>
-          ) : flags.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--enterprise-muted)]">
-              No variance flags yet.
-            </p>
-          ) : (
-            <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-              <table className="app-table w-full text-left text-sm">
-                <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-                  <tr>
-                    <th className="px-3 py-2">Item</th>
-                    <th className="px-3 py-2">Week</th>
-                    <th className="px-3 py-2">Variance</th>
-                    <th className="px-3 py-2">Severity</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {flags.slice(0, 6).map((flag) => (
-                    <tr key={flag.id} className="border-t">
-                      <td className="px-3 py-2">{flag.item_name}</td>
-                      <td className="px-3 py-2">
-                        {new Date(flag.week_start_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-3 py-2">{flag.variance_oz}</td>
-                      <td className="px-3 py-2 font-semibold">
-                        {flag.severity}
-                      </td>
+          <div className="app-card-body">
+            {loading ? (
+              <p className="text-sm text-[var(--enterprise-muted)]">
+                Loading variance...
+              </p>
+            ) : flags.length === 0 ? (
+              <div className="app-empty">
+                <div className="app-empty-title">No Variance Flags Yet</div>
+                <p className="app-empty-desc">
+                  Once your POS is connected and inventory is tracked, variance
+                  flags will appear here showing potential shrinkage and
+                  over-pouring.
+                </p>
+                <div className="app-empty-actions">
+                  <Link className="btn-primary btn-sm" href="/ingest">
+                    Connect POS
+                  </Link>
+                  <Link className="btn-secondary btn-sm" href="/inventory">
+                    Add Inventory
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
+                <table className="app-table w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
+                    <tr>
+                      <th className="px-3 py-2">Item</th>
+                      <th className="px-3 py-2">Week</th>
+                      <th className="px-3 py-2">Variance</th>
+                      <th className="px-3 py-2">Severity</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {flags.slice(0, 6).map((flag) => (
+                      <tr key={flag.id} className="border-t">
+                        <td className="px-3 py-2">{flag.item_name}</td>
+                        <td className="px-3 py-2">
+                          {new Date(flag.week_start_date).toLocaleDateString()}
+                        </td>
+                        <td className="px-3 py-2">{flag.variance_oz}</td>
+                        <td className="px-3 py-2 font-semibold">
+                          {flag.severity}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
-          <h3 className="enterprise-heading text-lg font-semibold">
-            Next 14-day forecast
-          </h3>
-          <p className="text-sm text-[var(--enterprise-muted)]">
-            Daily ounces projected by item.
-          </p>
-          {forecast.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--enterprise-muted)]">
-              No forecast data yet.
-            </p>
-          ) : (
-            <div className="mt-4 space-y-3 text-sm">
-              {sortedForecast.slice(0, 8).map((row) => (
-                <div
-                  key={`${row.inventory_item_id}-${row.forecast_date}`}
-                  className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span>
-                      {new Date(row.forecast_date).toLocaleDateString()}
-                    </span>
-                    <span className="font-semibold">
-                      {row.forecast_usage_oz} oz
-                    </span>
-                  </div>
-                </div>
-              ))}
+        <div className="app-card">
+          <div className="app-card-header">
+            <div>
+              <h3 className="app-card-title">Next 14-Day Forecast</h3>
+              <p className="app-card-subtitle">
+                Daily ounces projected by item.
+              </p>
             </div>
-          )}
+          </div>
+          <div className="app-card-body">
+            {forecast.length === 0 ? (
+              <div className="app-empty">
+                <div className="app-empty-title">Building Your Forecast</div>
+                <p className="app-empty-desc">
+                  Forecast data will appear once we have enough sales history to
+                  generate predictions. Typically requires 2-4 weeks of POS
+                  data.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 text-sm">
+                {sortedForecast.slice(0, 8).map((row) => (
+                  <div
+                    key={`${row.inventory_item_id}-${row.forecast_date}`}
+                    className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>
+                        {new Date(row.forecast_date).toLocaleDateString()}
+                      </span>
+                      <span className="font-semibold">
+                        {row.forecast_usage_oz} oz
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>

@@ -195,144 +195,186 @@ export default function IngestPage() {
   };
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">POS CSV Ingestion</h1>
-        <p className="text-sm text-gray-500">Sample files: `seed/csv`</p>
-      </div>
-
-      <div className="rounded border border-gray-200 bg-white p-4">
-        <div className="grid gap-3 text-sm">
-          <label className="grid gap-1">
-            <span className="text-xs text-gray-500">Location</span>
-            <select
-              className="rounded border border-gray-300 px-2 py-1 text-sm"
-              value={selectedLocation}
-              onChange={(event) => setSelectedLocation(event.target.value)}
-            >
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs text-gray-500">orders.csv</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(event) =>
-                setOrdersFile(event.target.files?.[0] ?? null)
-              }
-            />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs text-gray-500">order_items.csv</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(event) =>
-                setItemsFile(event.target.files?.[0] ?? null)
-              }
-            />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs text-gray-500">modifiers.csv</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(event) =>
-                setModifiersFile(event.target.files?.[0] ?? null)
-              }
-            />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs text-gray-500">voids_comps.csv</span>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={(event) =>
-                setVoidsFile(event.target.files?.[0] ?? null)
-              }
-            />
-          </label>
-          <button
-            className="w-fit rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
-            onClick={handleUpload}
-            disabled={uploading}
-          >
-            {uploading ? "Uploading..." : "Upload CSVs"}
-          </button>
-          {uploadStatus ? (
-            <p className="text-xs text-gray-600">{uploadStatus}</p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="rounded border border-gray-200 bg-white p-4">
-        <h2 className="text-lg font-semibold">Recent imports</h2>
-        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-600">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={(event) => setAutoRefresh(event.target.checked)}
-            />
-            Auto-refresh
-          </label>
-          <button
-            className="rounded border border-gray-300 px-2 py-1"
-            onClick={loadRuns}
-            disabled={refreshing}
-          >
-            {refreshing ? "Refreshing..." : "Refresh now"}
-          </button>
-        </div>
-        {importRuns.length === 0 ? (
-          <p className="text-xs text-gray-600">No import runs yet.</p>
-        ) : (
-          <div className="mt-2 overflow-hidden rounded border border-gray-200">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-[11px] uppercase text-gray-500">
-                <tr>
-                  <th className="px-3 py-2">Location</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Started</th>
-                  <th className="px-3 py-2">Finished</th>
-                  <th className="px-3 py-2">Error</th>
-                  <th className="px-3 py-2">View</th>
-                </tr>
-              </thead>
-              <tbody>
-                {importRuns.map((run) => (
-                  <tr key={run.id} className="border-t">
-                    <td className="px-3 py-2">{run.location_name}</td>
-                    <td className="px-3 py-2">{run.status}</td>
-                    <td className="px-3 py-2">
-                      {run.started_at
-                        ? new Date(run.started_at).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td className="px-3 py-2">
-                      {run.finished_at
-                        ? new Date(run.finished_at).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td className="px-3 py-2 text-red-600">
-                      {run.error_summary ?? ""}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Link className="text-xs text-blue-600" href={`/ingest/${run.id}`}>
-                        Details
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <section className="space-y-6">
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h2 className="enterprise-heading text-2xl font-semibold">
+              Data Connections
+            </h2>
+            <p className="app-card-subtitle">
+              Import POS CSVs to keep variance and forecasts up to date.
+            </p>
           </div>
-        )}
+          <p className="text-xs text-[var(--enterprise-muted)]">
+            Sample files: `seed/csv`
+          </p>
+        </div>
+        <div className="app-card-body">
+          <div className="grid gap-3 text-sm md:grid-cols-2">
+            <label className="grid gap-1 text-sm text-gray-700">
+              <span className="text-xs text-[var(--enterprise-muted)]">
+                Location
+              </span>
+              <select
+                className="rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
+                value={selectedLocation}
+                onChange={(event) => setSelectedLocation(event.target.value)}
+              >
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm text-gray-700">
+              <span className="text-xs text-[var(--enterprise-muted)]">
+                orders.csv
+              </span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(event) =>
+                  setOrdersFile(event.target.files?.[0] ?? null)
+                }
+              />
+            </label>
+            <label className="grid gap-1 text-sm text-gray-700">
+              <span className="text-xs text-[var(--enterprise-muted)]">
+                order_items.csv
+              </span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(event) =>
+                  setItemsFile(event.target.files?.[0] ?? null)
+                }
+              />
+            </label>
+            <label className="grid gap-1 text-sm text-gray-700">
+              <span className="text-xs text-[var(--enterprise-muted)]">
+                modifiers.csv
+              </span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(event) =>
+                  setModifiersFile(event.target.files?.[0] ?? null)
+                }
+              />
+            </label>
+            <label className="grid gap-1 text-sm text-gray-700">
+              <span className="text-xs text-[var(--enterprise-muted)]">
+                voids_comps.csv
+              </span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(event) =>
+                  setVoidsFile(event.target.files?.[0] ?? null)
+                }
+              />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              className="btn-primary btn-sm"
+              onClick={handleUpload}
+              disabled={uploading}
+            >
+              {uploading ? "Uploading..." : "Upload CSVs"}
+            </button>
+            {uploadStatus ? (
+              <p className="text-xs text-[var(--enterprise-muted)]">
+                {uploadStatus}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h3 className="app-card-title">Recent imports</h3>
+            <p className="app-card-subtitle">
+              Track ingestion status and troubleshoot errors.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--enterprise-muted)]">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={autoRefresh}
+                onChange={(event) => setAutoRefresh(event.target.checked)}
+              />
+              Auto-refresh
+            </label>
+            <button
+              className="btn-secondary btn-sm"
+              onClick={loadRuns}
+              disabled={refreshing}
+            >
+              {refreshing ? "Refreshing..." : "Refresh now"}
+            </button>
+          </div>
+        </div>
+        <div className="app-card-body">
+          {importRuns.length === 0 ? (
+            <div className="app-empty">
+              <div className="app-empty-title">No Import Runs Yet</div>
+              <p className="app-empty-desc">
+                Upload your first POS CSVs to kick off variance and forecast
+                jobs.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
+              <table className="app-table w-full text-left text-xs">
+                <thead className="text-[11px] uppercase text-[var(--enterprise-muted)]">
+                  <tr>
+                    <th className="px-3 py-2">Location</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Started</th>
+                    <th className="px-3 py-2">Finished</th>
+                    <th className="px-3 py-2">Error</th>
+                    <th className="px-3 py-2">View</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {importRuns.map((run) => (
+                    <tr key={run.id} className="border-t">
+                      <td className="px-3 py-2">{run.location_name}</td>
+                      <td className="px-3 py-2">{run.status}</td>
+                      <td className="px-3 py-2">
+                        {run.started_at
+                          ? new Date(run.started_at).toLocaleString()
+                          : "-"}
+                      </td>
+                      <td className="px-3 py-2">
+                        {run.finished_at
+                          ? new Date(run.finished_at).toLocaleString()
+                          : "-"}
+                      </td>
+                      <td className="px-3 py-2 text-[var(--color-status-danger-text)]">
+                        {run.error_summary ?? ""}
+                      </td>
+                      <td className="px-3 py-2">
+                        <Link
+                          className="text-xs text-[var(--color-accent-primary)]"
+                          href={`/ingest/${run.id}`}
+                        >
+                          Details
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

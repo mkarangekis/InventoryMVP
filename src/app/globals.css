@@ -304,6 +304,114 @@ textarea:focus-visible {
   font-size: var(--text-base);
 }
 
+.app-card {
+  background: linear-gradient(
+    145deg,
+    var(--color-surface-default) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--color-border-muted);
+}
+
+.app-card-body {
+  padding: var(--space-5);
+}
+
+.app-card-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.app-card-subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin-top: var(--space-1);
+}
+
+.app-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.app-kpi-card {
+  position: relative;
+  background: var(--color-surface-default);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.app-kpi-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--color-accent-primary);
+}
+
+.app-kpi-label {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text-tertiary);
+}
+
+.app-kpi-value {
+  margin-top: var(--space-2);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-text-primary);
+}
+
+.app-kpi-meta {
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.app-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border-default);
+  background: var(--color-bg-tertiary);
+}
+
+.app-empty-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.app-empty-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.app-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
 .input {
   height: 40px;
   padding: 0 var(--space-3);
@@ -1151,6 +1259,9 @@ textarea:focus-visible {
   .value-props-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .app-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
@@ -1182,6 +1293,9 @@ textarea:focus-visible {
     align-items: center;
   }
   .clarity-grid {
+    grid-template-columns: 1fr;
+  }
+  .app-kpi-grid {
     grid-template-columns: 1fr;
   }
 }
