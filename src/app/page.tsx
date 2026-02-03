@@ -58,7 +58,10 @@ export default function HomePage() {
             <Link className="btn-primary btn-lg btn-glow" href="/login?mode=signup">
               Start Free Trial <span className="btn-arrow">→</span>
             </Link>
-            <a className="btn-secondary btn-lg" href="mailto:sales@pourdex.com">
+            <Link className="btn-secondary btn-lg" href="/login?mode=signin">
+              Sign In
+            </Link>
+            <a className="btn-ghost btn-lg" href="mailto:sales@pourdex.com">
               Watch Demo
             </a>
           </div>
