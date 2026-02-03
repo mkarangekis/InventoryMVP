@@ -15,7 +15,19 @@ export default function AuthCallbackPage() {
       if (code) {
         await supabaseBrowser.auth.exchangeCodeForSession(code);
       } else {
-        await supabaseBrowser.auth.getSessionFromUrl({ storeSession: true });
+        const hash = window.location.hash.startsWith("#")
+          ? window.location.hash.slice(1)
+          : window.location.hash;
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          await supabaseBrowser.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
       }
 
       router.replace("/onboarding");
