@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { DEMO_LOCATION_ID, DEMO_TENANT_ID, isDemoEmail } from "@/lib/demo";
 
 type UserScope =
   | {
@@ -8,6 +9,8 @@ type UserScope =
       locationIds: string[];
       scopedLocationIds: string[];
       locationId: string | null;
+      userEmail: string | null;
+      isDemo: boolean;
     }
   | { ok: false; response: Response };
 
@@ -25,6 +28,24 @@ export const getUserScope = async (request: Request): Promise<UserScope> => {
   }
 
   const userId = userData.user.id;
+  const userEmail = userData.user.email ?? null;
+  const isDemo = isDemoEmail(userEmail);
+
+  if (isDemo) {
+    const url = new URL(request.url);
+    const requestedLocation = url.searchParams.get("locationId");
+    const locationId = requestedLocation ?? DEMO_LOCATION_ID;
+    return {
+      ok: true,
+      userId,
+      tenantId: DEMO_TENANT_ID,
+      locationIds: [DEMO_LOCATION_ID],
+      scopedLocationIds: [locationId],
+      locationId,
+      userEmail,
+      isDemo: true,
+    };
+  }
   const locationRows = await supabaseAdmin
     .from("user_locations")
     .select("location_id")
@@ -62,5 +83,7 @@ export const getUserScope = async (request: Request): Promise<UserScope> => {
     locationIds,
     scopedLocationIds,
     locationId: requestedLocation ?? null,
+    userEmail,
+    isDemo: false,
   };
 };

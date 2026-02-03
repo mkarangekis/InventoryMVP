@@ -5,6 +5,7 @@ import { systemPrompts } from "@/ai/prompts";
 import { runAiFeature, hashInput } from "@/ai/run";
 import { validateMenuSuggestions } from "@/ai/validators";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { demoAiMenuSuggestions } from "@/lib/demo";
 
 const daysAgo = (count: number) => {
   const date = new Date();
@@ -13,12 +14,16 @@ const daysAgo = (count: number) => {
 };
 
 export async function GET(request: Request) {
+  const scope = await getUserScope(request);
+  if (!scope.ok) return scope.response;
+
+  if (scope.isDemo) {
+    return Response.json(demoAiMenuSuggestions);
+  }
+
   if (!aiFeatureFlags.menuSuggestions()) {
     return new Response("Not found", { status: 404 });
   }
-
-  const scope = await getUserScope(request);
-  if (!scope.ok) return scope.response;
 
   if (scope.scopedLocationIds.length === 0) {
     return Response.json(

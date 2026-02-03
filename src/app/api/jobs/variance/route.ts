@@ -1,5 +1,6 @@
 import postgres from "postgres";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isDemoEmail } from "@/lib/demo";
 
 type RequestBody = {
   locationId?: string;
@@ -25,6 +26,10 @@ export async function POST(request: Request) {
   const { data: userData, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !userData.user) {
     return new Response("Invalid auth token", { status: 401 });
+  }
+
+  if (isDemoEmail(userData.user.email)) {
+    return Response.json({ ok: true, message: "Demo: variance job queued." });
   }
 
   const userId = userData.user.id;

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isDemoEmail } from "@/lib/demo";
 import { CsvAdapter } from "@/lib/pos/adapters/csvAdapter";
 import { parseCsv } from "@/lib/pos/csv";
 
@@ -23,6 +24,18 @@ export async function POST(request: Request) {
 
   if (userError || !userData.user) {
     return new Response("Invalid auth token", { status: 401 });
+  }
+
+  if (isDemoEmail(userData.user.email)) {
+    return Response.json({
+      ok: true,
+      jobResults: {
+        import: { ok: true },
+        usage: { ok: true },
+        forecast: { ok: true },
+        ordering: { ok: true },
+      },
+    });
   }
 
   const formData = await request.formData();

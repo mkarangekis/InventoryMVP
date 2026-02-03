@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import postgres from "postgres";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isDemoEmail } from "@/lib/demo";
 
 const loadDatabaseUrl = () => {
   if (process.env.DATABASE_URL) {
@@ -40,6 +41,10 @@ export async function POST(request: Request) {
   const { data: userData, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !userData.user) {
     return new Response("Invalid auth token", { status: 401 });
+  }
+
+  if (isDemoEmail(userData.user.email)) {
+    return Response.json({ ok: true, snapshotId: "demo-snapshot-001" });
   }
 
   const body = await request.json();

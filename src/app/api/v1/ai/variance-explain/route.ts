@@ -5,14 +5,19 @@ import { systemPrompts } from "@/ai/prompts";
 import { runAiFeature, hashInput } from "@/ai/run";
 import { validateVarianceExplain } from "@/ai/validators";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { demoAiVarianceExplain } from "@/lib/demo";
 
 export async function GET(request: Request) {
+  const scope = await getUserScope(request);
+  if (!scope.ok) return scope.response;
+
+  if (scope.isDemo) {
+    return Response.json(demoAiVarianceExplain);
+  }
+
   if (!aiFeatureFlags.varianceExplain()) {
     return new Response("Not found", { status: 404 });
   }
-
-  const scope = await getUserScope(request);
-  if (!scope.ok) return scope.response;
 
   if (scope.scopedLocationIds.length === 0) {
     return Response.json(

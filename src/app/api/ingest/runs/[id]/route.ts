@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { demoIngestRuns, demoIngestRows, isDemoEmail } from "@/lib/demo";
 
 const DEFAULT_LIMIT = 200;
 
@@ -19,6 +20,23 @@ export async function GET(
     return new Response("Invalid auth token", { status: 401 });
   }
 
+  const { id } = await context.params;
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split("/").filter(Boolean);
+  const runId = id || pathParts[pathParts.length - 1];
+  if (!runId) {
+    return new Response("Missing import run id", { status: 400 });
+  }
+
+  if (isDemoEmail(userData.user.email)) {
+    const run = demoIngestRuns.find((item) => item.id === runId) ?? demoIngestRuns[0];
+    return Response.json({
+      run,
+      rows: demoIngestRows,
+      limit: DEFAULT_LIMIT,
+    });
+  }
+
   const userId = userData.user.id;
   const profile = await supabaseAdmin
     .from("user_profiles")
@@ -28,14 +46,6 @@ export async function GET(
 
   if (profile.error || !profile.data?.tenant_id) {
     return new Response("User profile not found", { status: 403 });
-  }
-
-  const { id } = await context.params;
-  const url = new URL(request.url);
-  const pathParts = url.pathname.split("/").filter(Boolean);
-  const runId = id || pathParts[pathParts.length - 1];
-  if (!runId) {
-    return new Response("Missing import run id", { status: 400 });
   }
 
   const locations = await supabaseAdmin

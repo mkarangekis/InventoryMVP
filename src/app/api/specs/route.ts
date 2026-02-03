@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isDemoEmail } from "@/lib/demo";
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -11,6 +12,10 @@ export async function POST(request: Request) {
   const { data: userData, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !userData.user) {
     return new Response("Invalid auth token", { status: 401 });
+  }
+
+  if (isDemoEmail(userData.user.email)) {
+    return Response.json({ ok: true, specId: "demo-spec-001", version: 1 });
   }
 
   const body = await request.json();
