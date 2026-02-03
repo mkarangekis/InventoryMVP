@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     userId: string,
     billing: Record<string, any>,
   ) => {
-    const { data } = await supabaseAdmin.auth.getUserById(userId);
+    const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
     const metadata = (data.user?.user_metadata ?? {}) as Record<string, any>;
     await supabaseAdmin.auth.admin.updateUserById(userId, {
       user_metadata: {
