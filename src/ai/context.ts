@@ -60,6 +60,8 @@ export const getUserScope = async (request: Request): Promise<UserScope> => {
       locationIds,
       scopedLocationIds: [],
       locationId: null,
+      userEmail,
+      isDemo: false,
     };
   }
 
