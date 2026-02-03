@@ -42,3 +42,6 @@ next-env.d.ts
 
 # supabase editor snippets
 /supabase/snippets
+
+.vercel
+.env*.local

@@ -20,10 +20,18 @@ export async function GET(request: Request) {
     .select("locations(id,name)")
     .eq("user_id", userId);
 
+  type Location = { id: string; name: string };
+  type UserLocationRow = { locations: Location | Location[] | null };
+
   const mapped =
-    locations.data?.flatMap((row: { locations?: { id: string; name: string } }) =>
-      row.locations ? [{ id: row.locations.id, name: row.locations.name }] : [],
-    ) ?? [];
+    (locations.data as UserLocationRow[] | null)
+      ?.flatMap((row) => {
+        if (!row.locations) {
+          return [];
+        }
+        return Array.isArray(row.locations) ? row.locations : [row.locations];
+      })
+      .map((location) => ({ id: location.id, name: location.name })) ?? [];
 
   return Response.json({ locations: mapped });
 }
