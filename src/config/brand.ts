@@ -8,7 +8,7 @@ export const LEGACY_PRODUCT_NAME = "Bar Ops MVP";
 export const BRAND = {
   company: {
     name: "Pourdex",
-    legalName: "Pourdex Inc.",
+    legalName: "Augmentation Consulting Group Inc.",
     tagline: "Predictive Inventory Intelligence",
   },
   product: {
@@ -24,7 +24,7 @@ export const BRAND = {
     support: "support@pourdex.com",
   },
   legal: {
-    copyright: `© ${new Date().getFullYear()} Pourdex Inc. All rights reserved.`,
+    copyright: `© ${new Date().getFullYear()} Augmentation Consulting Group Inc. All rights reserved.`,
     privacyUrl: "/privacy",
     termsUrl: "/terms",
   },
