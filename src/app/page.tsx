@@ -63,7 +63,6 @@ export default function HomePage() {
             </a>
           </div>
           <div className="hero-proof animate-in stagger-4">
-            Trusted by 200+ independent bars • $2.4M in identified savings
           </div>
         </div>
         <div className="hero-visual animate-in">
