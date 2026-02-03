@@ -33,53 +33,80 @@ export default function HomePage() {
   return (
     <main className="min-h-screen">
       <section className="hero">
+        <div className="hero-bg">
+          <div className="hero-gradient-orb hero-gradient-orb-1" />
+          <div className="hero-gradient-orb hero-gradient-orb-2" />
+          <div className="hero-gradient-orb hero-gradient-orb-3" />
+          <div className="hero-grid-pattern" />
+        </div>
         <div className="hero-content">
-          <h1 className="hero-headline">Stop Guessing. Start Knowing.</h1>
-          <p className="hero-subheadline">
+          <div className="hero-badge animate-in">
+            <span className="hero-badge-dot" />
+            Now with Toast, Square & Clover integrations
+          </div>
+          <h1 className="hero-headline animate-in stagger-1">
+            <span className="text-gradient">Stop Guessing.</span>
+            <br />
+            <span className="text-gradient-accent">Start Knowing.</span>
+          </h1>
+          <p className="hero-subheadline animate-in stagger-2">
             {PRODUCT_NAME} transforms your POS data into predictive
             intelligence. Know what to order, when to order it, and where your
             inventory is really going.
           </p>
-          <div className="hero-cta">
-            <Link className="btn-primary btn-lg" href="/login?mode=signup">
-              Start Free Trial
+          <div className="hero-cta animate-in stagger-3">
+            <Link className="btn-primary btn-lg btn-glow" href="/login?mode=signup">
+              Start Free Trial <span className="btn-arrow">→</span>
             </Link>
-            <Link className="btn-secondary btn-lg" href="/login?mode=signin">
-              Sign In
-            </Link>
+            <a className="btn-secondary btn-lg" href="mailto:sales@pourdex.com">
+              Watch Demo
+            </a>
           </div>
-          <p className="hero-proof">
-            Trusted by independent bars • built for high-velocity operations
-          </p>
+          <div className="hero-proof animate-in stagger-4">
+            Trusted by 200+ independent bars • $2.4M in identified savings
+          </div>
         </div>
-        <div className="hero-visual">
-          <div className="hero-panel">
-            <p className="text-overline">Tonight’s Snapshot</p>
-            <h2 className="text-h2">Variance & Forecast</h2>
-            <div className="hero-metrics">
-              <div className="metric-card metric-card-accent">
-                <p className="metric-card-label">Flagged items</p>
-                <p className="metric-card-value">7</p>
-                <p className="metric-card-change metric-card-change-negative">
+        <div className="hero-visual animate-in">
+          <div className="hero-card glass border-gradient">
+            <div className="hero-card-header">
+              <span className="text-overline">Tonight’s Snapshot</span>
+              <h3>Variance & Forecast</h3>
+            </div>
+            <div className="hero-card-metrics">
+              <div>
+                <span className="hero-metric-label">Flagged Items</span>
+                <span className="hero-metric-value">7</span>
+                <span className="hero-metric-change positive">
                   +2 vs last week
-                </p>
+                </span>
               </div>
-              <div className="metric-card">
-                <p className="metric-card-label">Forecasted pour</p>
-                <p className="metric-card-value">412 oz</p>
-                <p className="metric-card-change metric-card-change-positive">
+              <div>
+                <span className="hero-metric-label">Forecasted Pour</span>
+                <span className="hero-metric-value">412 oz</span>
+                <span className="hero-metric-change positive">
                   3% above baseline
-                </p>
+                </span>
               </div>
             </div>
+          </div>
+          <div className="hero-floating-card hero-floating-card-1 glass">
+            <span className="status-dot status-dot-success" />
+            <span>POS Synced</span>
+          </div>
+          <div className="hero-floating-card hero-floating-card-2 glass">
+            <span>⚡</span>
+            <span>3 items need reorder</span>
           </div>
         </div>
       </section>
 
       <section className="value-props">
         <div className="value-props-header">
-          <p className="text-overline">Why Bar Ops</p>
+          <p className="text-overline text-gradient-accent">Why Bar Ops</p>
           <h2 className="text-h2">Everything You Need to Run Smarter</h2>
+          <p className="text-body-sm">
+            Six powerful capabilities. One intelligent platform.
+          </p>
         </div>
         <div className="value-props-grid">
           {[
@@ -87,45 +114,87 @@ export default function HomePage() {
               title: "POS Integration",
               desc:
                 "Capture every transaction, void, and modifier automatically. No manual spreadsheets.",
-              tone: "secondary",
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M7 7h10v10H7z" strokeWidth="2" />
+                  <path d="M3 12h4M17 12h4" strokeWidth="2" />
+                </svg>
+              ),
+              color: "var(--color-accent-secondary)",
+              footer: "Toast • Square • Clover",
             },
             {
               title: "Drink Specs Engine",
               desc:
                 "Map every recipe to pours and cost. Know what should have been used.",
-              tone: "primary",
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 3h6l-1 6 3 12H7l3-12z" strokeWidth="2" />
+                </svg>
+              ),
+              color: "var(--color-accent-primary)",
+              footer: "5,000+ recipes pre-loaded",
             },
             {
               title: "Variance Detection",
               desc:
                 "Reveal over-pouring, comps, and shrinkage before it hits margins.",
-              tone: "warning",
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 3l8 4v6c0 5-3.5 8-8 8s-8-3-8-8V7z" strokeWidth="2" />
+                </svg>
+              ),
+              color: "var(--color-status-warning)",
+              footer: "Avg $1,200/mo identified",
             },
             {
               title: "Demand Forecasting",
               desc:
                 "Forecast by day and hour to stay ahead of demand swings.",
-              tone: "info",
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M4 16l4-5 4 3 4-6 4 5" strokeWidth="2" />
+                </svg>
+              ),
+              color: "var(--color-status-info)",
+              footer: "85%+ forecast accuracy",
             },
             {
               title: "Smart Ordering",
               desc:
                 "Auto-generate purchase recommendations from reorder points.",
-              tone: "success",
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M6 6h15l-1.5 9h-12z" strokeWidth="2" />
+                  <circle cx="9" cy="20" r="1.5" />
+                  <circle cx="18" cy="20" r="1.5" />
+                </svg>
+              ),
+              color: "var(--color-status-success)",
+              footer: "30% fewer stockouts",
             },
             {
               title: "Margin Intelligence",
               desc:
                 "Rank menu items by profitability and refine what you sell.",
-              tone: "primary",
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M5 12h14M12 5v14" strokeWidth="2" />
+                </svg>
+              ),
+              color: "var(--color-accent-primary)",
+              footer: "3-5% margin lift",
             },
-          ].map((card) => (
-            <div key={card.title} className="value-card">
-              <div
-                className={`value-card-icon value-card-icon-${card.tone}`}
-              />
+          ].map((card, index) => (
+            <div
+              key={card.title}
+              className={`value-card animate-in stagger-${index + 1}`}
+              style={{ ["--icon-color" as string]: card.color }}
+            >
+              <div className="value-card-icon">{card.icon}</div>
               <h3 className="value-card-title">{card.title}</h3>
               <p className="value-card-description">{card.desc}</p>
+              <div className="text-body-sm">{card.footer}</div>
             </div>
           ))}
         </div>
@@ -174,22 +243,36 @@ export default function HomePage() {
 
       <section className="clarity-section">
         <div className="clarity-container">
-          <h2 className="text-h2">What Bar Ops Is Not</h2>
+          <h2 className="text-h2">Built for Reality</h2>
           <p className="clarity-intro">
-            Honest expectations keep teams aligned.
+            Honest about what we do—and what makes us different.
           </p>
           <div className="clarity-grid">
             {[
-              "Not real-time tracking — forecasts are based on historical usage.",
-              "Not a scale system — we calculate depletion from sales data.",
-              "Not magic — predictions improve as we learn your patterns.",
-              "Not a POS replacement — we integrate with what you already use.",
-            ].map((text) => (
-              <div key={text} className="clarity-item clarity-item-negative">
-                <div className="clarity-icon">✕</div>
+              {
+                icon: "📊",
+                title: "Sales-Based Intelligence",
+                body:
+                  "We calculate usage from your actual transactions, not physical weighing. More accurate, less hardware.",
+              },
+              {
+                icon: "🔌",
+                title: "Works With Your POS",
+                body:
+                  "We integrate with your existing system. No rip-and-replace. No new hardware to install.",
+              },
+              {
+                icon: "📈",
+                title: "Smarter Over Time",
+                body:
+                  "Predictions improve as we learn your patterns. Week one is good. Month three is incredible.",
+              },
+            ].map((item) => (
+              <div key={item.title} className="clarity-item">
+                <div className="clarity-icon">{item.icon}</div>
                 <div>
-                  <strong>{text.split(" — ")[0]}</strong>
-                  <p>{text.split(" — ")[1]}</p>
+                  <strong>{item.title}</strong>
+                  <p>{item.body}</p>
                 </div>
               </div>
             ))}
@@ -222,3 +305,95 @@ export default function HomePage() {
     </main>
   );
 }
+      <section className="pricing">
+        <div className="pricing-header">
+          <p className="text-overline">Pricing</p>
+          <h2 className="text-h2">Simple, Transparent Pricing</h2>
+          <p className="pricing-subtitle">
+            Pay only for what you use. No long-term contracts.
+          </p>
+        </div>
+        <div className="pricing-cards">
+          {[
+            {
+              name: "Starter",
+              price: "$149",
+              desc: "For single-location bars",
+              features: [
+                "1 POS integration",
+                "Up to 500 SKUs",
+                "Weekly forecasts",
+                "Basic variance reports",
+                "Email support",
+              ],
+              primary: false,
+              cta: "Start Free Trial",
+            },
+            {
+              name: "Professional",
+              price: "$299",
+              desc: "For serious operators",
+              features: [
+                "1 POS integration",
+                "Unlimited SKUs",
+                "Daily forecasts",
+                "Advanced variance & shrinkage",
+                "Auto ordering recommendations",
+                "Priority support",
+              ],
+              primary: true,
+              cta: "Start Free Trial",
+            },
+            {
+              name: "Enterprise",
+              price: "Custom",
+              desc: "For multi-location groups",
+              features: [
+                "Multiple locations",
+                "Consolidated reporting",
+                "Custom integrations",
+                "Dedicated success manager",
+                "SLA guarantees",
+                "On-site training",
+              ],
+              primary: false,
+              cta: "Contact Sales",
+            },
+          ].map((tier) => (
+            <div
+              key={tier.name}
+              className={`pricing-card ${tier.primary ? "pricing-card-featured" : ""}`}
+            >
+              {tier.primary ? <div className="pricing-badge">Most Popular</div> : null}
+              <div className="pricing-card-header">
+                <h3>{tier.name}</h3>
+                <p className="pricing-price">
+                  <span className="pricing-amount">{tier.price}</span>
+                  {tier.price !== "Custom" ? (
+                    <span className="pricing-period">/month</span>
+                  ) : null}
+                </p>
+                <p className="pricing-description">{tier.desc}</p>
+              </div>
+              <ul className="pricing-features">
+                {tier.features.map((feature) => (
+                  <li key={feature}>{feature}</li>
+                ))}
+              </ul>
+              {tier.primary ? (
+                <Link className="btn-primary" href="/login?mode=signup" style={{ width: "100%" }}>
+                  {tier.cta}
+                </Link>
+              ) : tier.cta === "Contact Sales" ? (
+                <a className="btn-secondary" href="mailto:sales@pourdex.com" style={{ width: "100%" }}>
+                  {tier.cta}
+                </a>
+              ) : (
+                <Link className="btn-secondary" href="/login?mode=signup" style={{ width: "100%" }}>
+                  {tier.cta}
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
