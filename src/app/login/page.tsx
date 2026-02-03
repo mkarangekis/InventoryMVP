@@ -75,9 +75,29 @@ export default function LoginPage() {
       console.error("Auth error", errorMessage);
       setStatus(`Error: ${errorMessage}`);
     } else {
-      if (mode === "signup") {
-        setStatus("Account created. Redirecting to onboarding...");
-        router.replace("/onboarding");
+      const { data } = await supabaseBrowser.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        setStatus(
+          "Account created, but email confirmation is still required. Disable confirm email in Supabase Auth to auto-login.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      const statusRes = await fetch("/api/onboarding/status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (statusRes.ok) {
+        const payload = (await statusRes.json()) as { hasProfile: boolean };
+        if (payload.hasProfile) {
+          setStatus("Signed in. Redirecting to dashboard...");
+          router.replace("/dashboard");
+        } else {
+          setStatus("Welcome! Let’s set up your first location.");
+          router.replace("/onboarding");
+        }
       } else {
         setStatus("Signed in. Redirecting to dashboard...");
         router.replace("/dashboard");
@@ -95,6 +115,30 @@ export default function LoginPage() {
       <p className="mt-2 text-sm text-gray-600">
         Use a username and password to access your account.
       </p>
+      <div className="mt-4 flex gap-2">
+        <button
+          className={`rounded-full px-4 py-1 text-xs font-semibold ${
+            mode === "signin"
+              ? "bg-black text-white"
+              : "border border-gray-300 text-gray-700"
+          }`}
+          type="button"
+          onClick={() => setMode("signin")}
+        >
+          Sign in
+        </button>
+        <button
+          className={`rounded-full px-4 py-1 text-xs font-semibold ${
+            mode === "signup"
+              ? "bg-black text-white"
+              : "border border-gray-300 text-gray-700"
+          }`}
+          type="button"
+          onClick={() => setMode("signup")}
+        >
+          Sign up
+        </button>
+      </div>
 
       <form className="mt-6 space-y-4" onSubmit={handleAuth}>
         {mode === "signup" ? (
