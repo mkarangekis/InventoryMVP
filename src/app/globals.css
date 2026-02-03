@@ -142,22 +142,119 @@ textarea:focus-visible {
 }
 
 .enterprise-theme {
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  background: #0b1016;
+  color: #f8fafc;
   font-family: var(--font-family-sans);
-  --enterprise-bg: var(--color-bg-primary);
-  --enterprise-panel: var(--color-surface-default);
-  --enterprise-ink: var(--color-text-primary);
-  --enterprise-muted: var(--color-text-tertiary);
-  --enterprise-border: var(--color-border-default);
-  --enterprise-accent: var(--color-accent-primary);
-  --enterprise-accent-soft: var(--color-accent-primary-muted);
-  --enterprise-warm: var(--color-accent-primary-hover);
+  --enterprise-bg: #0b1016;
+  --enterprise-panel: #141a22;
+  --enterprise-ink: #f8fafc;
+  --enterprise-muted: #9ca3af;
+  --enterprise-border: #2a3240;
+  --enterprise-accent: #d4a853;
+  --enterprise-accent-soft: rgba(212, 168, 83, 0.12);
+  --enterprise-warm: #f2c26b;
 }
 
 .enterprise-heading {
   font-family: var(--font-family-display);
   letter-spacing: 0.01em;
+}
+
+.enterprise-theme .btn-primary {
+  background-color: #d4a853;
+  color: #111827;
+  box-shadow: none;
+}
+
+.enterprise-theme .btn-primary:hover {
+  background-color: #e5bc6a;
+  box-shadow: none;
+}
+
+.enterprise-theme .btn-secondary {
+  border-color: #3b4654;
+  color: #e5e7eb;
+  background-color: transparent;
+}
+
+.enterprise-theme .btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.enterprise-theme .btn-ghost {
+  color: #cbd5f5;
+}
+
+.enterprise-theme .btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+}
+
+.enterprise-theme .app-card {
+  background: #141a22;
+  border: 1px solid #2a3240;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.enterprise-theme .app-card-header {
+  border-bottom: 1px solid #2a3240;
+  background: linear-gradient(90deg, #121821, #1c232d);
+  color: #ffffff;
+  border-radius: calc(var(--radius-xl) - 2px) calc(var(--radius-xl) - 2px) 0 0;
+}
+
+.enterprise-theme .app-card-title,
+.enterprise-theme .app-card-subtitle,
+.enterprise-theme .app-card-header .enterprise-heading {
+  color: #f8fafc;
+}
+
+.enterprise-theme .app-card-body {
+  color: #e5e7eb;
+}
+
+.enterprise-theme .app-kpi-card {
+  background: #1b222b;
+  border: 1px solid #2a3240;
+  color: #f8fafc;
+}
+
+.enterprise-theme .app-kpi-card::before {
+  background: #d4a853;
+}
+
+.enterprise-theme .app-kpi-label,
+.enterprise-theme .app-kpi-meta {
+  color: #9ca3af;
+}
+
+.enterprise-theme .app-kpi-value {
+  color: #ffffff;
+}
+
+.enterprise-theme .app-empty {
+  background: #11161f;
+  border: 1px dashed #2a3240;
+}
+
+.enterprise-theme .app-empty-title {
+  color: #ffffff;
+}
+
+.enterprise-theme .app-empty-desc {
+  color: #9ca3af;
+}
+
+.enterprise-theme .app-table thead {
+  background: #11161f;
+}
+
+.enterprise-theme .app-table th {
+  color: #9ca3af;
+}
+
+.enterprise-theme .app-table td {
+  color: #e5e7eb;
 }
 
 .btn-primary {
