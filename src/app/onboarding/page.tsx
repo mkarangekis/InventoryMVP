@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { COMPANY_NAME } from "@/config/brand";
 
@@ -12,6 +13,27 @@ export default function OnboardingPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadSession = async () => {
+      const { data } = await supabaseBrowser.auth.getSession();
+      if (isMounted) {
+        setHasSession(Boolean(data.session?.access_token));
+      }
+    };
+    void loadSession();
+    const { data: subscription } = supabaseBrowser.auth.onAuthStateChange(
+      () => {
+        void loadSession();
+      },
+    );
+    return () => {
+      isMounted = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleToken = async () => {
     const { data: sessionData } = await supabaseBrowser.auth.getSession();
@@ -103,7 +125,7 @@ export default function OnboardingPage() {
         <button
           className="w-full rounded bg-black px-4 py-2 text-sm font-semibold text-white"
           type="submit"
-          disabled={loading}
+          disabled={loading || !hasSession}
         >
           {loading ? "Creating..." : "Create tenant + location"}
         </button>
@@ -121,6 +143,29 @@ export default function OnboardingPage() {
           <p className="break-words">Token: {accessToken}</p>
         ) : null}
       </div>
+
+      {!hasSession ? (
+        <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">Sign in required</p>
+          <p className="mt-1 text-sm">
+            Create your account or sign in to complete onboarding.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              className="rounded bg-black px-3 py-2 text-xs font-semibold text-white"
+              href="/login?mode=signup"
+            >
+              Create account
+            </Link>
+            <Link
+              className="rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
+              href="/login?mode=signin"
+            >
+              Sign in
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {status ? (
         <p className="mt-4 text-sm text-gray-700">{status}</p>
