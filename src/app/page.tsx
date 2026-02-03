@@ -42,15 +42,15 @@ export default function HomePage() {
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Link
           className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white"
-          href="/login"
+          href="/login?mode=signin"
         >
-          Get started
+          Sign in
         </Link>
         <Link
           className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold"
-          href="/onboarding"
+          href="/login?mode=signup"
         >
-          Create tenant
+          Create account
         </Link>
       </div>
     </main>

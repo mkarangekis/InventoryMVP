@@ -1,16 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { PRODUCT_NAME } from "@/config/brand";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const mode = useMemo(() => {
+    const value = searchParams?.get("mode");
+    return value === "signup" ? "signup" : "signin";
+  }, [searchParams]);
+
+  const redirectBase =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -23,7 +33,7 @@ export default function LoginPage() {
       const { error } = await supabaseBrowser.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${redirectBase}/auth/callback`,
         },
       });
 
@@ -42,7 +52,11 @@ export default function LoginPage() {
       console.error("Magic link error", errorMessage);
       setStatus(`Error: ${errorMessage}`);
     } else {
-      setStatus("Check your email for the magic link (Mailpit for local). ");
+      setStatus(
+        mode === "signup"
+          ? "Check your email to confirm your account and finish signup."
+          : "Check your email for the sign-in link.",
+      );
     }
 
     setLoading(false);
@@ -87,9 +101,11 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-2xl font-semibold">{PRODUCT_NAME} Login</h1>
+      <h1 className="text-2xl font-semibold">
+        {mode === "signup" ? "Create account" : "Sign in"} to {PRODUCT_NAME}
+      </h1>
       <p className="mt-2 text-sm text-gray-600">
-        Magic link auth via Supabase. Local inbox: http://127.0.0.1:54324
+        Magic link auth via Supabase. Links return to the production site.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleLogin}>
@@ -120,7 +136,11 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
           >
-            {loading ? "Sending..." : "Send magic link"}
+            {loading
+              ? "Sending..."
+              : mode === "signup"
+                ? "Send signup link"
+                : "Send sign-in link"}
           </button>
         </div>
       </form>
