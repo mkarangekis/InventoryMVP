@@ -1,10 +1,82 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { COMPANY_NAME, PRODUCT_NAME } from "@/config/brand";
+import { supabaseBrowser } from "@/lib/supabase/browser";
+
+type BillingStatus = {
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_status: string | null;
+  trial_ends_at: string | null;
+  current_period_end: string | null;
+};
 
 export default function SettingsPage() {
   const enterpriseEnabled = isEnterpriseUIEnabled();
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [billingLoading, setBillingLoading] = useState(true);
+  const [billingError, setBillingError] = useState<string | null>(null);
+
+  const loadBilling = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) {
+      setBillingLoading(false);
+      return;
+    }
+    const res = await fetch("/api/billing/status", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      setBillingError(await res.text());
+      setBillingLoading(false);
+      return;
+    }
+    setBilling((await res.json()) as BillingStatus);
+    setBillingLoading(false);
+  };
+
+  const handleCheckout = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+    const res = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      setBillingError(await res.text());
+      return;
+    }
+    const payload = (await res.json()) as { url?: string };
+    if (payload.url) {
+      window.location.href = payload.url;
+    }
+  };
+
+  const handlePortal = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+    const res = await fetch("/api/billing/portal", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      setBillingError(await res.text());
+      return;
+    }
+    const payload = (await res.json()) as { url?: string };
+    if (payload.url) {
+      window.location.href = payload.url;
+    }
+  };
+
+  useEffect(() => {
+    void loadBilling();
+  }, []);
 
   if (!enterpriseEnabled) {
     return (
@@ -75,6 +147,62 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="app-card">
+        <div className="app-card-header">
+          <div>
+            <h3 className="app-card-title">Billing</h3>
+            <p className="app-card-subtitle">
+              Manage your subscription and payment method.
+            </p>
+          </div>
+        </div>
+        <div className="app-card-body">
+          {billingLoading ? (
+            <p className="text-sm text-[var(--enterprise-muted)]">
+              Loading billing status...
+            </p>
+          ) : billingError ? (
+            <p className="text-sm text-[var(--enterprise-muted)]">
+              {billingError}
+            </p>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4">
+                <p className="text-xs uppercase text-[var(--enterprise-muted)]">
+                  Subscription
+                </p>
+                <p className="mt-2 font-semibold">
+                  {billing?.stripe_status ?? "Not started"}
+                </p>
+                {billing?.trial_ends_at ? (
+                  <p className="text-xs text-[var(--enterprise-muted)]">
+                    Trial ends: {new Date(billing.trial_ends_at).toLocaleDateString()}
+                  </p>
+                ) : null}
+                {billing?.current_period_end ? (
+                  <p className="text-xs text-[var(--enterprise-muted)]">
+                    Current period ends:{" "}
+                    {new Date(billing.current_period_end).toLocaleDateString()}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button className="btn-primary btn-sm" onClick={handleCheckout}>
+                  Start free trial
+                </button>
+                <button className="btn-secondary btn-sm" onClick={handlePortal}>
+                  Manage subscription
+                </button>
+              </div>
+              <p className="text-xs text-[var(--enterprise-muted)]">
+                Cancel anytime from the billing portal.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </section>

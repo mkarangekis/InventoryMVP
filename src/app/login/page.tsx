@@ -28,6 +28,24 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SITE_URL ??
     (typeof window !== "undefined" ? window.location.origin : "");
 
+  const handleStartTrial = async (token: string) => {
+    const response = await fetch("/api/billing/checkout", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      const message = await response.text();
+      setStatus(`Billing error: ${message}`);
+      return;
+    }
+    const payload = (await response.json()) as { url?: string };
+    if (payload.url) {
+      window.location.href = payload.url;
+    } else {
+      setStatus("Billing error: missing checkout URL.");
+    }
+  };
+
   const handleAuth = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus(null);
@@ -103,7 +121,7 @@ export default function LoginPage() {
 
       if (mode === "signup") {
         setStatus("Welcome! Let’s set up your first location.");
-        router.replace("/onboarding");
+        await handleStartTrial(token);
         setLoading(false);
         return;
       }
@@ -206,7 +224,7 @@ export default function LoginPage() {
             {loading
               ? "Working..."
               : mode === "signup"
-                ? "Create account"
+                ? "Start free trial"
                 : "Sign in"}
           </button>
         </div>
