@@ -244,7 +244,7 @@ export default function InventoryPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="enterprise-heading text-2xl font-semibold">
@@ -265,7 +265,7 @@ export default function InventoryPage() {
               />
             </label>
             <button
-              className="rounded-full bg-[var(--enterprise-accent)] px-4 py-2 text-xs font-semibold text-white"
+              className="rounded-full bg-[var(--app-accent)] px-4 py-2 text-xs font-semibold text-white"
               onClick={handleSubmit}
             >
               Save snapshot
@@ -275,13 +275,13 @@ export default function InventoryPage() {
 
         <div className="mt-6 flex flex-wrap items-center gap-2 text-xs text-[var(--enterprise-muted)]">
           <button
-            className="rounded-full border border-[var(--enterprise-border)] px-3 py-1"
+            className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
             onClick={prefillEmptyWithFull}
           >
             Prefill empty = full
           </button>
           <button
-            className="rounded-full border border-[var(--enterprise-border)] px-3 py-1"
+            className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
             onClick={() =>
               setAllCounts(String(items[0]?.container_size_oz ?? 0))
             }
@@ -289,7 +289,7 @@ export default function InventoryPage() {
             Set all = full
           </button>
           <button
-            className="rounded-full border border-[var(--enterprise-border)] px-3 py-1"
+            className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
             onClick={() => setAllCounts("0")}
           >
             Set all = 0
@@ -297,14 +297,14 @@ export default function InventoryPage() {
           <label className="flex items-center gap-2">
             <span>Set all to</span>
             <input
-              className="w-24 rounded border border-[var(--enterprise-border)] px-2 py-1 text-xs"
+              className="w-24 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-xs text-[var(--enterprise-ink)]"
               type="number"
               step="0.1"
               value={bulkValue}
               onChange={(event) => setBulkValue(event.target.value)}
             />
             <button
-              className="rounded-full border border-[var(--enterprise-border)] px-3 py-1"
+              className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-1"
               onClick={applyBulkValue}
             >
               Apply
@@ -313,7 +313,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         {loading ? (
           <p className="text-sm text-[var(--enterprise-muted)]">
             Loading inventory...
@@ -324,8 +324,8 @@ export default function InventoryPage() {
           </p>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <table className="app-table w-full text-left text-sm">
+              <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
                 <tr>
                   <th className="px-3 py-2">Item</th>
                   <th className="px-3 py-2">Container</th>
@@ -341,7 +341,7 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-3 py-2">
                       <input
-                        className="w-24 rounded border border-[var(--enterprise-border)] px-2 py-1 text-sm"
+                        className="w-24 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
                         value={counts[item.id] ?? ""}
                         placeholder={String(item.container_size_oz)}
                         onChange={(event) =>

@@ -193,13 +193,17 @@ export default function ProfitPage() {
       {status ? <p className="text-sm text-red-600">{status}</p> : null}
 
       {loading ? (
-        <p className="text-sm text-gray-600">Loading profit ranking...</p>
+        <p className="text-sm text-[var(--enterprise-muted)]">
+          Loading profit ranking...
+        </p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-600">No sales data yet.</p>
+        <p className="text-sm text-[var(--enterprise-muted)]">
+          No sales data yet.
+        </p>
       ) : (
-        <div className="overflow-hidden rounded border border-gray-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+        <div className="overflow-hidden rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)]">
+          <table className="app-table w-full text-left text-sm">
+            <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
               <tr>
                 <th className="px-3 py-2">Drink</th>
                 <th className="px-3 py-2">Sold</th>
@@ -229,7 +233,7 @@ export default function ProfitPage() {
         </div>
       )}
 
-      <div className="rounded border border-gray-200 bg-white p-4">
+      <div className="rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-4">
         <h2 className="text-lg font-semibold">Create Drink Spec</h2>
         <p className="text-sm text-gray-600">
           Add a new versioned spec for a menu item.
@@ -239,7 +243,7 @@ export default function ProfitPage() {
           <label className="text-sm text-gray-700">
             Location
             <select
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
               value={selectedLocation}
               onChange={(event) => setSelectedLocation(event.target.value)}
             >
@@ -253,7 +257,7 @@ export default function ProfitPage() {
           <label className="text-sm text-gray-700">
             Menu item
             <select
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
               value={selectedMenuItem}
               onChange={(event) => setSelectedMenuItem(event.target.value)}
             >
@@ -272,7 +276,7 @@ export default function ProfitPage() {
           <label className="text-sm text-gray-700">
             Glass type
             <input
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
               value={glassType}
               onChange={(event) => setGlassType(event.target.value)}
             />
@@ -280,7 +284,7 @@ export default function ProfitPage() {
           <label className="text-sm text-gray-700">
             Ice type
             <input
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
               value={iceType}
               onChange={(event) => setIceType(event.target.value)}
             />
@@ -288,7 +292,7 @@ export default function ProfitPage() {
           <label className="text-sm text-gray-700">
             Target pour (oz)
             <input
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
               value={targetPourOz}
               onChange={(event) => setTargetPourOz(event.target.value)}
             />
@@ -296,7 +300,7 @@ export default function ProfitPage() {
           <label className="text-sm text-gray-700">
             Notes
             <input
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+              className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
             />
@@ -307,7 +311,7 @@ export default function ProfitPage() {
           {lines.map((line, index) => (
             <div key={`line-${index}`} className="flex gap-2">
               <select
-                className="w-2/3 rounded border border-gray-300 px-2 py-1 text-sm"
+                className="w-2/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
                 value={line.ingredientId}
                 onChange={(event) =>
                   handleLineChange(index, "ingredientId", event.target.value)
@@ -321,7 +325,7 @@ export default function ProfitPage() {
                 ))}
               </select>
               <input
-                className="w-1/3 rounded border border-gray-300 px-2 py-1 text-sm"
+                className="w-1/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
                 placeholder="oz"
                 value={line.ounces}
                 onChange={(event) =>
@@ -331,7 +335,7 @@ export default function ProfitPage() {
             </div>
           ))}
           <button
-            className="rounded border border-gray-300 px-2 py-1 text-xs"
+            className="rounded border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-2 py-1 text-xs"
             onClick={handleAddLine}
           >
             Add ingredient line
@@ -339,7 +343,7 @@ export default function ProfitPage() {
         </div>
 
         <button
-          className="mt-4 rounded bg-black px-3 py-2 text-xs font-semibold text-white"
+          className="mt-4 rounded bg-[var(--app-accent)] px-3 py-2 text-xs font-semibold text-white"
           onClick={handleSubmitSpec}
         >
           Save spec

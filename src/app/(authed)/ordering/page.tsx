@@ -294,7 +294,7 @@ export default function OrderingPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="enterprise-heading text-2xl font-semibold">
@@ -305,7 +305,7 @@ export default function OrderingPage() {
             </p>
           </div>
           <button
-            className="w-fit rounded-full bg-[var(--enterprise-accent)] px-5 py-2 text-xs font-semibold text-white"
+            className="w-fit rounded-full bg-[var(--app-accent)] px-5 py-2 text-xs font-semibold text-white"
             onClick={handleGenerateDrafts}
             disabled={generating}
           >
@@ -314,7 +314,7 @@ export default function OrderingPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         {loading ? (
           <p className="text-sm text-[var(--enterprise-muted)]">
             Loading draft POs...
@@ -328,7 +328,7 @@ export default function OrderingPage() {
             {orders.map((po) => (
               <div
                 key={po.id}
-                className="rounded-2xl border border-[var(--enterprise-border)] bg-slate-50 p-4"
+                className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
@@ -344,7 +344,7 @@ export default function OrderingPage() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <a
-                      className="rounded-full border border-[var(--enterprise-border)] px-3 py-2 text-xs font-semibold"
+                      className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-3 py-2 text-xs font-semibold"
                       href={getPoLink(po.id)}
                       target="_blank"
                       rel="noreferrer"
@@ -352,7 +352,7 @@ export default function OrderingPage() {
                       Print
                     </a>
                     <a
-                      className="rounded-full border border-[var(--enterprise-border)] px-3 py-2 text-xs font-semibold"
+                      className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-3 py-2 text-xs font-semibold"
                       href={getPoLink(po.id, true)}
                       target="_blank"
                       rel="noreferrer"
@@ -361,14 +361,14 @@ export default function OrderingPage() {
                     </a>
                     {po.vendor?.email ? (
                       <a
-                        className="rounded-full border border-[var(--enterprise-border)] px-3 py-2 text-xs font-semibold"
+                        className="rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-3 py-2 text-xs font-semibold"
                         href={getMailtoLink(po)}
                       >
                         Email vendor
                       </a>
                     ) : null}
                     <button
-                      className="rounded-full bg-[var(--enterprise-ink)] px-3 py-2 text-xs font-semibold text-white"
+                      className="rounded-full bg-[var(--app-accent-strong)] px-3 py-2 text-xs font-semibold text-white"
                       onClick={() => handleApprove(po.id)}
                     >
                       Approve
@@ -376,8 +376,8 @@ export default function OrderingPage() {
                   </div>
                 </div>
 
-                <table className="mt-4 w-full text-left text-sm">
-                  <thead className="text-xs uppercase text-slate-500">
+                <table className="app-table mt-4 w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
                     <tr>
                       <th className="py-1">Item</th>
                       <th className="py-1">Qty</th>

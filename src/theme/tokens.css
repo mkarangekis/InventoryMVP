@@ -1,0 +1,47 @@
+:root {
+  color-scheme: light;
+  --app-bg: #f6f1ea;
+  --app-surface: #ffffff;
+  --app-surface-elevated: #f3ece2;
+  --app-surface-muted: #ede4d7;
+  --app-text: #1a1b1f;
+  --app-text-muted: #5a5f69;
+  --app-text-soft: #7c828c;
+  --app-border: #e1d6c7;
+  --app-border-soft: #eae0d3;
+  --app-accent: #b86a33;
+  --app-accent-strong: #8a4f24;
+  --app-accent-soft: #f1d2b6;
+  --app-olive: #6f7a4c;
+  --app-warning: #d08a2b;
+  --app-success: #2f8a6d;
+  --app-danger: #c24b4b;
+  --app-focus: #e4a35a;
+  --app-shadow: 0 18px 40px rgba(31, 23, 15, 0.12);
+  --app-shadow-soft: 0 8px 18px rgba(31, 23, 15, 0.08);
+  --app-font-sans: "Space Grotesk", "Segoe UI", sans-serif;
+  --app-font-serif: "Fraunces", "Times New Roman", serif;
+}
+
+.enterprise-theme {
+  color-scheme: dark;
+  --app-bg: #0f1116;
+  --app-surface: #161b22;
+  --app-surface-elevated: #1c222d;
+  --app-surface-muted: #12161d;
+  --app-text: #f5f6f8;
+  --app-text-muted: #a3adba;
+  --app-text-soft: #8b96a6;
+  --app-border: #252c38;
+  --app-border-soft: #1f2430;
+  --app-accent: #c97838;
+  --app-accent-strong: #f0a24a;
+  --app-accent-soft: #2a1d14;
+  --app-olive: #7d8c5a;
+  --app-warning: #f1b04f;
+  --app-success: #49b08b;
+  --app-danger: #e06b63;
+  --app-focus: #f2b85f;
+  --app-shadow: 0 26px 50px rgba(5, 8, 12, 0.45);
+  --app-shadow-soft: 0 14px 28px rgba(5, 8, 12, 0.3);
+}

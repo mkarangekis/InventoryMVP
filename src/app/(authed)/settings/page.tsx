@@ -19,7 +19,7 @@ export default function SettingsPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         <h2 className="enterprise-heading text-2xl font-semibold">Settings</h2>
         <p className="text-sm text-[var(--enterprise-muted)]">
           {PRODUCT_NAME} workspace preferences and access control.
@@ -27,14 +27,14 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
           <h3 className="enterprise-heading text-lg font-semibold">
             Workspace
           </h3>
           <p className="text-sm text-[var(--enterprise-muted)]">
             Update workspace details in your {COMPANY_NAME} admin console.
           </p>
-          <div className="mt-4 rounded-2xl border border-[var(--enterprise-border)] bg-slate-50 p-4 text-sm">
+          <div className="mt-4 rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4 text-sm">
             <p className="text-xs uppercase text-[var(--enterprise-muted)]">
               Current status
             </p>
@@ -45,14 +45,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
           <h3 className="enterprise-heading text-lg font-semibold">
             Notifications
           </h3>
           <p className="text-sm text-[var(--enterprise-muted)]">
             Configure alerting by connecting your notification provider.
           </p>
-          <div className="mt-4 rounded-2xl border border-[var(--enterprise-border)] bg-slate-50 p-4 text-sm">
+          <div className="mt-4 rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4 text-sm">
             <p className="text-xs uppercase text-[var(--enterprise-muted)]">
               Status
             </p>

@@ -161,7 +161,7 @@ export default function DashboardPage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="enterprise-heading text-2xl font-semibold">
@@ -171,13 +171,13 @@ export default function DashboardPage() {
               Variance flags and demand signals for the next two weeks.
             </p>
           </div>
-          <div className="rounded-2xl bg-[var(--enterprise-accent-soft)] px-4 py-3 text-sm text-[var(--enterprise-accent)]">
+          <div className="rounded-2xl bg-[var(--enterprise-accent-soft)] px-4 py-3 text-sm text-[var(--app-accent-strong)]">
             {loading ? "Syncing variance + forecast..." : "Live from POS runs"}
           </div>
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4">
             <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
               Flagged items
             </p>
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                 : "—"}
             </p>
           </div>
-          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4">
             <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
               Next forecast date
             </p>
@@ -206,7 +206,7 @@ export default function DashboardPage() {
                 : "No forecast data yet"}
             </p>
           </div>
-          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-white p-4">
+          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4">
             <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
               Forecast rows
             </p>
@@ -221,7 +221,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="enterprise-heading text-lg font-semibold">
@@ -249,8 +249,8 @@ export default function DashboardPage() {
             </p>
           ) : (
             <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <table className="app-table w-full text-left text-sm">
+                <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
                   <tr>
                     <th className="px-3 py-2">Item</th>
                     <th className="px-3 py-2">Week</th>
@@ -277,7 +277,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
           <h3 className="enterprise-heading text-lg font-semibold">
             Next 14-day forecast
           </h3>
@@ -293,7 +293,7 @@ export default function DashboardPage() {
               {sortedForecast.slice(0, 8).map((row) => (
                 <div
                   key={`${row.inventory_item_id}-${row.forecast_date}`}
-                  className="rounded-2xl border border-[var(--enterprise-border)] bg-slate-50 px-3 py-2"
+                  className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-2"
                 >
                   <div className="flex items-center justify-between">
                     <span>

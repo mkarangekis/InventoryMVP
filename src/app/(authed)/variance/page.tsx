@@ -110,7 +110,7 @@ export default function VariancePage() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         <h2 className="enterprise-heading text-2xl font-semibold">
           Variance & Shrink
         </h2>
@@ -119,7 +119,7 @@ export default function VariancePage() {
         </p>
       </div>
 
-      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-[var(--app-surface)] p-6 shadow-[var(--app-shadow-soft)]">
         {loading ? (
           <p className="text-sm text-[var(--enterprise-muted)]">
             Loading variance...
@@ -130,8 +130,8 @@ export default function VariancePage() {
           </p>
         ) : (
           <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <table className="app-table w-full text-left text-sm">
+              <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
                 <tr>
                   <th className="px-3 py-2">Item</th>
                   <th className="px-3 py-2">Week</th>

@@ -80,7 +80,7 @@ export default function EnterpriseShell({
     <div className="enterprise-theme min-h-screen">
       <div className="flex min-h-screen">
         <aside
-          className={`relative hidden min-h-screen border-r border-[var(--enterprise-border)] bg-white/80 backdrop-blur md:block ${
+          className={`relative hidden min-h-screen border-r border-[var(--enterprise-border)] bg-[var(--app-surface)]/95 backdrop-blur md:block ${
             collapsed ? "w-20" : "w-72"
           }`}
         >
@@ -111,8 +111,8 @@ export default function EnterpriseShell({
                   href={item.href}
                   className={`mb-2 flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition ${
                     isActive
-                      ? "bg-[var(--enterprise-accent-soft)] text-[var(--enterprise-accent)]"
-                      : "text-[var(--enterprise-ink)] hover:bg-white"
+                      ? "bg-[var(--enterprise-accent-soft)] text-[var(--app-accent-strong)] shadow-[var(--app-shadow-soft)]"
+                      : "text-[var(--enterprise-ink)] hover:bg-[var(--app-surface-elevated)]"
                   }`}
                 >
                   <span className="h-2 w-2 rounded-full bg-[var(--enterprise-warm)]" />
@@ -129,17 +129,17 @@ export default function EnterpriseShell({
             })}
           </nav>
 
-          <div className="absolute bottom-6 left-3 right-3 rounded-2xl border border-[var(--enterprise-border)] bg-white p-3">
+          <div className="absolute bottom-6 left-3 right-3 rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3 shadow-[var(--app-shadow-soft)]">
             {collapsed ? (
               <button
-                className="w-full rounded-lg border border-[var(--enterprise-border)] py-2 text-xs"
+                className="w-full rounded-lg border border-[var(--enterprise-border)] py-2 text-xs text-[var(--enterprise-ink)]"
                 onClick={() => setCollapsed(false)}
               >
                 Expand
               </button>
             ) : (
               <button
-                className="w-full rounded-lg border border-[var(--enterprise-border)] py-2 text-xs"
+                className="w-full rounded-lg border border-[var(--enterprise-border)] py-2 text-xs text-[var(--enterprise-ink)]"
                 onClick={() => setCollapsed(true)}
               >
                 Collapse sidebar
@@ -149,7 +149,7 @@ export default function EnterpriseShell({
         </aside>
 
         <div className="flex flex-1 flex-col">
-          <header className="border-b border-[var(--enterprise-border)] bg-[radial-gradient(circle_at_top,_#ffffff,_#f1f5f9)]">
+          <header className="border-b border-[var(--enterprise-border)] bg-[radial-gradient(circle_at_top,_#1c222d,_#0f1116)]">
             <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 md:flex-row md:items-center md:justify-between">
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.2em] text-[var(--enterprise-muted)]">
@@ -176,13 +176,13 @@ export default function EnterpriseShell({
                 ) : null}
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--enterprise-border)] bg-white px-4 py-3">
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-4 py-3 shadow-[var(--app-shadow-soft)]">
                 <div>
                   <p className="text-xs text-[var(--enterprise-muted)]">
                     Active location
                   </p>
                   <select
-                    className="mt-1 rounded border border-[var(--enterprise-border)] bg-white px-2 py-1 text-sm"
+                    className="mt-1 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
                     value={activeLocation}
                     onChange={(event) => onLocationChange(event.target.value)}
                   >
