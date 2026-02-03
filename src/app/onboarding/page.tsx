@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { COMPANY_NAME } from "@/config/brand";
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [tenantName, setTenantName] = useState("");
   const [locationName, setLocationName] = useState("");
   const [address, setAddress] = useState("");
@@ -14,13 +16,28 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     const loadSession = async () => {
       const { data } = await supabaseBrowser.auth.getSession();
+      const token = data.session?.access_token ?? null;
       if (isMounted) {
-        setHasSession(Boolean(data.session?.access_token));
+        setHasSession(Boolean(token));
+        setChecking(false);
+      }
+
+      if (token) {
+        const statusRes = await fetch("/api/onboarding/status", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (statusRes.ok) {
+          const payload = (await statusRes.json()) as { hasProfile: boolean };
+          if (payload.hasProfile) {
+            router.replace("/dashboard");
+          }
+        }
       }
     };
     void loadSession();
@@ -33,7 +50,7 @@ export default function OnboardingPage() {
       isMounted = false;
       subscription.subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   const handleToken = async () => {
     const { data: sessionData } = await supabaseBrowser.auth.getSession();
@@ -68,7 +85,8 @@ export default function OnboardingPage() {
       const message = await response.text();
       setStatus(`Error: ${message}`);
     } else {
-      setStatus("Onboarding complete. You can open the dashboard next.");
+      setStatus("Onboarding complete. Redirecting to the dashboard...");
+      router.replace("/dashboard");
     }
 
     setLoading(false);
@@ -81,7 +99,10 @@ export default function OnboardingPage() {
         Create your tenant and first location in {COMPANY_NAME} (dev-only).
       </p>
 
-      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+      {checking ? (
+        <p className="mt-6 text-sm text-gray-600">Checking your session...</p>
+      ) : (
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
         <label className="block text-sm font-medium text-gray-700">
           Tenant name
           <input
@@ -130,6 +151,7 @@ export default function OnboardingPage() {
           {loading ? "Creating..." : "Create tenant + location"}
         </button>
       </form>
+      )}
 
       <div className="mt-6 space-y-2 text-sm text-gray-700">
         <button

@@ -51,6 +51,19 @@ export default function LoginPage() {
             typeof error.message === "string" && error.message.length > 0
               ? error.message
               : JSON.stringify(error);
+        } else {
+          const { error: signInError } =
+            await supabaseBrowser.auth.signInWithPassword({
+              email,
+              password,
+            });
+          if (signInError) {
+            errorMessage =
+              typeof signInError.message === "string" &&
+              signInError.message.length > 0
+                ? signInError.message
+                : JSON.stringify(signInError);
+          }
         }
       } else {
         const { error } = await supabaseBrowser.auth.signInWithPassword({
@@ -80,8 +93,17 @@ export default function LoginPage() {
 
       if (!token) {
         setStatus(
-          "Account created, but email confirmation is still required. Disable confirm email in Supabase Auth to auto-login.",
+          mode === "signup"
+            ? "Account created, but email confirmation is required. Disable confirm email in Supabase Auth to auto-login."
+            : "No active session. Check your credentials.",
         );
+        setLoading(false);
+        return;
+      }
+
+      if (mode === "signup") {
+        setStatus("Welcome! Let’s set up your first location.");
+        router.replace("/onboarding");
         setLoading(false);
         return;
       }
@@ -95,7 +117,7 @@ export default function LoginPage() {
           setStatus("Signed in. Redirecting to dashboard...");
           router.replace("/dashboard");
         } else {
-          setStatus("Welcome! Let’s set up your first location.");
+          setStatus("Welcome back! Let’s finish onboarding.");
           router.replace("/onboarding");
         }
       } else {
