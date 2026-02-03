@@ -1,4 +1,4 @@
-# Bar Monetization & Automation System (MVP)
+# Pourdex Bar Ops (MVP)
 
 ## Prerequisites
 - Node.js 20+ (tested with 24.x)

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { PRODUCT_NAME } from "@/config/brand";
+import { isEnterpriseUIEnabled } from "@/config/flags";
+import EnterpriseShell from "@/components/enterprise/EnterpriseShell";
 
 type Location = { id: string; name: string };
 
@@ -61,12 +64,34 @@ export default function AuthedLayout({
     return <main className="mx-auto max-w-5xl px-6 py-10">Loading...</main>;
   }
 
+  if (isEnterpriseUIEnabled()) {
+    return (
+      <EnterpriseShell
+        locations={locations}
+        activeLocation={activeLocation}
+        onLocationChange={(next) => {
+          setActiveLocation(next);
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem("barops.locationId", next);
+            window.dispatchEvent(
+              new CustomEvent("location-change", {
+                detail: { locationId: next },
+              }),
+            );
+          }
+        }}
+      >
+        {children}
+      </EnterpriseShell>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50">
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
-            <span className="text-sm font-semibold">Bar Ops MVP</span>
+            <span className="text-sm font-semibold">{PRODUCT_NAME}</span>
             <nav className="flex gap-3 text-sm text-gray-600">
               <Link href="/dashboard">Dashboard</Link>
               <Link href="/inventory">Inventory</Link>

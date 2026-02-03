@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
 :root {
   --background: #ffffff;
@@ -24,4 +25,22 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.enterprise-theme {
+  --enterprise-bg: #f7f3ee;
+  --enterprise-panel: #ffffff;
+  --enterprise-ink: #0f172a;
+  --enterprise-muted: #475569;
+  --enterprise-border: #e2e8f0;
+  --enterprise-accent: #0f766e;
+  --enterprise-accent-soft: #ccfbf1;
+  --enterprise-warm: #f59e0b;
+  background: var(--enterprise-bg);
+  color: var(--enterprise-ink);
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+}
+
+.enterprise-heading {
+  font-family: "Fraunces", "Times New Roman", serif;
 }

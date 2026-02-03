@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { COMPANY_NAME, PRODUCT_NAME } from "@/config/brand";
 
 export default function HomePage() {
   const router = useRouter();
@@ -31,10 +32,11 @@ export default function HomePage() {
   return (
     <main className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="text-3xl font-semibold">
-        Bar Monetization & Automation System
+        {PRODUCT_NAME}
       </h1>
       <p className="mt-4 text-base text-gray-600">
-        MVP scaffold is live. Next: auth, onboarding, and POS ingestion.
+        {COMPANY_NAME} MVP scaffold is live. Next: auth, onboarding, and POS
+        ingestion.
       </p>
     </main>
   );

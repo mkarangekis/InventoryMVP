@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { isEnterpriseUIEnabled } from "@/config/flags";
 
 type PurchaseOrderLine = {
   inventory_item_id: string;
@@ -27,6 +28,7 @@ export default function OrderingPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const enterpriseEnabled = isEnterpriseUIEnabled();
 
   const loadOrders = async () => {
     const { data } = await supabaseBrowser.auth.getSession();
@@ -190,98 +192,224 @@ export default function OrderingPage() {
     )}&body=${encodeURIComponent(body)}`;
   };
 
-  return (
-    <section className="space-y-4">
-      <h1 className="text-2xl font-semibold">Draft POs + Approve</h1>
-      <p className="text-sm text-gray-600">
-        Draft purchase orders grouped by vendor.
-      </p>
-      <button
-        className="w-fit rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
-        onClick={handleGenerateDrafts}
-        disabled={generating}
-      >
-        {generating ? "Generating..." : "Generate Draft POs"}
-      </button>
+  if (!enterpriseEnabled) {
+    return (
+      <section className="space-y-4">
+        <h1 className="text-2xl font-semibold">Draft POs + Approve</h1>
+        <p className="text-sm text-gray-600">
+          Draft purchase orders grouped by vendor.
+        </p>
+        <button
+          className="w-fit rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
+          onClick={handleGenerateDrafts}
+          disabled={generating}
+        >
+          {generating ? "Generating..." : "Generate Draft POs"}
+        </button>
 
-      {loading ? (
-        <p className="text-sm text-gray-600">Loading draft POs...</p>
-      ) : orders.length === 0 ? (
-        <p className="text-sm text-gray-600">No draft purchase orders.</p>
-      ) : (
-        <div className="space-y-4">
-          {orders.map((po) => (
-            <div key={po.id} className="rounded border bg-white p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Vendor</p>
-                  <p className="text-lg font-semibold">
-                    {po.vendor?.name ?? "Unknown vendor"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {po.vendor?.email ?? ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    className="rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
-                    href={getPoLink(po.id)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Print
-                  </a>
-                  <a
-                    className="rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
-                    href={getPoLink(po.id, true)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    PDF
-                  </a>
-                  {po.vendor?.email ? (
+        {loading ? (
+          <p className="text-sm text-gray-600">Loading draft POs...</p>
+        ) : orders.length === 0 ? (
+          <p className="text-sm text-gray-600">No draft purchase orders.</p>
+        ) : (
+          <div className="space-y-4">
+            {orders.map((po) => (
+              <div key={po.id} className="rounded border bg-white p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Vendor</p>
+                    <p className="text-lg font-semibold">
+                      {po.vendor?.name ?? "Unknown vendor"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {po.vendor?.email ?? ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <a
                       className="rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
-                      href={getMailtoLink(po)}
+                      href={getPoLink(po.id)}
+                      target="_blank"
+                      rel="noreferrer"
                     >
-                      Email vendor
+                      Print
                     </a>
-                  ) : null}
-                  <button
-                    className="rounded bg-black px-3 py-2 text-xs font-semibold text-white"
-                    onClick={() => handleApprove(po.id)}
-                  >
-                    Approve
-                  </button>
+                    <a
+                      className="rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
+                      href={getPoLink(po.id, true)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      PDF
+                    </a>
+                    {po.vendor?.email ? (
+                      <a
+                        className="rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
+                        href={getMailtoLink(po)}
+                      >
+                        Email vendor
+                      </a>
+                    ) : null}
+                    <button
+                      className="rounded bg-black px-3 py-2 text-xs font-semibold text-white"
+                      onClick={() => handleApprove(po.id)}
+                    >
+                      Approve
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <table className="mt-4 w-full text-left text-sm">
-                <thead className="text-xs uppercase text-gray-500">
-                  <tr>
-                    <th className="py-1">Item</th>
-                    <th className="py-1">Qty</th>
-                    <th className="py-1">Unit</th>
-                    <th className="py-1">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {po.lines.map((line) => (
-                    <tr key={`${po.id}-${line.inventory_item_id}`} className="border-t">
-                      <td className="py-1">{line.item_name}</td>
-                      <td className="py-1">{line.qty_units}</td>
-                      <td className="py-1">${line.unit_price}</td>
-                      <td className="py-1">${line.line_total}</td>
+                <table className="mt-4 w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-gray-500">
+                    <tr>
+                      <th className="py-1">Item</th>
+                      <th className="py-1">Qty</th>
+                      <th className="py-1">Unit</th>
+                      <th className="py-1">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
+                  </thead>
+                  <tbody>
+                    {po.lines.map((line) => (
+                      <tr
+                        key={`${po.id}-${line.inventory_item_id}`}
+                        className="border-t"
+                      >
+                        <td className="py-1">{line.item_name}</td>
+                        <td className="py-1">{line.qty_units}</td>
+                        <td className="py-1">${line.unit_price}</td>
+                        <td className="py-1">${line.line_total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
 
-      {status ? <p className="text-sm text-gray-700">{status}</p> : null}
+        {status ? <p className="text-sm text-gray-700">{status}</p> : null}
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-6">
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="enterprise-heading text-2xl font-semibold">
+              Ordering Recommendations
+            </h2>
+            <p className="text-sm text-[var(--enterprise-muted)]">
+              Draft purchase orders generated from forecasts and current stock.
+            </p>
+          </div>
+          <button
+            className="w-fit rounded-full bg-[var(--enterprise-accent)] px-5 py-2 text-xs font-semibold text-white"
+            onClick={handleGenerateDrafts}
+            disabled={generating}
+          >
+            {generating ? "Generating..." : "Generate Draft POs"}
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-[var(--enterprise-border)] bg-white p-6 shadow-sm">
+        {loading ? (
+          <p className="text-sm text-[var(--enterprise-muted)]">
+            Loading draft POs...
+          </p>
+        ) : orders.length === 0 ? (
+          <p className="text-sm text-[var(--enterprise-muted)]">
+            No draft purchase orders.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {orders.map((po) => (
+              <div
+                key={po.id}
+                className="rounded-2xl border border-[var(--enterprise-border)] bg-slate-50 p-4"
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
+                      Vendor
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {po.vendor?.name ?? "Unknown vendor"}
+                    </p>
+                    <p className="text-xs text-[var(--enterprise-muted)]">
+                      {po.vendor?.email ?? ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      className="rounded-full border border-[var(--enterprise-border)] px-3 py-2 text-xs font-semibold"
+                      href={getPoLink(po.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Print
+                    </a>
+                    <a
+                      className="rounded-full border border-[var(--enterprise-border)] px-3 py-2 text-xs font-semibold"
+                      href={getPoLink(po.id, true)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      PDF
+                    </a>
+                    {po.vendor?.email ? (
+                      <a
+                        className="rounded-full border border-[var(--enterprise-border)] px-3 py-2 text-xs font-semibold"
+                        href={getMailtoLink(po)}
+                      >
+                        Email vendor
+                      </a>
+                    ) : null}
+                    <button
+                      className="rounded-full bg-[var(--enterprise-ink)] px-3 py-2 text-xs font-semibold text-white"
+                      onClick={() => handleApprove(po.id)}
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+
+                <table className="mt-4 w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-slate-500">
+                    <tr>
+                      <th className="py-1">Item</th>
+                      <th className="py-1">Qty</th>
+                      <th className="py-1">Unit</th>
+                      <th className="py-1">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {po.lines.map((line) => (
+                      <tr
+                        key={`${po.id}-${line.inventory_item_id}`}
+                        className="border-t"
+                      >
+                        <td className="py-1">{line.item_name}</td>
+                        <td className="py-1">{line.qty_units}</td>
+                        <td className="py-1">${line.unit_price}</td>
+                        <td className="py-1">${line.line_total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {status ? (
+          <p className="mt-3 text-sm text-[var(--enterprise-muted)]">
+            {status}
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }

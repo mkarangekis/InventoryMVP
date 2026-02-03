@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { COMPANY_NAME } from "@/config/brand";
 
 export default function OnboardingPage() {
   const [tenantName, setTenantName] = useState("");
@@ -55,7 +56,7 @@ export default function OnboardingPage() {
     <main className="mx-auto max-w-xl px-6 py-16">
       <h1 className="text-2xl font-semibold">Onboarding</h1>
       <p className="mt-2 text-sm text-gray-600">
-        Create your tenant and first location (dev-only).
+        Create your tenant and first location in {COMPANY_NAME} (dev-only).
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>

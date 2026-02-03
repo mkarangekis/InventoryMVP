@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { PRODUCT_NAME } from "@/config/brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -86,7 +87,7 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-2xl font-semibold">Login</h1>
+      <h1 className="text-2xl font-semibold">{PRODUCT_NAME} Login</h1>
       <p className="mt-2 text-sm text-gray-600">
         Magic link auth via Supabase. Local inbox: http://127.0.0.1:54324
       </p>
