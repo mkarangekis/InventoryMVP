@@ -1,22 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { PRODUCT_NAME } from "@/config/brand";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const mode = useMemo(() => {
-    const value = searchParams?.get("mode");
-    return value === "signup" ? "signup" : "signin";
-  }, [searchParams]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    setMode(params.get("mode") === "signup" ? "signup" : "signin");
+  }, []);
 
   const redirectBase =
     process.env.NEXT_PUBLIC_SITE_URL ??
