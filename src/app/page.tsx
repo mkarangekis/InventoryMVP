@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { COMPANY_NAME, PRODUCT_NAME } from "@/config/brand";
@@ -38,6 +39,20 @@ export default function HomePage() {
         {COMPANY_NAME} MVP scaffold is live. Next: auth, onboarding, and POS
         ingestion.
       </p>
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <Link
+          className="rounded-full bg-black px-5 py-2 text-sm font-semibold text-white"
+          href="/login"
+        >
+          Get started
+        </Link>
+        <Link
+          className="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold"
+          href="/onboarding"
+        >
+          Create tenant
+        </Link>
+      </div>
     </main>
   );
 }
