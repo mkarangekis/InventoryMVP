@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
+import { AiCard } from "@/components/ai/AiCard";
+import { AiCountSchedule } from "@/ai/types";
 
 type InventoryItem = {
   id: string;
@@ -22,6 +24,9 @@ export default function InventoryPage() {
   );
   const [counts, setCounts] = useState<Record<string, string>>({});
   const [bulkValue, setBulkValue] = useState("");
+  const [aiSchedule, setAiSchedule] = useState<AiCountSchedule | null>(null);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState(true);
   const enterpriseEnabled = isEnterpriseUIEnabled();
 
   const loadItems = async () => {
@@ -51,11 +56,44 @@ export default function InventoryPage() {
     setLoading(false);
   };
 
+  const loadAi = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      setAiLoading(false);
+      return;
+    }
+
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const response = await fetch(`/api/v1/ai/count-schedule${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.status === 404) {
+      setAiEnabled(false);
+      setAiLoading(false);
+      return;
+    }
+
+    if (response.ok) {
+      setAiSchedule((await response.json()) as AiCountSchedule);
+    }
+    setAiLoading(false);
+  };
+
   useEffect(() => {
     void loadItems();
+    void loadAi();
 
     const handleLocationChange = () => {
       void loadItems();
+      void loadAi();
     };
     if (typeof window !== "undefined") {
       window.addEventListener("location-change", handleLocationChange);
@@ -383,6 +421,33 @@ export default function InventoryPage() {
           ) : null}
         </div>
       </div>
+
+      {aiEnabled ? (
+        <AiCard
+          title="Smart Count Scheduler"
+          subtitle="Recommended cadence based on recent variance."
+          loading={aiLoading}
+          error={!aiSchedule ? "Count schedule not available yet." : null}
+        >
+          <div className="space-y-3 text-sm">
+            {aiSchedule?.cadence.map((item) => (
+              <div
+                key={`${item.item}-${item.recommended_frequency}`}
+                className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold">{item.item}</div>
+                  <span className="app-pill">{item.recommended_frequency}</span>
+                </div>
+                <p className="text-xs text-[var(--enterprise-muted)]">
+                  Variance score: {item.variance_score}
+                </p>
+                <p className="mt-2 text-sm">{item.why}</p>
+              </div>
+            ))}
+          </div>
+        </AiCard>
+      ) : null}
     </section>
   );
 }

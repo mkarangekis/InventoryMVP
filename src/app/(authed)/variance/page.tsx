@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
+import { AiCard } from "@/components/ai/AiCard";
+import { AiVarianceExplain } from "@/ai/types";
 
 type VarianceFlag = {
   id: string;
@@ -18,6 +20,9 @@ type VarianceFlag = {
 export default function VariancePage() {
   const [flags, setFlags] = useState<VarianceFlag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiExplain, setAiExplain] = useState<AiVarianceExplain | null>(null);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState(true);
   const enterpriseEnabled = isEnterpriseUIEnabled();
 
   const load = async () => {
@@ -47,11 +52,44 @@ export default function VariancePage() {
     setLoading(false);
   };
 
+  const loadAi = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      setAiLoading(false);
+      return;
+    }
+
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const response = await fetch(`/api/v1/ai/variance-explain${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.status === 404) {
+      setAiEnabled(false);
+      setAiLoading(false);
+      return;
+    }
+
+    if (response.ok) {
+      setAiExplain((await response.json()) as AiVarianceExplain);
+    }
+    setAiLoading(false);
+  };
+
   useEffect(() => {
     void load();
+    void loadAi();
 
     const handleLocationChange = () => {
       void load();
+      void loadAi();
     };
     if (typeof window !== "undefined") {
       window.addEventListener("location-change", handleLocationChange);
@@ -170,6 +208,61 @@ export default function VariancePage() {
           )}
         </div>
       </div>
+
+      {aiEnabled ? (
+        <AiCard
+          title="AI Variance Explanation"
+          subtitle="Possible causes and recommended checks."
+          loading={aiLoading}
+          error={!aiExplain ? "No variance explanation available yet." : null}
+        >
+          <div className="space-y-4 text-sm">
+            <p className="text-[var(--enterprise-muted)]">
+              {aiExplain?.non_accusatory_note}
+            </p>
+            <div className="space-y-3">
+              {aiExplain?.findings.map((finding) => (
+                <div
+                  key={`${finding.item}-${finding.severity}`}
+                  className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold">{finding.item}</div>
+                    <span className="app-pill">{finding.severity}</span>
+                  </div>
+                  <p className="text-xs text-[var(--enterprise-muted)]">
+                    Variance: {finding.variance_pct.toFixed(1)}%
+                  </p>
+                  {finding.hypotheses.length ? (
+                    <div className="mt-2">
+                      <div className="text-xs uppercase text-[var(--enterprise-muted)]">
+                        Possible causes
+                      </div>
+                      <ul className="mt-1 list-disc pl-4 text-[var(--enterprise-muted)]">
+                        {finding.hypotheses.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {finding.recommended_checks.length ? (
+                    <div className="mt-2">
+                      <div className="text-xs uppercase text-[var(--enterprise-muted)]">
+                        Recommended checks
+                      </div>
+                      <ul className="mt-1 list-disc pl-4 text-[var(--enterprise-muted)]">
+                        {finding.recommended_checks.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        </AiCard>
+      ) : null}
     </section>
   );
 }

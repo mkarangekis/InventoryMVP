@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
+import { AiCard } from "@/components/ai/AiCard";
+import { AiDataGap, AiShiftPush, AiWeeklyBrief } from "@/ai/types";
 
 type VarianceFlag = {
   id: string;
@@ -28,6 +30,15 @@ export default function DashboardPage() {
   const [flags, setFlags] = useState<VarianceFlag[]>([]);
   const [forecast, setForecast] = useState<ForecastRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shiftPush, setShiftPush] = useState<AiShiftPush | null>(null);
+  const [dataGap, setDataGap] = useState<AiDataGap | null>(null);
+  const [weeklyBrief, setWeeklyBrief] = useState<AiWeeklyBrief | null>(null);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState({
+    shiftPush: true,
+    dataGap: true,
+    weeklyBrief: true,
+  });
   const enterpriseEnabled = isEnterpriseUIEnabled();
 
   const sortedForecast = useMemo(
@@ -80,11 +91,61 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
+  const loadAi = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      setAiLoading(false);
+      return;
+    }
+
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const [shiftRes, gapRes, briefRes] = await Promise.all([
+      fetch(`/api/v1/ai/shift-push${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`/api/v1/ai/data-gap${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      fetch(`/api/v1/ai/weekly-brief${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
+
+    if (shiftRes.status === 404) {
+      setAiEnabled((prev) => ({ ...prev, shiftPush: false }));
+    } else if (shiftRes.ok) {
+      setShiftPush((await shiftRes.json()) as AiShiftPush);
+    }
+
+    if (gapRes.status === 404) {
+      setAiEnabled((prev) => ({ ...prev, dataGap: false }));
+    } else if (gapRes.ok) {
+      setDataGap((await gapRes.json()) as AiDataGap);
+    }
+
+    if (briefRes.status === 404) {
+      setAiEnabled((prev) => ({ ...prev, weeklyBrief: false }));
+    } else if (briefRes.ok) {
+      setWeeklyBrief((await briefRes.json()) as AiWeeklyBrief);
+    }
+
+    setAiLoading(false);
+  };
+
   useEffect(() => {
     void load();
+    void loadAi();
 
     const handleLocationChange = () => {
       void load();
+      void loadAi();
     };
     if (typeof window !== "undefined") {
       window.addEventListener("location-change", handleLocationChange);
@@ -343,6 +404,121 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {(aiEnabled.shiftPush || aiEnabled.dataGap || aiEnabled.weeklyBrief) && (
+        <div className="grid gap-6 lg:grid-cols-3">
+          {aiEnabled.shiftPush ? (
+            <AiCard
+              title="Tonight’s Push"
+              subtitle="Suggested items to spotlight this shift."
+              loading={aiLoading}
+              error={!shiftPush ? "No shift push suggestions yet." : null}
+            >
+              <div className="space-y-3">
+                {shiftPush?.push_items.map((item) => (
+                  <div
+                    key={`${item.item}-${item.priority}`}
+                    className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold">{item.item}</div>
+                      <span className="app-pill">{item.priority}</span>
+                    </div>
+                    <p className="text-xs text-[var(--enterprise-muted)]">
+                      {item.why}
+                    </p>
+                    <p className="mt-2 text-sm">{item.script}</p>
+                  </div>
+                ))}
+              </div>
+            </AiCard>
+          ) : null}
+
+          {aiEnabled.dataGap ? (
+            <AiCard
+              title="Data Gap Advisor"
+              subtitle="What to capture next for better accuracy."
+              loading={aiLoading}
+              error={!dataGap ? "No data gap insights available yet." : null}
+            >
+              <div className="space-y-3">
+                {dataGap?.gaps.map((gap) => (
+                  <div
+                    key={`${gap.gap}-${gap.priority}`}
+                    className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold">{gap.gap}</div>
+                      <span className="app-pill">{gap.priority}</span>
+                    </div>
+                    <p className="text-xs text-[var(--enterprise-muted)]">
+                      {gap.why_it_matters}
+                    </p>
+                    <p className="mt-2 text-sm">{gap.how_to_collect}</p>
+                  </div>
+                ))}
+              </div>
+            </AiCard>
+          ) : null}
+
+          {aiEnabled.weeklyBrief ? (
+            <AiCard
+              title="Weekly Owner Brief"
+              subtitle={weeklyBrief?.week_range ?? "Weekly summary"}
+              loading={aiLoading}
+              error={!weeklyBrief ? "Weekly brief not ready yet." : null}
+            >
+              <div className="space-y-4 text-sm">
+                {weeklyBrief?.wins.length ? (
+                  <div>
+                    <div className="font-semibold">Wins</div>
+                    <ul className="mt-2 space-y-2 text-[var(--enterprise-muted)]">
+                      {weeklyBrief.wins.map((win) => (
+                        <li key={win.title}>
+                          <span className="font-semibold text-[var(--enterprise-ink)]">
+                            {win.title}
+                          </span>{" "}
+                          — {win.detail}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {weeklyBrief?.watchouts.length ? (
+                  <div>
+                    <div className="font-semibold">Watchouts</div>
+                    <ul className="mt-2 space-y-2 text-[var(--enterprise-muted)]">
+                      {weeklyBrief.watchouts.map((item) => (
+                        <li key={item.title}>
+                          <span className="font-semibold text-[var(--enterprise-ink)]">
+                            {item.title}
+                          </span>{" "}
+                          — {item.detail}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {weeklyBrief?.next_actions.length ? (
+                  <div>
+                    <div className="font-semibold">Next actions</div>
+                    <ul className="mt-2 space-y-2 text-[var(--enterprise-muted)]">
+                      {weeklyBrief.next_actions.map((action) => (
+                        <li key={action.action}>
+                          <span className="font-semibold text-[var(--enterprise-ink)]">
+                            {action.action}
+                          </span>{" "}
+                          — {action.why}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </AiCard>
+          ) : null}
+        </div>
+      )}
     </section>
   );
 }

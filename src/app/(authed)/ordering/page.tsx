@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
+import { AiCard } from "@/components/ai/AiCard";
+import { AiOrderingSummary } from "@/ai/types";
 
 type PurchaseOrderLine = {
   inventory_item_id: string;
@@ -28,6 +30,9 @@ export default function OrderingPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [aiSummary, setAiSummary] = useState<AiOrderingSummary | null>(null);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState(true);
   const enterpriseEnabled = isEnterpriseUIEnabled();
 
   const loadOrders = async () => {
@@ -66,8 +71,39 @@ export default function OrderingPage() {
     setLoading(false);
   };
 
+  const loadAi = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const accessToken = data.session?.access_token ?? null;
+    if (!accessToken) {
+      setAiLoading(false);
+      return;
+    }
+
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const response = await fetch(`/api/v1/ai/order-summary${query}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (response.status === 404) {
+      setAiEnabled(false);
+      setAiLoading(false);
+      return;
+    }
+
+    if (response.ok) {
+      setAiSummary((await response.json()) as AiOrderingSummary);
+    }
+    setAiLoading(false);
+  };
+
   useEffect(() => {
     void loadOrders();
+    void loadAi();
 
     const { data: subscription } = supabaseBrowser.auth.onAuthStateChange(
       () => {
@@ -77,6 +113,7 @@ export default function OrderingPage() {
 
     const handleLocationChange = () => {
       void loadOrders();
+      void loadAi();
     };
     if (typeof window !== "undefined") {
       window.addEventListener("location-change", handleLocationChange);
@@ -478,6 +515,68 @@ export default function OrderingPage() {
           ) : null}
         </div>
       </div>
+
+      {aiEnabled ? (
+        <AiCard
+          title="AI Ordering Copilot"
+          subtitle="Natural-language summary of reorder recommendations."
+          loading={aiLoading}
+          error={!aiSummary ? "AI summary not available yet." : null}
+          footer={
+            aiSummary ? (
+              <button
+                className="btn-secondary btn-sm"
+                onClick={() => {
+                  void navigator.clipboard.writeText(aiSummary.summary);
+                }}
+              >
+                Copy summary
+              </button>
+            ) : null
+          }
+        >
+          <div className="space-y-4 text-sm">
+            <p className="text-[var(--enterprise-muted)]">{aiSummary?.summary}</p>
+            {aiSummary?.top_actions.length ? (
+              <div>
+                <div className="text-xs uppercase text-[var(--enterprise-muted)]">
+                  Top actions
+                </div>
+                <ul className="mt-2 space-y-2">
+                  {aiSummary.top_actions.map((action) => (
+                    <li key={action.action} className="flex items-start gap-2">
+                      <span className="app-pill">{action.urgency}</span>
+                      <div>
+                        <div className="font-semibold">{action.action}</div>
+                        <div className="text-xs text-[var(--enterprise-muted)]">
+                          {action.reason}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {aiSummary?.risk_notes.length ? (
+              <div>
+                <div className="text-xs uppercase text-[var(--enterprise-muted)]">
+                  Risks to watch
+                </div>
+                <ul className="mt-2 list-disc pl-4 text-[var(--enterprise-muted)]">
+                  {aiSummary.risk_notes.map((risk) => (
+                    <li key={risk.risk}>
+                      <span className="font-semibold text-[var(--enterprise-ink)]">
+                        {risk.risk}
+                      </span>{" "}
+                      — {risk.impact}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </AiCard>
+      ) : null}
     </section>
   );
 }

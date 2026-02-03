@@ -543,6 +543,21 @@ textarea:focus-visible {
   margin-top: var(--space-1);
 }
 
+.app-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fef3c7;
+  background: rgba(212, 168, 83, 0.2);
+  border: 1px solid rgba(212, 168, 83, 0.45);
+}
+
 .app-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

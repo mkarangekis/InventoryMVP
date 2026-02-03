@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { AiCard } from "@/components/ai/AiCard";
+import { AiMenuSuggestions } from "@/ai/types";
 
 type ProfitRow = {
   menu_item_id: string;
@@ -50,6 +52,11 @@ export default function ProfitPage() {
   >([{ ingredientId: "", ounces: "" }]);
   const [status, setStatus] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<AiMenuSuggestions | null>(
+    null,
+  );
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState(true);
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -123,14 +130,47 @@ export default function ProfitPage() {
     setLoading(false);
   };
 
+  const loadAi = async () => {
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      setAiLoading(false);
+      return;
+    }
+
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const response = await fetch(`/api/v1/ai/menu-suggestions${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.status === 404) {
+      setAiEnabled(false);
+      setAiLoading(false);
+      return;
+    }
+
+    if (response.ok) {
+      setAiSuggestions((await response.json()) as AiMenuSuggestions);
+    }
+    setAiLoading(false);
+  };
+
   useEffect(() => {
     void loadProfit();
+    void loadAi();
   }, []);
 
   useEffect(() => {
     const handleLocationChange = () => {
       setLoading(true);
       void loadProfit();
+      void loadAi();
     };
     if (typeof window !== "undefined") {
       window.addEventListener("location-change", handleLocationChange);
@@ -255,6 +295,39 @@ export default function ProfitPage() {
           </div>
         </div>
       </div>
+
+      {aiEnabled ? (
+        <AiCard
+          title="Menu Profitability Suggestions"
+          subtitle="Scenario ideas for price and margin adjustments."
+          loading={aiLoading}
+          error={!aiSuggestions ? "Menu suggestions not available yet." : null}
+        >
+          <div className="space-y-3 text-sm">
+            {aiSuggestions?.suggestions.map((suggestion) => (
+              <div
+                key={`${suggestion.drink}-${suggestion.suggested_price}`}
+                className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold">{suggestion.drink}</div>
+                  <span className="app-pill">
+                    +{formatCurrency(suggestion.margin_impact_monthly)}
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--enterprise-muted)]">
+                  Current: {formatCurrency(suggestion.current_price)} → Proposed:{" "}
+                  {formatCurrency(suggestion.suggested_price)}
+                </p>
+                <p className="mt-2 text-sm">{suggestion.rationale}</p>
+                <p className="mt-1 text-xs text-[var(--enterprise-muted)]">
+                  Risk: {suggestion.risk}
+                </p>
+              </div>
+            ))}
+          </div>
+        </AiCard>
+      ) : null}
 
       <div className="app-card">
         <div className="app-card-header">
