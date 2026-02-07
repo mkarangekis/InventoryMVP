@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { COMPANY_NAME } from "@/config/brand";
+import { isSubscriptionGatingEnabled } from "@/config/flags";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -35,7 +36,28 @@ export default function OnboardingPage() {
         if (statusRes.ok) {
           const payload = (await statusRes.json()) as { hasProfile: boolean };
           if (payload.hasProfile) {
-            router.replace("/dashboard");
+            if (isSubscriptionGatingEnabled()) {
+              const entitlementRes = await fetch("/api/v1/billing/entitlement", {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (entitlementRes.ok) {
+                const ent = (await entitlementRes.json()) as {
+                  entitlementStatus: string;
+                };
+                if (
+                  ent.entitlementStatus === "active" ||
+                  ent.entitlementStatus === "trialing"
+                ) {
+                  router.replace("/dashboard");
+                } else {
+                  router.replace("/subscribe");
+                }
+              } else {
+                router.replace("/subscribe");
+              }
+            } else {
+              router.replace("/dashboard");
+            }
           }
         }
       }
@@ -86,7 +108,28 @@ export default function OnboardingPage() {
       setStatus(`Error: ${message}`);
     } else {
       setStatus("Onboarding complete. Redirecting to the dashboard...");
-      router.replace("/dashboard");
+      if (isSubscriptionGatingEnabled()) {
+        const entitlementRes = await fetch("/api/v1/billing/entitlement", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (entitlementRes.ok) {
+          const ent = (await entitlementRes.json()) as {
+            entitlementStatus: string;
+          };
+          if (
+            ent.entitlementStatus === "active" ||
+            ent.entitlementStatus === "trialing"
+          ) {
+            router.replace("/dashboard");
+          } else {
+            router.replace("/subscribe");
+          }
+        } else {
+          router.replace("/subscribe");
+        }
+      } else {
+        router.replace("/dashboard");
+      }
     }
 
     setLoading(false);

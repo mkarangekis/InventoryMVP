@@ -9,6 +9,7 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test:entitlement": "tsx scripts/tests/entitlement.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "seed:demo": "node scripts/seed-demo.mjs",

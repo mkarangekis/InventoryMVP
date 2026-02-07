@@ -29,6 +29,53 @@ SUPABASE_SERVICE_ROLE_KEY=
 DATABASE_URL=
 ```
 
+## Feature flags
+Flags are read from server env and exposed to client components at runtime via `window.__BAROPS_FLAGS`.
+
+Add to `.env.local`:
+```
+ENTERPRISE_UI=true
+AI_TOP_PANEL=false
+GRAPHS_OVERVIEW=false
+SUBSCRIPTION_GATING=false
+```
+
+## Billing (Stripe)
+Existing endpoints:
+- `POST /api/billing/checkout` create Stripe Checkout session (subscription + 14-day trial)
+- `POST /api/billing/portal` create Stripe Customer Portal session
+- `GET /api/billing/status` read billing status from Supabase user metadata
+- `POST /api/billing/webhook` Stripe webhook handler
+
+Versioned endpoints (additive):
+- `GET /api/v1/billing/entitlement` canonical entitlement status (server-validated)
+- `POST /api/v1/billing/create-checkout-session`
+- `POST /api/v1/billing/create-portal-session`
+
+Required env vars (do not rename):
+```
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_ID=
+APP_URL=
+```
+
+Webhook setup notes:
+- Configure Stripe to send events to `APP_URL/api/billing/webhook`
+- This app updates billing state in Supabase `user_metadata.billing` (source of truth for gating)
+- Relevant events:
+  - `checkout.session.completed`
+  - `customer.subscription.created`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+  - `invoice.payment_failed`
+
+## Subscription gating
+When `SUBSCRIPTION_GATING=true`, users must have entitlement `active` or `trialing` to access protected routes under `src/app/(authed)/*`.
+
+Paywall:
+- `/subscribe` shows status and directs to Checkout / Portal
+
 ## Seed demo data
 ```powershell
 pnpm seed:demo
@@ -70,6 +117,11 @@ pnpm job:forecast --date=2026-01-18
 pnpm job:ordering --date=2026-01-18
 pnpm job:import
 pnpm job:import:node
+```
+
+## Tests (minimal)
+```powershell
+pnpm test:entitlement
 ```
 
 ## App pages

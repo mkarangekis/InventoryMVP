@@ -5,6 +5,15 @@
 :root {
   --background: var(--color-bg-primary);
   --foreground: var(--color-text-primary);
+
+  /* Defaults so enterprise-styled components can render outside .enterprise-theme. */
+  --enterprise-ink: var(--color-text-primary);
+  --enterprise-muted: var(--color-text-tertiary);
+  --enterprise-border: var(--color-border-default);
+  --enterprise-accent: var(--color-accent-primary);
+  --enterprise-accent-soft: var(--color-accent-primary-muted);
+  --app-surface: var(--color-surface-default);
+  --app-surface-elevated: var(--color-surface-elevated);
 }
 
 @theme inline {

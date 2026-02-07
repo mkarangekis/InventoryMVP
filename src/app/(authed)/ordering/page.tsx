@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { AiCard } from "@/components/ai/AiCard";
+import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
 import { AiOrderingSummary } from "@/ai/types";
+import { isAiTopPanelEnabled, isGraphsOverviewEnabled } from "@/config/flags";
+import { BarChart } from "@/components/charts/BarChart";
 
 type PurchaseOrderLine = {
   inventory_item_id: string;
@@ -34,6 +37,8 @@ export default function OrderingPage() {
   const [aiLoading, setAiLoading] = useState(true);
   const [aiEnabled, setAiEnabled] = useState(true);
   const enterpriseEnabled = isEnterpriseUIEnabled();
+  const aiTopEnabled = isAiTopPanelEnabled();
+  const graphsEnabled = isGraphsOverviewEnabled();
 
   const loadOrders = async () => {
     const { data } = await supabaseBrowser.auth.getSession();
@@ -246,6 +251,35 @@ export default function OrderingPage() {
     orders.map((po) => po.vendor?.id ?? po.vendor?.name ?? "unknown"),
   ).size;
 
+  const vendorTotals = (() => {
+    const map = new Map<string, { label: string; total: number }>();
+    for (const po of orders) {
+      const key = po.vendor?.id ?? po.vendor?.name ?? "unknown";
+      const label = po.vendor?.name ?? "Unknown vendor";
+      const poTotal = po.lines.reduce((s, l) => s + (l.line_total || 0), 0);
+      const prev = map.get(key) ?? { label, total: 0 };
+      map.set(key, { label: prev.label, total: prev.total + poTotal });
+    }
+    return Array.from(map.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8);
+  })();
+
+  const topItems = (() => {
+    const map = new Map<string, { label: string; total: number }>();
+    for (const po of orders) {
+      for (const line of po.lines) {
+        const key = line.inventory_item_id;
+        const label = line.item_name;
+        const prev = map.get(key) ?? { label, total: 0 };
+        map.set(key, { label: prev.label, total: prev.total + (line.qty_units || 0) });
+      }
+    }
+    return Array.from(map.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+  })();
+
   if (!enterpriseEnabled) {
     return (
       <section className="space-y-4">
@@ -253,6 +287,29 @@ export default function OrderingPage() {
         <p className="text-sm text-gray-600">
           Draft purchase orders grouped by vendor.
         </p>
+
+        <AIInsightsTopPanel
+          pageContext="ordering"
+          loading={aiLoading}
+          error={
+            !aiEnabled
+              ? "AI ordering copilot is not enabled for this workspace."
+              : !aiSummary
+                ? "AI summary not available yet."
+                : null
+          }
+          summary={aiSummary?.summary ?? null}
+          recommendations={(aiSummary?.top_actions ?? []).map((a) => ({
+            action: a.action,
+            reason: a.reason,
+            urgency: a.urgency,
+          }))}
+          risks={(aiSummary?.risk_notes ?? []).map((r) => ({
+            risk: r.risk,
+            impact: r.impact,
+          }))}
+        />
+
         <button
           className="w-fit rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
           onClick={handleGenerateDrafts}
@@ -396,6 +453,94 @@ export default function OrderingPage() {
         </div>
       </div>
 
+      <AIInsightsTopPanel
+        pageContext="ordering"
+        loading={aiLoading}
+        error={
+          !aiEnabled
+            ? "AI ordering copilot is not enabled for this workspace."
+            : !aiSummary
+              ? "AI summary not available yet."
+              : null
+        }
+        summary={aiSummary?.summary ?? null}
+        recommendations={(aiSummary?.top_actions ?? []).map((a) => ({
+          action: a.action,
+          reason: a.reason,
+          urgency: a.urgency,
+        }))}
+        risks={(aiSummary?.risk_notes ?? []).map((r) => ({
+          risk: r.risk,
+          impact: r.impact,
+        }))}
+      />
+
+      {graphsEnabled ? (
+        <div className="app-card">
+          <div className="app-card-header">
+            <div>
+              <h3 className="app-card-title">Ordering Breakdown</h3>
+              <p className="app-card-subtitle">
+                Chart-first view of recommended draft orders.
+              </p>
+            </div>
+          </div>
+          <div className="app-card-body">
+            {loading ? (
+              <p className="text-sm text-[var(--enterprise-muted)]">
+                Loading ordering charts…
+              </p>
+            ) : orders.length === 0 ? (
+              <div className="app-empty">
+                <div className="app-empty-title">No Draft Orders</div>
+                <p className="app-empty-desc">
+                  Generate draft POs to see breakdown charts.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div>
+                  <div className="text-sm font-semibold text-[var(--enterprise-ink)]">
+                    Estimated cost by vendor
+                  </div>
+                  <div className="mt-2">
+                    <BarChart
+                      data={vendorTotals.map((v) => ({
+                        label: v.label,
+                        value: v.total,
+                        color: "var(--enterprise-accent)",
+                      }))}
+                      valueFormat={(v) =>
+                        new Intl.NumberFormat("en-US", {
+                          style: "currency",
+                          currency: "USD",
+                          maximumFractionDigits: 0,
+                        }).format(v)
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[var(--enterprise-ink)]">
+                    Top items by units
+                  </div>
+                  <div className="mt-2">
+                    <BarChart
+                      data={topItems.map((i) => ({
+                        label: i.label,
+                        value: i.total,
+                        color: "var(--enterprise-accent)",
+                      }))}
+                      valueFormat={(v) => `${v.toFixed(0)} units`}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       <div className="app-card">
         <div className="app-card-header">
           <div>
@@ -516,7 +661,7 @@ export default function OrderingPage() {
         </div>
       </div>
 
-      {aiEnabled ? (
+      {!aiTopEnabled && aiEnabled ? (
         <AiCard
           title="AI Ordering Copilot"
           subtitle="Natural-language summary of reorder recommendations."

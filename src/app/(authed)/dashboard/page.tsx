@@ -5,7 +5,12 @@ import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { AiCard } from "@/components/ai/AiCard";
+import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
 import { AiDataGap, AiShiftPush, AiWeeklyBrief } from "@/ai/types";
+import { isAiTopPanelEnabled, isGraphsOverviewEnabled } from "@/config/flags";
+import { ViewToggle } from "@/components/ui/ViewToggle";
+import { LineChart } from "@/components/charts/LineChart";
+import { BarChart } from "@/components/charts/BarChart";
 
 type VarianceFlag = {
   id: string;
@@ -40,6 +45,27 @@ export default function DashboardPage() {
     weeklyBrief: true,
   });
   const enterpriseEnabled = isEnterpriseUIEnabled();
+  const aiTopEnabled = isAiTopPanelEnabled();
+  const graphsEnabled = isGraphsOverviewEnabled();
+
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<{
+    forecastByDay: { date: string; total_usage_oz: number }[];
+    varianceByWeek: {
+      week_start_date: string;
+      total_abs_variance_oz: number;
+      flag_count: number;
+    }[];
+    topForecastItems: {
+      inventory_item_id: string;
+      item_name: string;
+      total_usage_oz: number;
+    }[];
+  } | null>(null);
+
+  const [varianceView, setVarianceView] = useState<"charts" | "table">("charts");
+  const [forecastView, setForecastView] = useState<"charts" | "table">("charts");
 
   const sortedForecast = useMemo(
     () =>
@@ -89,6 +115,40 @@ export default function DashboardPage() {
     }
 
     setLoading(false);
+  };
+
+  const loadAnalytics = async () => {
+    if (!graphsEnabled) return;
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      setAnalyticsLoading(false);
+      return;
+    }
+
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const res = await fetch(`/api/v1/analytics/overview${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      setAnalyticsError(await res.text());
+      setAnalytics(null);
+      setAnalyticsLoading(false);
+      return;
+    }
+
+    setAnalytics((await res.json()) as any);
+    setAnalyticsLoading(false);
   };
 
   const loadAi = async () => {
@@ -142,10 +202,12 @@ export default function DashboardPage() {
   useEffect(() => {
     void load();
     void loadAi();
+    void loadAnalytics();
 
     const handleLocationChange = () => {
       void load();
       void loadAi();
+      void loadAnalytics();
     };
     if (typeof window !== "undefined") {
       window.addEventListener("location-change", handleLocationChange);
@@ -165,6 +227,140 @@ export default function DashboardPage() {
         <p className="text-sm text-gray-600">
           Latest variance flags across your locations.
         </p>
+
+        <AIInsightsTopPanel
+          pageContext="overview"
+          loading={aiLoading}
+          error={
+            !aiEnabled.shiftPush && !aiEnabled.dataGap && !aiEnabled.weeklyBrief
+              ? "AI insights are not enabled for this workspace."
+              : !shiftPush && !dataGap && !weeklyBrief
+                ? "No AI insights available yet."
+                : null
+          }
+          summary={
+            weeklyBrief
+              ? `Week ${weeklyBrief.week_range}: ${weeklyBrief.wins[0]?.title ?? "Summary ready."}`
+              : shiftPush
+                ? `Shift push ready: ${shiftPush.push_items.length} items to spotlight.`
+                : dataGap
+                  ? `Data gap advisor: ${dataGap.gaps.length} opportunities to improve accuracy.`
+                  : null
+          }
+          recommendations={[
+            ...(weeklyBrief?.next_actions ?? []).slice(0, 3).map((a) => ({
+              action: a.action,
+              reason: a.why,
+              urgency: "med",
+            })),
+            ...(dataGap?.gaps ?? []).slice(0, 2).map((g) => ({
+              action: g.gap,
+              reason: g.expected_improvement,
+              urgency: g.priority,
+            })),
+            ...(shiftPush?.push_items ?? []).slice(0, 2).map((i) => ({
+              action: `Spotlight ${i.item}`,
+              reason: i.why,
+              urgency: i.priority,
+            })),
+          ]}
+          risks={(weeklyBrief?.watchouts ?? []).slice(0, 4).map((w) => ({
+            risk: w.title,
+            impact: w.detail,
+          }))}
+        />
+
+        {graphsEnabled ? (
+          <div className="rounded border border-gray-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">Overview Charts</h2>
+                <p className="text-sm text-gray-600">
+                  Interactive rollups from forecasts and variance.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <ViewToggle value={varianceView} onChange={setVarianceView} />
+                <ViewToggle value={forecastView} onChange={setForecastView} />
+              </div>
+            </div>
+
+            {analyticsLoading ? (
+              <p className="mt-3 text-sm text-gray-600">Loading charts…</p>
+            ) : analyticsError ? (
+              <p className="mt-3 text-sm text-amber-900">{analyticsError}</p>
+            ) : analytics ? (
+              <div className="mt-4 grid gap-4">
+                {varianceView === "charts" ? (
+                  <div>
+                    <div className="text-sm font-semibold">Variance over time</div>
+                    <div className="mt-2">
+                      <LineChart
+                        series={[
+                          {
+                            name: "Abs variance (oz)",
+                            color: "#d4a853",
+                            data: (analytics.varianceByWeek ?? []).map((row) => ({
+                              x: new Date(row.week_start_date).getTime(),
+                              y: row.total_abs_variance_oz,
+                              label: new Date(row.week_start_date).toLocaleDateString(),
+                            })),
+                          },
+                        ]}
+                        valueFormat={(v) => `${v.toFixed(1)} oz`}
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
+                {forecastView === "charts" ? (
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div>
+                      <div className="text-sm font-semibold">Forecast usage (total)</div>
+                      <div className="mt-2">
+                        <LineChart
+                          series={[
+                            {
+                              name: "Forecast usage (oz)",
+                              color: "#d4a853",
+                              data: (analytics.forecastByDay ?? []).map((row) => ({
+                                x: new Date(row.date).getTime(),
+                                y: row.total_usage_oz,
+                                label: new Date(row.date).toLocaleDateString(),
+                              })),
+                            },
+                          ]}
+                          valueFormat={(v) => `${v.toFixed(0)} oz`}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">Top items by forecast usage</div>
+                      <div className="mt-2">
+                        <BarChart
+                          data={(analytics.topForecastItems ?? []).map((row) => ({
+                            label: row.item_name,
+                            value: row.total_usage_oz,
+                            color: "#d4a853",
+                          }))}
+                          valueFormat={(v) => `${v.toFixed(0)} oz`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {varianceView === "table" || forecastView === "table" ? (
+                  <p className="text-sm text-gray-600">
+                    Switch the page sections below to table view.
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-gray-600">No chart data yet.</p>
+            )}
+          </div>
+        ) : null}
 
         {loading ? (
           <p className="text-sm text-gray-600">Loading variance...</p>
@@ -297,6 +493,67 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <AIInsightsTopPanel
+        pageContext="overview"
+        loading={aiLoading}
+        error={
+          !aiEnabled.shiftPush && !aiEnabled.dataGap && !aiEnabled.weeklyBrief
+            ? "AI insights are not enabled for this workspace."
+            : !shiftPush && !dataGap && !weeklyBrief
+              ? "No AI insights available yet."
+              : null
+        }
+        primaryMetrics={[
+          {
+            label: "Variance this week",
+            value: loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`,
+            meta: latestVarianceWeek
+              ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString()}`
+              : "No variance week yet",
+          },
+          {
+            label: "Active flags",
+            value: loading ? "—" : String(flags.length),
+            meta: "Awaiting review",
+          },
+          {
+            label: "Items tracked",
+            value: loading ? "—" : trackedItems ? String(trackedItems) : "—",
+            meta: "Forecast coverage",
+          },
+        ]}
+        summary={
+          weeklyBrief
+            ? `Week ${weeklyBrief.week_range}: ${weeklyBrief.wins[0]?.title ?? "Summary ready."}`
+            : shiftPush
+              ? `Shift push ready: ${shiftPush.push_items.length} items to spotlight.`
+              : dataGap
+                ? `Data gap advisor: ${dataGap.gaps.length} opportunities to improve accuracy.`
+                : null
+        }
+        recommendations={[
+          ...(weeklyBrief?.next_actions ?? []).slice(0, 3).map((a) => ({
+            action: a.action,
+            reason: a.why,
+            urgency: "med",
+          })),
+          ...(dataGap?.gaps ?? []).slice(0, 2).map((g) => ({
+            action: g.gap,
+            reason: g.expected_improvement,
+            urgency: g.priority,
+          })),
+          ...(shiftPush?.push_items ?? []).slice(0, 2).map((i) => ({
+            action: `Spotlight ${i.item}`,
+            reason: i.why,
+            urgency: i.priority,
+          })),
+        ]}
+        risks={(weeklyBrief?.watchouts ?? []).slice(0, 4).map((w) => ({
+          risk: w.title,
+          impact: w.detail,
+        }))}
+      />
+
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="app-card">
           <div className="app-card-header">
@@ -306,12 +563,48 @@ export default function DashboardPage() {
                 Potential shrink and over-pours to review.
               </p>
             </div>
+            {graphsEnabled ? (
+              <ViewToggle value={varianceView} onChange={setVarianceView} />
+            ) : (
             <Link className="btn-ghost btn-sm" href="/variance">
               View all
             </Link>
+            )}
           </div>
           <div className="app-card-body">
-            {loading ? (
+            {graphsEnabled && varianceView === "charts" ? (
+              analyticsLoading ? (
+                <p className="text-sm text-[var(--enterprise-muted)]">
+                  Loading variance chart…
+                </p>
+              ) : analyticsError ? (
+                <p className="text-sm text-[var(--enterprise-muted)]">
+                  {analyticsError}
+                </p>
+              ) : analytics?.varianceByWeek?.length ? (
+                <LineChart
+                  series={[
+                    {
+                      name: "Abs variance (oz)",
+                      color: "var(--enterprise-accent)",
+                      data: analytics.varianceByWeek.map((row) => ({
+                        x: new Date(row.week_start_date).getTime(),
+                        y: row.total_abs_variance_oz,
+                        label: new Date(row.week_start_date).toLocaleDateString(),
+                      })),
+                    },
+                  ]}
+                  valueFormat={(v) => `${v.toFixed(1)} oz`}
+                />
+              ) : (
+                <div className="app-empty">
+                  <div className="app-empty-title">No Variance Trend Yet</div>
+                  <p className="app-empty-desc">
+                    Once inventory counts and usage data are available, variance trends will appear here.
+                  </p>
+                </div>
+              )
+            ) : loading ? (
               <p className="text-sm text-[var(--enterprise-muted)]">
                 Loading variance...
               </p>
@@ -371,9 +664,56 @@ export default function DashboardPage() {
                 Daily ounces projected by item.
               </p>
             </div>
+            {graphsEnabled ? (
+              <ViewToggle value={forecastView} onChange={setForecastView} />
+            ) : null}
           </div>
           <div className="app-card-body">
-            {forecast.length === 0 ? (
+            {graphsEnabled && forecastView === "charts" ? (
+              analyticsLoading ? (
+                <p className="text-sm text-[var(--enterprise-muted)]">
+                  Loading forecast chart…
+                </p>
+              ) : analyticsError ? (
+                <p className="text-sm text-[var(--enterprise-muted)]">
+                  {analyticsError}
+                </p>
+              ) : analytics?.forecastByDay?.length ? (
+                <div className="space-y-4">
+                  <LineChart
+                    series={[
+                      {
+                        name: "Forecast usage (oz)",
+                        color: "var(--enterprise-accent)",
+                        data: analytics.forecastByDay.map((row) => ({
+                          x: new Date(row.date).getTime(),
+                          y: row.total_usage_oz,
+                          label: new Date(row.date).toLocaleDateString(),
+                        })),
+                      },
+                    ]}
+                    valueFormat={(v) => `${v.toFixed(0)} oz`}
+                  />
+                  {analytics.topForecastItems?.length ? (
+                    <BarChart
+                      data={analytics.topForecastItems.map((row) => ({
+                        label: row.item_name,
+                        value: row.total_usage_oz,
+                        color: "var(--enterprise-accent)",
+                      }))}
+                      valueFormat={(v) => `${v.toFixed(0)} oz`}
+                    />
+                  ) : null}
+                </div>
+              ) : (
+                <div className="app-empty">
+                  <div className="app-empty-title">Building Your Forecast</div>
+                  <p className="app-empty-desc">
+                    Forecast charts will appear once there is enough sales history.
+                  </p>
+                </div>
+              )
+            ) : forecast.length === 0 ? (
               <div className="app-empty">
                 <div className="app-empty-title">Building Your Forecast</div>
                 <p className="app-empty-desc">
@@ -405,7 +745,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {(aiEnabled.shiftPush || aiEnabled.dataGap || aiEnabled.weeklyBrief) && (
+      {!aiTopEnabled &&
+        (aiEnabled.shiftPush || aiEnabled.dataGap || aiEnabled.weeklyBrief) && (
         <div className="grid gap-6 lg:grid-cols-3">
           {aiEnabled.shiftPush ? (
             <AiCard

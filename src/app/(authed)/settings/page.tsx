@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { COMPANY_NAME, PRODUCT_NAME } from "@/config/brand";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
 
 type BillingStatus = {
   stripe_customer_id: string | null;
@@ -85,6 +86,19 @@ export default function SettingsPage() {
         <p className="text-sm text-gray-600">
           Workspace settings are managed in Supabase for now.
         </p>
+
+        <AIInsightsTopPanel
+          pageContext="settings"
+          loading={false}
+          summary="Review billing status and access control settings."
+          recommendations={[
+            {
+              action: "Manage billing in Settings",
+              reason: "Update subscription, invoices, and payment methods.",
+              urgency: "med",
+            },
+          ]}
+        />
       </section>
     );
   }
@@ -103,6 +117,37 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <AIInsightsTopPanel
+        pageContext="settings"
+        loading={billingLoading}
+        error={billingError}
+        summary={
+          billing?.stripe_status
+            ? `Billing status: ${billing.stripe_status}`
+            : "Billing status not started yet."
+        }
+        recommendations={[
+          {
+            action:
+              billing?.stripe_status === "past_due"
+                ? "Update payment method"
+                : "Manage subscription",
+            reason: "Open the billing portal to update your plan and payment method.",
+            urgency: billing?.stripe_status === "past_due" ? "high" : "med",
+          },
+        ]}
+        risks={
+          billing?.stripe_status === "past_due"
+            ? [
+                {
+                  risk: "Past-due subscription",
+                  impact: "Access may be limited until payment is updated.",
+                },
+              ]
+            : []
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="app-card">

@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { AiCard } from "@/components/ai/AiCard";
+import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
 import { AiVarianceExplain } from "@/ai/types";
+import {
+  isAiTopPanelEnabled,
+  isGraphsOverviewEnabled,
+} from "@/config/flags";
+import { LineChart } from "@/components/charts/LineChart";
+import { BarChart } from "@/components/charts/BarChart";
 
 type VarianceFlag = {
   id: string;
@@ -24,6 +31,8 @@ export default function VariancePage() {
   const [aiLoading, setAiLoading] = useState(true);
   const [aiEnabled, setAiEnabled] = useState(true);
   const enterpriseEnabled = isEnterpriseUIEnabled();
+  const aiTopEnabled = isAiTopPanelEnabled();
+  const graphsEnabled = isGraphsOverviewEnabled();
 
   const load = async () => {
     const { data } = await supabaseBrowser.auth.getSession();
@@ -108,6 +117,32 @@ export default function VariancePage() {
         <p className="text-sm text-gray-600">
           Weekly variance flags by inventory item.
         </p>
+
+        <AIInsightsTopPanel
+          pageContext="variance"
+          loading={aiLoading}
+          error={
+            !aiEnabled
+              ? "AI variance explanation is not enabled for this workspace."
+              : !aiExplain
+                ? "No variance explanation available yet."
+                : null
+          }
+          summary={aiExplain?.non_accusatory_note ?? null}
+          recommendations={(aiExplain?.findings ?? []).slice(0, 6).map((f) => ({
+            action: `Review ${f.item}`,
+            reason: `Variance ${f.variance_pct.toFixed(1)}%`,
+            urgency: f.severity,
+          }))}
+          risks={(aiExplain?.findings ?? [])
+            .filter((f) => f.severity === "high")
+            .slice(0, 3)
+            .map((f) => ({
+              risk: `${f.item} variance`,
+              impact: `${f.variance_pct.toFixed(1)}% flagged`,
+            }))}
+        />
+
         {loading ? (
           <p className="text-sm text-gray-600">Loading variance...</p>
         ) : flags.length === 0 ? (
@@ -209,7 +244,118 @@ export default function VariancePage() {
         </div>
       </div>
 
-      {aiEnabled ? (
+      <AIInsightsTopPanel
+        pageContext="variance"
+        loading={aiLoading}
+        error={
+          !aiEnabled
+            ? "AI variance explanation is not enabled for this workspace."
+            : !aiExplain
+              ? "No variance explanation available yet."
+              : null
+        }
+        summary={aiExplain?.non_accusatory_note ?? null}
+        recommendations={(aiExplain?.findings ?? []).slice(0, 6).map((f) => ({
+          action: `Review ${f.item}`,
+          reason: `Variance ${f.variance_pct.toFixed(1)}%`,
+          urgency: f.severity,
+        }))}
+        risks={(aiExplain?.findings ?? [])
+          .filter((f) => f.severity === "high")
+          .slice(0, 3)
+          .map((f) => ({
+            risk: `${f.item} variance`,
+            impact: `${f.variance_pct.toFixed(1)}% flagged`,
+          }))}
+      />
+
+      {graphsEnabled ? (
+        <div className="app-card">
+          <div className="app-card-header">
+            <div>
+              <h3 className="app-card-title">Variance Charts</h3>
+              <p className="app-card-subtitle">
+                Trend over time and item-level variance distribution.
+              </p>
+            </div>
+          </div>
+          <div className="app-card-body">
+            {loading ? (
+              <p className="text-sm text-[var(--enterprise-muted)]">
+                Loading variance charts…
+              </p>
+            ) : flags.length === 0 ? (
+              <div className="app-empty">
+                <div className="app-empty-title">No Variance Flags Yet</div>
+                <p className="app-empty-desc">
+                  Connect your POS and complete inventory counts to surface variance signals.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div>
+                  <div className="text-sm font-semibold text-[var(--enterprise-ink)]">
+                    Abs variance (oz) by week
+                  </div>
+                  <div className="mt-2">
+                    <LineChart
+                      series={[
+                        {
+                          name: "Abs variance (oz)",
+                          color: "var(--enterprise-accent)",
+                          data: (() => {
+                            const map = new Map<string, number>();
+                            for (const row of flags) {
+                              const prev = map.get(row.week_start_date) ?? 0;
+                              const v = Number.parseFloat(row.variance_oz);
+                              map.set(
+                                row.week_start_date,
+                                prev + (Number.isNaN(v) ? 0 : Math.abs(v)),
+                              );
+                            }
+                            return Array.from(map.entries())
+                              .map(([week, total]) => ({
+                                x: new Date(week).getTime(),
+                                y: total,
+                                label: new Date(week).toLocaleDateString(),
+                              }))
+                              .sort((a, b) => a.x - b.x);
+                          })(),
+                        },
+                      ]}
+                      valueFormat={(v) => `${v.toFixed(1)} oz`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-[var(--enterprise-ink)]">
+                    Variance % by item (top)
+                  </div>
+                  <div className="mt-2">
+                    <BarChart
+                      data={[...flags]
+                        .sort(
+                          (a, b) =>
+                            Math.abs(Number.parseFloat(b.variance_pct)) -
+                            Math.abs(Number.parseFloat(a.variance_pct)),
+                        )
+                        .slice(0, 10)
+                        .map((row) => ({
+                          label: row.item_name,
+                          value: Number.parseFloat(row.variance_pct) || 0,
+                          color: "var(--enterprise-accent)",
+                        }))}
+                      valueFormat={(v) => `${v.toFixed(1)}%`}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {!aiTopEnabled && aiEnabled ? (
         <AiCard
           title="AI Variance Explanation"
           subtitle="Possible causes and recommended checks."

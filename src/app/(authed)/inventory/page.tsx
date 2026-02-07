@@ -5,7 +5,11 @@ import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { AiCard } from "@/components/ai/AiCard";
+import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
 import { AiCountSchedule } from "@/ai/types";
+import { isAiTopPanelEnabled, isGraphsOverviewEnabled } from "@/config/flags";
+import { ViewToggle } from "@/components/ui/ViewToggle";
+import { NeedVsOnHand } from "@/components/charts/NeedVsOnHand";
 
 type InventoryItem = {
   id: string;
@@ -28,6 +32,21 @@ export default function InventoryPage() {
   const [aiLoading, setAiLoading] = useState(true);
   const [aiEnabled, setAiEnabled] = useState(true);
   const enterpriseEnabled = isEnterpriseUIEnabled();
+  const aiTopEnabled = isAiTopPanelEnabled();
+  const graphsEnabled = isGraphsOverviewEnabled();
+
+  const [needLoading, setNeedLoading] = useState(false);
+  const [needError, setNeedError] = useState<string | null>(null);
+  const [needData, setNeedData] = useState<{
+    snapshotDate: string | null;
+    items: {
+      inventory_item_id: string;
+      item_name: string;
+      on_hand_oz: number;
+      forecast_next_14d_oz: number;
+    }[];
+  } | null>(null);
+  const [view, setView] = useState<"charts" | "table">("charts");
 
   const loadItems = async () => {
     const { data } = await supabaseBrowser.auth.getSession();
@@ -54,6 +73,40 @@ export default function InventoryPage() {
     }
 
     setLoading(false);
+  };
+
+  const loadNeedVsOnhand = async () => {
+    if (!graphsEnabled) return;
+    setNeedLoading(true);
+    setNeedError(null);
+
+    const { data } = await supabaseBrowser.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      setNeedLoading(false);
+      return;
+    }
+
+    const locationId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("barops.locationId")
+        : null;
+    const query = locationId ? `?locationId=${locationId}` : "";
+
+    const res = await fetch(`/api/v1/analytics/inventory/need-vs-onhand${query}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      setNeedError(await res.text());
+      setNeedData(null);
+      setNeedLoading(false);
+      return;
+    }
+
+    setNeedData((await res.json()) as any);
+    setNeedLoading(false);
   };
 
   const loadAi = async () => {
@@ -90,10 +143,12 @@ export default function InventoryPage() {
   useEffect(() => {
     void loadItems();
     void loadAi();
+    void loadNeedVsOnhand();
 
     const handleLocationChange = () => {
       void loadItems();
       void loadAi();
+      void loadNeedVsOnhand();
     };
     if (typeof window !== "undefined") {
       window.addEventListener("location-change", handleLocationChange);
@@ -177,6 +232,28 @@ export default function InventoryPage() {
         <p className="text-sm text-gray-600">
           Enter actual remaining ounces for each item.
         </p>
+
+        <AIInsightsTopPanel
+          pageContext="inventory"
+          loading={aiLoading}
+          error={
+            !aiEnabled
+              ? "AI count scheduler is not enabled for this workspace."
+              : !aiSchedule
+                ? "Count schedule not available yet."
+                : null
+          }
+          summary={
+            aiSchedule
+              ? `Recommended cadence for ${aiSchedule.cadence.length} items based on recent variance.`
+              : null
+          }
+          recommendations={(aiSchedule?.cadence ?? []).slice(0, 6).map((c) => ({
+            action: `${c.item}: ${c.recommended_frequency}`,
+            reason: c.why,
+            urgency: c.recommended_frequency === "weekly" ? "high" : "med",
+          }))}
+        />
 
         <div className="flex items-center gap-3">
           <label className="text-sm text-gray-700">
@@ -347,7 +424,105 @@ export default function InventoryPage() {
         </div>
       </div>
 
+      <AIInsightsTopPanel
+        pageContext="inventory"
+        loading={aiLoading}
+        error={
+          !aiEnabled
+            ? "AI count scheduler is not enabled for this workspace."
+            : !aiSchedule
+              ? "Count schedule not available yet."
+              : null
+        }
+        summary={
+          aiSchedule
+            ? `Recommended cadence for ${aiSchedule.cadence.length} items based on recent variance.`
+            : null
+        }
+        recommendations={(aiSchedule?.cadence ?? []).slice(0, 6).map((c) => ({
+          action: `${c.item}: ${c.recommended_frequency}`,
+          reason: c.why,
+          urgency: c.recommended_frequency === "weekly" ? "high" : "med",
+        }))}
+      />
+
+      {graphsEnabled ? (
+        <div className="app-card">
+          <div className="app-card-header">
+            <div>
+              <h3 className="app-card-title">Forecasted Need vs On-hand</h3>
+              <p className="app-card-subtitle">
+                Top items comparing next 14 days forecast to the latest snapshot.
+              </p>
+            </div>
+            <ViewToggle value={view} onChange={setView} />
+          </div>
+          <div className="app-card-body">
+            {view === "charts" ? (
+              needLoading ? (
+                <p className="text-sm text-[var(--enterprise-muted)]">
+                  Loading chart…
+                </p>
+              ) : needError ? (
+                <p className="text-sm text-[var(--enterprise-muted)]">
+                  {needError}
+                </p>
+              ) : needData?.items?.length ? (
+                <NeedVsOnHand
+                  data={needData.items.map((row) => ({
+                    label: row.item_name,
+                    onHandOz: row.on_hand_oz,
+                    forecastOz: row.forecast_next_14d_oz,
+                  }))}
+                />
+              ) : (
+                <div className="app-empty">
+                  <div className="app-empty-title">No Snapshot Data Yet</div>
+                  <p className="app-empty-desc">
+                    Record an inventory snapshot to enable need vs on-hand charts.
+                  </p>
+                  <div className="app-empty-actions">
+                    <a className="btn-primary btn-sm" href="#quick-count">
+                      Create snapshot
+                    </a>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
+                <table className="app-table w-full text-left text-sm">
+                  <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
+                    <tr>
+                      <th className="px-3 py-2">Item</th>
+                      <th className="px-3 py-2">On-hand</th>
+                      <th className="px-3 py-2">Forecast (14d)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(needData?.items ?? []).map((row) => (
+                      <tr
+                        key={row.inventory_item_id}
+                        className="border-t"
+                      >
+                        <td className="px-3 py-2">{row.item_name}</td>
+                        <td className="px-3 py-2">
+                          {row.on_hand_oz.toFixed(0)} oz
+                        </td>
+                        <td className="px-3 py-2">
+                          {row.forecast_next_14d_oz.toFixed(0)} oz
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       <div className="app-card">
+        <div id="quick-count" />
         <div className="app-card-header">
           <div>
             <h3 className="app-card-title">Quick Count</h3>
@@ -422,7 +597,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {aiEnabled ? (
+      {!aiTopEnabled && aiEnabled ? (
         <AiCard
           title="Smart Count Scheduler"
           subtitle="Recommended cadence based on recent variance."

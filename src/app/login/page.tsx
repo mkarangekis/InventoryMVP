@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { PRODUCT_NAME } from "@/config/brand";
+import { isSubscriptionGatingEnabled } from "@/config/flags";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -132,8 +133,32 @@ export default function LoginPage() {
       if (statusRes.ok) {
         const payload = (await statusRes.json()) as { hasProfile: boolean };
         if (payload.hasProfile) {
-          setStatus("Signed in. Redirecting to dashboard...");
-          router.replace("/dashboard");
+          if (isSubscriptionGatingEnabled()) {
+            const entitlementRes = await fetch("/api/v1/billing/entitlement", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (entitlementRes.ok) {
+              const ent = (await entitlementRes.json()) as {
+                entitlementStatus: string;
+              };
+              if (
+                ent.entitlementStatus === "active" ||
+                ent.entitlementStatus === "trialing"
+              ) {
+                setStatus("Signed in. Redirecting to dashboard...");
+                router.replace("/dashboard");
+              } else {
+                setStatus("Subscription required. Redirecting...");
+                router.replace("/subscribe");
+              }
+            } else {
+              setStatus("Subscription required. Redirecting...");
+              router.replace("/subscribe");
+            }
+          } else {
+            setStatus("Signed in. Redirecting to dashboard...");
+            router.replace("/dashboard");
+          }
         } else {
           setStatus("Welcome back! Let’s finish onboarding.");
           router.replace("/onboarding");
