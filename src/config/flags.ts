@@ -7,9 +7,11 @@ type RuntimeFlags = Partial<
 
 const readRuntimeFlag = (key: keyof RuntimeFlags): string | undefined => {
   if (typeof window !== "undefined") {
-    return (window as unknown as { __BAROPS_FLAGS?: RuntimeFlags }).__BAROPS_FLAGS?.[
-      key
-    ];
+    return (
+      (window as unknown as { __BAROPS_FLAGS?: RuntimeFlags }).__BAROPS_FLAGS?.[
+        key
+      ] ?? undefined
+    );
   }
 
   return process.env[key];
@@ -17,7 +19,10 @@ const readRuntimeFlag = (key: keyof RuntimeFlags): string | undefined => {
 
 const isEnabled = (value: string | undefined, defaultValue = false) => {
   if (value === undefined) return defaultValue;
-  return value === "true";
+  const v = value.trim().toLowerCase();
+  if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
+  if (v === "false" || v === "0" || v === "no" || v === "off") return false;
+  return defaultValue;
 };
 
 // Backward-compatible: previously hard-enabled.
