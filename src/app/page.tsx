@@ -32,6 +32,29 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen">
+
+      {/* ── Landing nav ── */}
+      <nav className="landing-nav">
+        <div className="landing-nav-inner">
+          <Link className="landing-nav-brand" href="/">
+            <div className="app-logo" style={{ width: "30px", height: "30px", fontSize: "0.85rem", borderRadius: "8px" }}>P</div>
+            <div className="app-brand-text">
+              <span className="app-brand-name">Pourdex</span>
+              <span className="app-brand-product">Bar Ops</span>
+            </div>
+          </Link>
+          <div className="landing-nav-links">
+            <a className="landing-nav-link" href="#features">Features</a>
+            <a className="landing-nav-link" href="#how-it-works">How It Works</a>
+            <a className="landing-nav-link" href="#pricing">Pricing</a>
+          </div>
+          <div className="landing-nav-actions">
+            <Link className="btn-ghost btn-sm" href="/login?mode=signin">Sign In</Link>
+            <Link className="btn-primary btn-sm" href="/login?mode=signup">Start Free Trial</Link>
+          </div>
+        </div>
+      </nav>
+
       <section className="hero">
         <div className="hero-bg">
           <div className="hero-gradient-orb hero-gradient-orb-1" />
@@ -39,70 +62,72 @@ export default function HomePage() {
           <div className="hero-gradient-orb hero-gradient-orb-3" />
           <div className="hero-grid-pattern" />
         </div>
-        <div className="hero-content">
-          <div className="hero-badge animate-in">
-            <span className="hero-badge-dot" />
-            Now with Toast, Square & Clover integrations
-          </div>
-          <h1 className="hero-headline animate-in stagger-1">
-            <span className="text-gradient">Stop Guessing.</span>
-            <br />
-            <span className="text-gradient-accent">Start Knowing.</span>
-          </h1>
-          <p className="hero-subheadline animate-in stagger-2">
-            {PRODUCT_NAME} transforms your POS data into predictive
-            intelligence. Know what to order, when to order it, and where your
-            inventory is really going.
-          </p>
-          <div className="hero-cta animate-in stagger-3">
-            <Link className="btn-primary btn-lg btn-glow" href="/login?mode=signup">
-              Start Free Trial <span className="btn-arrow">→</span>
-            </Link>
-            <Link className="btn-secondary btn-lg" href="/login?mode=signin">
-              Sign In
-            </Link>
-            <a className="btn-ghost btn-lg" href="mailto:sales@pourdex.com">
-              Watch Demo
-            </a>
-          </div>
-          <div className="hero-proof animate-in stagger-4">
-          </div>
-        </div>
-        <div className="hero-visual animate-in">
-          <div className="hero-card glass border-gradient">
-            <div className="hero-card-header">
-              <span className="text-overline">Tonight’s Snapshot</span>
-              <h3>Variance & Forecast</h3>
+        <div className="hero-inner">
+          <div className="hero-content">
+            <div className="hero-badge animate-in">
+              <span className="hero-badge-dot" />
+              Now with Toast, Square & Clover integrations
             </div>
-            <div className="hero-card-metrics">
-              <div>
-                <span className="hero-metric-label">Flagged Items</span>
-                <span className="hero-metric-value">7</span>
-                <span className="hero-metric-change positive">
-                  +2 vs last week
-                </span>
-              </div>
-              <div>
-                <span className="hero-metric-label">Forecasted Pour</span>
-                <span className="hero-metric-value">412 oz</span>
-                <span className="hero-metric-change positive">
-                  3% above baseline
-                </span>
-              </div>
+            <h1 className="hero-headline animate-in stagger-1">
+              <span className="text-gradient">Stop Guessing.</span>
+              <br />
+              <span className="text-gradient-accent">Start Knowing.</span>
+            </h1>
+            <p className="hero-subheadline animate-in stagger-2">
+              {PRODUCT_NAME} transforms your POS data into predictive
+              intelligence. Know what to order, when to order it, and where your
+              inventory is really going.
+            </p>
+            <div className="hero-cta animate-in stagger-3">
+              <Link className="btn-primary btn-lg btn-glow" href="/login?mode=signup">
+                Start Free Trial <span className="btn-arrow">→</span>
+              </Link>
+              <Link className="btn-secondary btn-lg" href="/login?mode=signin">
+                Sign In
+              </Link>
+              <a className="btn-ghost btn-lg" href="mailto:sales@pourdex.com">
+                Watch Demo
+              </a>
+            </div>
+            <div className="hero-proof animate-in stagger-4">
             </div>
           </div>
-          <div className="hero-floating-card hero-floating-card-1 glass">
-            <span className="status-dot status-dot-success" />
-            <span>POS Synced</span>
-          </div>
-          <div className="hero-floating-card hero-floating-card-2 glass">
-            <span>⚡</span>
-            <span>3 items need reorder</span>
+          <div className="hero-visual animate-in">
+            <div className="hero-card glass border-gradient">
+              <div className="hero-card-header">
+                <span className="text-overline">Tonight&apos;s Snapshot</span>
+                <h3>Variance &amp; Forecast</h3>
+              </div>
+              <div className="hero-card-metrics">
+                <div>
+                  <span className="hero-metric-label">Flagged Items</span>
+                  <span className="hero-metric-value">7</span>
+                  <span className="hero-metric-change positive">
+                    +2 vs last week
+                  </span>
+                </div>
+                <div>
+                  <span className="hero-metric-label">Forecasted Pour</span>
+                  <span className="hero-metric-value">412 oz</span>
+                  <span className="hero-metric-change positive">
+                    3% above baseline
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="hero-floating-card hero-floating-card-1 glass">
+              <span className="status-dot status-dot-success" />
+              <span>POS Synced</span>
+            </div>
+            <div className="hero-floating-card hero-floating-card-2 glass">
+              <span>⚡</span>
+              <span>3 items need reorder</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="value-props">
+      <section id="features" className="value-props">
         <div className="value-props-header">
           <p className="text-overline text-gradient-accent">Why Bar Ops</p>
           <h2 className="text-h2">Everything You Need to Run Smarter</h2>
@@ -202,7 +227,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="how-it-works">
+      <section id="how-it-works" className="how-it-works">
         <div className="how-it-works-header">
           <p className="text-overline">How It Works</p>
           <h2 className="text-h2">From Raw Data to Real Intelligence</h2>
@@ -282,32 +307,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="final-cta">
-        <div className="final-cta-content">
-          <h2>Ready to See What You’re Missing?</h2>
-          <p>
-            Start a 14-day free trial. No credit card required. Get your first
-            variance report within 48 hours.
-          </p>
-          <div className="final-cta-actions">
-            <Link className="btn-primary btn-lg" href="/login?mode=signup">
-              Start Free Trial
-            </Link>
-            <span className="final-cta-or">or</span>
-            <a className="final-cta-link" href="mailto:sales@pourdex.com">
-              Schedule a Demo →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <footer className="app-footer">
-        <span>{BRAND.legal.copyright}</span>
-      </footer>
-    </main>
-  );
-}
-      <section className="pricing">
+      <section id="pricing" className="pricing">
         <div className="pricing-header">
           <p className="text-overline">Pricing</p>
           <h2 className="text-h2">Simple, Transparent Pricing</h2>
@@ -364,7 +364,7 @@ export default function HomePage() {
           ].map((tier) => (
             <div
               key={tier.name}
-              className={`pricing-card ${tier.primary ? "pricing-card-featured" : ""}`}
+              className={`pricing-card${tier.primary ? " pricing-card-featured" : ""}`}
             >
               {tier.primary ? <div className="pricing-badge">Most Popular</div> : null}
               <div className="pricing-card-header">
@@ -383,15 +383,15 @@ export default function HomePage() {
                 ))}
               </ul>
               {tier.primary ? (
-                <Link className="btn-primary" href="/login?mode=signup" style={{ width: "100%" }}>
+                <Link className="btn-primary" href="/login?mode=signup" style={{ width: "100%", display: "block", textAlign: "center" }}>
                   {tier.cta}
                 </Link>
               ) : tier.cta === "Contact Sales" ? (
-                <a className="btn-secondary" href="mailto:sales@pourdex.com" style={{ width: "100%" }}>
+                <a className="btn-secondary" href="mailto:sales@pourdex.com" style={{ width: "100%", display: "block", textAlign: "center" }}>
                   {tier.cta}
                 </a>
               ) : (
-                <Link className="btn-secondary" href="/login?mode=signup" style={{ width: "100%" }}>
+                <Link className="btn-secondary" href="/login?mode=signup" style={{ width: "100%", display: "block", textAlign: "center" }}>
                   {tier.cta}
                 </Link>
               )}
@@ -399,3 +399,29 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      <section className="final-cta">
+        <div className="final-cta-content">
+          <h2>Ready to See What You&apos;re Missing?</h2>
+          <p>
+            Start a 14-day free trial. No credit card required. Get your first
+            variance report within 48 hours.
+          </p>
+          <div className="final-cta-actions">
+            <Link className="btn-primary btn-lg" href="/login?mode=signup">
+              Start Free Trial
+            </Link>
+            <span className="final-cta-or">or</span>
+            <a className="final-cta-link" href="mailto:sales@pourdex.com">
+              Schedule a Demo →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer className="app-footer">
+        <span>{BRAND.legal.copyright}</span>
+      </footer>
+    </main>
+  );
+}

@@ -819,13 +819,23 @@ textarea:focus-visible {
 
 .hero {
   min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--space-20) + 68px) var(--space-8) var(--space-20);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-inner {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-12);
   align-items: center;
-  padding: var(--space-20) var(--space-8);
+  max-width: 1200px;
+  width: 100%;
   position: relative;
-  overflow: hidden;
+  z-index: 1;
 }
 
 .hero-bg {
@@ -1496,7 +1506,9 @@ textarea:focus-visible {
 
 @media (max-width: 768px) {
   .hero {
-    padding: var(--space-12) var(--space-4);
+    padding: calc(var(--space-12) + 68px) var(--space-4) var(--space-12);
+  }
+  .hero-inner {
     grid-template-columns: 1fr;
   }
   .hero-headline {
@@ -2091,4 +2103,79 @@ textarea:focus-visible {
   padding: var(--space-3) var(--space-4);
   font-size: var(--text-sm);
   color: #86efac;
+}
+
+/* ─────────────────────────────────────────────
+   LANDING PAGE NAVIGATION
+   ───────────────────────────────────────────── */
+.landing-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(11, 16, 22, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.landing-nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-3_5) var(--space-8);
+}
+
+.landing-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.landing-nav-brand .app-logo {
+  width: 30px;
+  height: 30px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.landing-nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  flex: 1;
+}
+
+.landing-nav-link {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.landing-nav-link:hover {
+  color: var(--color-text-primary);
+}
+
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .landing-nav-links {
+    display: none;
+  }
+  .landing-nav-inner {
+    padding: var(--space-3_5) var(--space-4);
+    gap: var(--space-4);
+  }
 }
