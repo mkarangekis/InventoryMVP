@@ -318,28 +318,14 @@ export default function HomePage() {
         <div className="pricing-cards">
           {[
             {
-              name: "Starter",
-              price: "$149",
-              desc: "For single-location bars",
-              features: [
-                "1 POS integration",
-                "Up to 500 SKUs",
-                "Weekly forecasts",
-                "Basic variance reports",
-                "Email support",
-              ],
-              primary: false,
-              cta: "Start Free Trial",
-            },
-            {
-              name: "Professional",
-              price: "$299",
-              desc: "For serious operators",
+              name: "Single Bar",
+              price: "$500",
+              desc: "Everything you need for one location",
               features: [
                 "1 POS integration",
                 "Unlimited SKUs",
                 "Daily forecasts",
-                "Advanced variance & shrinkage",
+                "Variance & shrinkage detection",
                 "Auto ordering recommendations",
                 "Priority support",
               ],
