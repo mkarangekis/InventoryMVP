@@ -64,11 +64,25 @@ export default function AuthedLayout({
   }, [router]);
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-6 py-10">Loading...</main>;
+    return (
+      <div className="page-loading">
+        <div className="page-loading-content">
+          <div className="page-loading-logo">P</div>
+          <p className="page-loading-text">Loading workspace…</p>
+        </div>
+      </div>
+    );
   }
 
   if (!token) {
-    return <main className="mx-auto max-w-5xl px-6 py-10">Loading...</main>;
+    return (
+      <div className="page-loading">
+        <div className="page-loading-content">
+          <div className="page-loading-logo">P</div>
+          <p className="page-loading-text">Authenticating…</p>
+        </div>
+      </div>
+    );
   }
 
   if (isEnterpriseUIEnabled()) {

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
-import { PRODUCT_NAME } from "@/config/brand";
+import { COMPANY_NAME, PRODUCT_NAME } from "@/config/brand";
 import { isSubscriptionGatingEnabled } from "@/config/flags";
 
 export default function LoginPage() {
@@ -173,91 +173,160 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="text-2xl font-semibold">
-        {mode === "signup" ? "Create account" : "Sign in"} to {PRODUCT_NAME}
-      </h1>
-      <p className="mt-2 text-sm text-gray-600">
-        Use a username and password to access your account.
-      </p>
-      <div className="mt-4 flex gap-2">
-        <button
-          className={`rounded-full px-4 py-1 text-xs font-semibold ${
-            mode === "signin"
-              ? "bg-black text-white"
-              : "border border-gray-300 text-gray-700"
-          }`}
-          type="button"
-          onClick={() => setMode("signin")}
-        >
-          Sign in
-        </button>
-        <button
-          className={`rounded-full px-4 py-1 text-xs font-semibold ${
-            mode === "signup"
-              ? "bg-black text-white"
-              : "border border-gray-300 text-gray-700"
-          }`}
-          type="button"
-          onClick={() => setMode("signup")}
-        >
-          Sign up
-        </button>
+    <main className="auth-layout">
+      <div className="auth-bg">
+        <div className="hero-gradient-orb hero-gradient-orb-1" />
+        <div className="hero-gradient-orb hero-gradient-orb-2" />
+        <div className="hero-grid-pattern" />
       </div>
 
-      <form className="mt-6 space-y-4" onSubmit={handleAuth}>
-        {mode === "signup" ? (
-          <label className="block text-sm font-medium text-gray-700">
-            Username
-            <input
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-              type="text"
-              required
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-            />
-          </label>
-        ) : null}
-        <label className="block text-sm font-medium text-gray-700">
-          Email
-          <input
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
-
-        <label className="block text-sm font-medium text-gray-700">
-          Password
-          <input
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-            type="password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-        </label>
-
-        <div className="space-y-2">
-          <button
-            className="w-full rounded bg-black px-4 py-2 text-sm font-semibold text-white"
-            type="submit"
-            disabled={loading}
-          >
-            {loading
-              ? "Working..."
-              : mode === "signup"
-                ? "Start free trial"
-                : "Sign in"}
-          </button>
+      <div className="auth-container">
+        <div className="auth-brand">
+          <div className="app-logo">P</div>
+          <div className="app-brand-text">
+            <span className="app-brand-name">{COMPANY_NAME}</span>
+            <span className="app-brand-product">{PRODUCT_NAME}</span>
+          </div>
         </div>
-      </form>
 
-      {status ? (
-        <p className="mt-4 text-sm text-gray-700">{status}</p>
-      ) : null}
+        <div className="auth-card">
+          <div className="auth-mode-toggle">
+            <button
+              type="button"
+              className={`auth-mode-btn${mode === "signin" ? " auth-mode-btn-active" : ""}`}
+              onClick={() => setMode("signin")}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={`auth-mode-btn${mode === "signup" ? " auth-mode-btn-active" : ""}`}
+              onClick={() => setMode("signup")}
+            >
+              Create account
+            </button>
+          </div>
+
+          <h1 className="auth-title">
+            {mode === "signup" ? "Create your account" : "Welcome back"}
+          </h1>
+          <p className="auth-subtitle">
+            {mode === "signup"
+              ? "Start your 14-day free trial. No credit card required."
+              : "Sign in to your intelligence dashboard."}
+          </p>
+
+          <form className="auth-form" onSubmit={handleAuth}>
+            {mode === "signup" ? (
+              <div className="auth-form-group">
+                <label className="auth-label" htmlFor="username">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  className="input"
+                  type="text"
+                  required
+                  placeholder="yourname"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                />
+              </div>
+            ) : null}
+
+            <div className="auth-form-group">
+              <label className="auth-label" htmlFor="email">
+                Email address
+              </label>
+              <input
+                id="email"
+                className="input"
+                type="email"
+                required
+                placeholder="you@yourbar.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+
+            <div className="auth-form-group">
+              <label className="auth-label" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                className="input"
+                type="password"
+                required
+                placeholder={
+                  mode === "signup" ? "Create a strong password" : "Your password"
+                }
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
+
+            <button
+              className="btn-primary auth-submit"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="auth-loading">
+                  <span className="spinner spinner-sm" />
+                  {mode === "signup" ? "Creating account…" : "Signing in…"}
+                </span>
+              ) : mode === "signup" ? (
+                "Start Free Trial →"
+              ) : (
+                "Sign In →"
+              )}
+            </button>
+          </form>
+
+          {status ? (
+            <div
+              className={`auth-status${
+                status.toLowerCase().includes("error") ||
+                status.toLowerCase().includes("billing")
+                  ? " auth-status-error"
+                  : status.toLowerCase().includes("welcome") ||
+                      status.toLowerCase().includes("signed in")
+                    ? " auth-status-success"
+                    : ""
+              }`}
+            >
+              {status}
+            </div>
+          ) : null}
+
+          <div className="auth-footer">
+            {mode === "signin" ? (
+              <span>
+                No account?{" "}
+                <button
+                  type="button"
+                  className="auth-footer-link"
+                  onClick={() => setMode("signup")}
+                >
+                  Start free trial
+                </button>
+              </span>
+            ) : (
+              <span>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  className="auth-footer-link"
+                  onClick={() => setMode("signin")}
+                >
+                  Sign in
+                </button>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

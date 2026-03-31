@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PRODUCT_NAME } from "@/config/brand";
+import { COMPANY_NAME, PRODUCT_NAME } from "@/config/brand";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import type { Entitlement } from "@/lib/billing/entitlement";
 
@@ -142,105 +142,152 @@ export default function SubscribePage() {
     status === "inactive" || status === "canceled" || status === "past_due";
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16">
-      <div className="rounded-2xl border border-[var(--enterprise-border,#e5e7eb)] bg-white p-6">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-          {PRODUCT_NAME}
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold">{cta.title}</h1>
-        <p className="mt-2 text-sm text-gray-600">{cta.subtitle}</p>
+    <main className="auth-layout">
+      <div className="auth-bg">
+        <div className="hero-gradient-orb hero-gradient-orb-1" />
+        <div className="hero-gradient-orb hero-gradient-orb-2" />
+        <div className="hero-grid-pattern" />
+      </div>
 
-        {loading ? (
-          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-            Loading…
+      <div className="auth-container" style={{ maxWidth: "520px" }}>
+        <div className="auth-brand">
+          <div className="app-logo">P</div>
+          <div className="app-brand-text">
+            <span className="app-brand-name">{COMPANY_NAME}</span>
+            <span className="app-brand-product">{PRODUCT_NAME}</span>
           </div>
-        ) : loadError ? (
-          <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p className="font-semibold">Couldn’t load billing status</p>
-            <p className="mt-1 break-words">{loadError}</p>
-            <button
-              className="mt-3 rounded border border-amber-300 bg-white px-3 py-2 text-xs font-semibold"
-              onClick={() => void load()}
+        </div>
+
+        <div className="auth-card">
+          <p className="text-overline" style={{ color: "var(--color-accent-primary)" }}>
+            {PRODUCT_NAME}
+          </p>
+          <h1 className="auth-title" style={{ marginTop: "var(--space-2)" }}>
+            {cta.title}
+          </h1>
+          <p className="auth-subtitle">{cta.subtitle}</p>
+
+          {loading ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-3)",
+                padding: "var(--space-5) 0",
+                color: "#9ca3af",
+                fontSize: "var(--text-sm)",
+              }}
             >
-              Retry
-            </button>
-          </div>
-        ) : !token ? (
-          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-            <p className="font-semibold">Sign in required</p>
-            <p className="mt-1">
-              Please sign in to manage your subscription.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                className="rounded bg-black px-3 py-2 text-xs font-semibold text-white"
-                href="/login?mode=signin"
-              >
-                Sign in
-              </Link>
-              <Link
-                className="rounded border border-gray-300 px-3 py-2 text-xs font-semibold"
-                href="/login?mode=signup"
-              >
-                Create account
-              </Link>
+              <span className="spinner spinner-sm" />
+              Checking subscription status…
             </div>
-          </div>
-        ) : (
-          <div className="mt-6 space-y-3">
-            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+          ) : loadError ? (
+            <div className="auth-status auth-status-error" style={{ marginTop: "var(--space-4)" }}>
+              <p style={{ fontWeight: 600, marginBottom: "var(--space-1)" }}>
+                Couldn&apos;t load billing status
+              </p>
+              <p style={{ wordBreak: "break-word" }}>{loadError}</p>
+              <button
+                className="btn-secondary btn-sm"
+                style={{ marginTop: "var(--space-3)" }}
+                onClick={() => void load()}
+              >
+                Retry
+              </button>
+            </div>
+          ) : !token ? (
+            <div className="auth-status auth-status-error" style={{ marginTop: "var(--space-4)" }}>
+              <p style={{ fontWeight: 600, marginBottom: "var(--space-1)" }}>
+                Sign in required
+              </p>
+              <p>Please sign in to manage your subscription.</p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "var(--space-2)",
+                  marginTop: "var(--space-3)",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Link className="btn-primary btn-sm" href="/login?mode=signin">
+                  Sign in
+                </Link>
+                <Link className="btn-secondary btn-sm" href="/login?mode=signup">
+                  Create account
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div
+              style={{
+                marginTop: "var(--space-5)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "var(--space-3)",
+              }}
+            >
+              <div className="sub-status-block">
                 <div>
-                  <div className="text-xs uppercase text-gray-500">
-                    Current status
-                  </div>
-                  <div className="mt-1 font-semibold">{status}</div>
+                  <div className="sub-status-label">Current status</div>
+                  <div className="sub-status-value">{status}</div>
                 </div>
                 {entitlement?.trialEnd ? (
-                  <div className="text-xs text-gray-600">
-                    Trial ends{" "}
-                    {new Date(entitlement.trialEnd).toLocaleDateString()}
+                  <div className="sub-status-date">
+                    Trial ends {new Date(entitlement.trialEnd).toLocaleDateString()}
                   </div>
                 ) : entitlement?.currentPeriodEnd ? (
-                  <div className="text-xs text-gray-600">
+                  <div className="sub-status-date">
                     Period ends{" "}
                     {new Date(entitlement.currentPeriodEnd).toLocaleDateString()}
                   </div>
                 ) : null}
               </div>
+
+              {showActions ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)" }}>
+                  <button
+                    className="btn-primary"
+                    onClick={handleStartTrial}
+                    disabled={checkout.loading}
+                  >
+                    {checkout.loading ? (
+                      <span className="auth-loading">
+                        <span className="spinner spinner-sm" />
+                        Redirecting…
+                      </span>
+                    ) : (
+                      "Start 14-day free trial →"
+                    )}
+                  </button>
+                  <button
+                    className="btn-secondary"
+                    onClick={handleManageBilling}
+                    disabled={portal.loading}
+                  >
+                    {portal.loading ? "Opening…" : "Manage billing"}
+                  </button>
+                </div>
+              ) : (
+                <div className="sub-active-block">
+                  Your subscription is active. Redirecting to dashboard…
+                </div>
+              )}
+
+              {checkout.error ? (
+                <div className="auth-status auth-status-error">{checkout.error}</div>
+              ) : null}
+              {portal.error ? (
+                <div className="auth-status auth-status-error">{portal.error}</div>
+              ) : null}
             </div>
+          )}
 
-            {showActions ? (
-              <div className="flex flex-wrap gap-2">
-                <button
-                  className="rounded bg-black px-4 py-2 text-sm font-semibold text-white"
-                  onClick={handleStartTrial}
-                  disabled={checkout.loading}
-                >
-                  {checkout.loading ? "Redirecting…" : "Start 14-day free trial"}
-                </button>
-                <button
-                  className="rounded border border-gray-300 px-4 py-2 text-sm font-semibold"
-                  onClick={handleManageBilling}
-                  disabled={portal.loading}
-                >
-                  {portal.loading ? "Opening…" : "Manage billing"}
-                </button>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-                If this looks wrong, contact support.
-              </div>
-            )}
-
-            {checkout.error ? (
-              <p className="text-sm text-amber-900">{checkout.error}</p>
-            ) : null}
-            {portal.error ? (
-              <p className="text-sm text-amber-900">{portal.error}</p>
-            ) : null}
+          <div className="auth-footer">
+            <Link href="/login" className="auth-footer-link">
+              ← Back to sign in
+            </Link>
           </div>
-        )}
+        </div>
       </div>
     </main>
   );
