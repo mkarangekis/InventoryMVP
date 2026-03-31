@@ -31,7 +31,7 @@ export default function HomePage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen">
+    <main className="landing-page min-h-screen">
 
       {/* ── Landing nav ── */}
       <nav className="landing-nav">
@@ -89,7 +89,21 @@ export default function HomePage() {
                 Watch Demo
               </a>
             </div>
-            <div className="hero-proof animate-in stagger-4">
+            <div className="hero-stats animate-in stagger-4">
+              <div className="hero-stat">
+                <span className="hero-stat-value">85%+</span>
+                <span className="hero-stat-label">Forecast accuracy</span>
+              </div>
+              <div className="hero-stat-divider" />
+              <div className="hero-stat">
+                <span className="hero-stat-value">$1,200</span>
+                <span className="hero-stat-label">Avg variance identified / mo</span>
+              </div>
+              <div className="hero-stat-divider" />
+              <div className="hero-stat">
+                <span className="hero-stat-value">30%</span>
+                <span className="hero-stat-label">Fewer stockouts</span>
+              </div>
             </div>
           </div>
           <div className="hero-visual animate-in">
@@ -405,8 +419,44 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="app-footer">
-        <span>{BRAND.legal.copyright}</span>
+      <footer className="landing-footer">
+        <div className="landing-footer-inner">
+          <div>
+            <div className="landing-footer-brand">
+              <div className="app-logo" style={{ width: "32px", height: "32px", fontSize: "0.9rem", borderRadius: "9px" }}>P</div>
+              <div className="app-brand-text">
+                <span className="app-brand-name">Pourdex</span>
+                <span className="app-brand-product">Bar Ops</span>
+              </div>
+            </div>
+            <p className="landing-footer-tagline">{BRAND.company.tagline} for independent bars and restaurants.</p>
+          </div>
+          <div className="landing-footer-links">
+            <div className="landing-footer-col">
+              <p className="landing-footer-col-title">Product</p>
+              <a className="landing-footer-link" href="#features">Features</a>
+              <a className="landing-footer-link" href="#how-it-works">How It Works</a>
+              <a className="landing-footer-link" href="#pricing">Pricing</a>
+            </div>
+            <div className="landing-footer-col">
+              <p className="landing-footer-col-title">Company</p>
+              <a className="landing-footer-link" href={`mailto:${BRAND.contact.sales}`}>Contact Sales</a>
+              <a className="landing-footer-link" href={`mailto:${BRAND.contact.support}`}>Support</a>
+            </div>
+            <div className="landing-footer-col">
+              <p className="landing-footer-col-title">Account</p>
+              <Link className="landing-footer-link" href="/login?mode=signin">Sign In</Link>
+              <Link className="landing-footer-link" href="/login?mode=signup">Start Free Trial</Link>
+            </div>
+          </div>
+        </div>
+        <div className="landing-footer-bottom">
+          <span>{BRAND.legal.copyright}</span>
+          <div className="landing-footer-legal">
+            <a className="landing-footer-link" href={BRAND.legal.privacyUrl}>Privacy</a>
+            <a className="landing-footer-link" href={BRAND.legal.termsUrl}>Terms</a>
+          </div>
+        </div>
       </footer>
     </main>
   );
