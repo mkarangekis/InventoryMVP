@@ -1,6 +1,7 @@
 import postgres from "postgres";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isDemoEmail } from "@/lib/demo";
+import { FORECAST_HISTORY_DAYS, FORECAST_HORIZON_DAYS } from "@/config/analytics";
 
 type RequestBody = {
   date?: string;
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
 
     await sql`
       delete from demand_forecasts_daily
-      where forecast_date between ${runDate}::date and (${runDate}::date + interval '13 days')
+      where forecast_date between ${runDate}::date and (${runDate}::date + ${FORECAST_HORIZON_DAYS} * interval '1 day')
         and tenant_id = ${tenantId}
         and (${locationId}::uuid is null or location_id = ${locationId});
     `;
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
           on ii.ingredient_id = tud.ingredient_id
           and ii.location_id = tud.location_id
           and ii.tenant_id = tud.tenant_id
-        where tud.usage_date >= ${runDate}::date - interval '56 days'
+        where tud.usage_date >= ${runDate}::date - ${FORECAST_HISTORY_DAYS} * interval '1 day'
           and tud.usage_date < ${runDate}::date
           and tud.tenant_id = ${tenantId}
           and (${locationId}::uuid is null or tud.location_id = ${locationId})
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
       ),
       forecast_dates as (
         select (${runDate}::date + gs.day)::date as forecast_date
-        from generate_series(0, 13) as gs(day)
+        from generate_series(0, ${FORECAST_HORIZON_DAYS}) as gs(day)
       ),
       expanded as (
         select

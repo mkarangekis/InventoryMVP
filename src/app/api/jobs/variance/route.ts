@@ -1,19 +1,15 @@
 import postgres from "postgres";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { isDemoEmail } from "@/lib/demo";
+import {
+  VARIANCE_HIGH_PCT,
+  VARIANCE_MEDIUM_PCT,
+  VARIANCE_LOW_PCT,
+} from "@/config/analytics";
 
 type RequestBody = {
   locationId?: string;
 };
-
-const severityCase = `
-  case
-    when v.variance_pct >= 0.15 then 'high'
-    when v.variance_pct >= 0.10 then 'medium'
-    when v.variance_pct >= 0.05 then 'low'
-    else 'none'
-  end
-`;
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -185,7 +181,12 @@ export async function POST(request: Request) {
         v.actual_remaining_oz,
         v.variance_oz,
         v.variance_pct,
-        ${sql.unsafe(severityCase)} as severity,
+        case
+          when v.variance_pct >= ${VARIANCE_HIGH_PCT} then 'high'
+          when v.variance_pct >= ${VARIANCE_MEDIUM_PCT} then 'medium'
+          when v.variance_pct >= ${VARIANCE_LOW_PCT} then 'low'
+          else 'none'
+        end as severity,
         now() as created_at
       from variance_calc v
       on conflict do nothing;

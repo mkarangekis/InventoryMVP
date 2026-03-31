@@ -110,7 +110,8 @@ export async function GET(request: Request) {
         and o.tenant_id = oi.tenant_id
       where o.closed_at between ${fromDate}::timestamptz and ${toDate}::timestamptz
         and o.location_id = any(${scopedLocationIds})
-      group by oi.menu_item_id;
+      group by oi.menu_item_id
+      limit 500;
     `;
 
     const costs = await sql`

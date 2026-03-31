@@ -5,6 +5,15 @@ import { parseCsv } from "@/lib/pos/csv";
 
 const requiredFiles = ["orders", "order_items", "modifiers", "voids_comps"];
 
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+
+const isValidCsvFile = (file: File): boolean => {
+  if (file.size > MAX_FILE_SIZE_BYTES) return false;
+  const name = file.name?.toLowerCase() ?? "";
+  const type = file.type?.toLowerCase() ?? "";
+  return name.endsWith(".csv") || type === "text/csv" || type === "text/plain";
+};
+
 const parseNumber = (value: string) => {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -46,8 +55,15 @@ export async function POST(request: Request) {
   }
 
   for (const key of requiredFiles) {
-    if (!formData.get(key)) {
+    const file = formData.get(key);
+    if (!file) {
       return new Response(`Missing file: ${key}`, { status: 400 });
+    }
+    if (!(file instanceof File) || !isValidCsvFile(file)) {
+      return new Response(
+        `Invalid file for "${key}": must be a CSV under 10 MB`,
+        { status: 400 },
+      );
     }
   }
 
