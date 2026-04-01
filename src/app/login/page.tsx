@@ -105,7 +105,14 @@ export default function LoginPage() {
 
     if (errorMessage) {
       console.error("Auth error", errorMessage);
-      setStatus(`Error: ${errorMessage}`);
+      const friendlyMessage = errorMessage.toLowerCase().includes("email not confirmed")
+        ? "Check your inbox — we sent you a confirmation link. Click it, then sign in."
+        : errorMessage.toLowerCase().includes("invalid login credentials") || errorMessage.toLowerCase().includes("invalid credentials")
+        ? "Incorrect email or password."
+        : errorMessage.toLowerCase().includes("user already registered")
+        ? "An account with this email already exists. Try signing in instead."
+        : `Error: ${errorMessage}`;
+      setStatus(friendlyMessage);
     } else {
       const { data } = await supabaseBrowser.auth.getSession();
       const token = data.session?.access_token;
@@ -113,7 +120,7 @@ export default function LoginPage() {
       if (!token) {
         setStatus(
           mode === "signup"
-            ? "Account created, but email confirmation is required. Disable confirm email in Supabase Auth to auto-login."
+            ? "Almost there! Check your inbox for a confirmation link, then sign in."
             : "No active session. Check your credentials.",
         );
         setLoading(false);
@@ -288,12 +295,13 @@ export default function LoginPage() {
             <div
               className={`auth-status${
                 status.toLowerCase().includes("error") ||
-                status.toLowerCase().includes("billing")
+                status.toLowerCase().includes("billing") ||
+                status.toLowerCase().includes("incorrect")
                   ? " auth-status-error"
                   : status.toLowerCase().includes("welcome") ||
                       status.toLowerCase().includes("signed in")
                     ? " auth-status-success"
-                    : ""
+                    : " auth-status-info"
               }`}
             >
               {status}

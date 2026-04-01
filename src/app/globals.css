@@ -1722,6 +1722,12 @@ textarea:focus-visible {
   color: #86efac;
 }
 
+.auth-status-info {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
 .auth-footer {
   margin-top: var(--space-6);
   text-align: center;
