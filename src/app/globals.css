@@ -376,17 +376,24 @@ textarea:focus-visible {
 }
 
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 40px;
   padding: 0 var(--space-4);
   min-width: 80px;
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
+  font-family: inherit;
   line-height: 1;
   background-color: var(--color-accent-primary);
   color: var(--color-accent-primary-text);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   transition: all 150ms ease;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .btn-primary:hover {
@@ -419,16 +426,24 @@ textarea:focus-visible {
 }
 
 .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 40px;
   padding: 0 var(--space-4);
   min-width: 80px;
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
+  font-family: inherit;
+  line-height: 1;
   background-color: transparent;
   color: var(--color-text-primary);
   border: 1px solid var(--color-border-emphasis);
   border-radius: var(--radius-md);
   transition: all 150ms ease;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .btn-secondary:hover {
@@ -453,15 +468,23 @@ textarea:focus-visible {
 }
 
 .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 40px;
   padding: 0 var(--space-3);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
+  font-family: inherit;
+  line-height: 1;
   background-color: transparent;
   color: var(--color-text-secondary);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   transition: all 150ms ease;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .btn-ghost:hover {
