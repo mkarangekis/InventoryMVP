@@ -1613,6 +1613,7 @@ textarea:focus-visible {
 
 .auth-mode-toggle {
   display: flex;
+  align-items: center;
   width: 100%;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid #2a3240;
@@ -1624,20 +1625,26 @@ textarea:focus-visible {
 
 .auth-mode-btn {
   flex: 1;
-  height: 32px;
+  height: 36px;
   padding: 0;
+  margin: 0;
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
+  font-family: inherit;
+  line-height: 1;
   color: #9ca3af;
   background: transparent;
   border: none;
   cursor: pointer;
   transition: all 150ms ease;
-  text-align: center;
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  vertical-align: middle;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .auth-mode-btn:hover {
