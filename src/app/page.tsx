@@ -187,7 +187,7 @@ export default function LandingPage() {
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                   </svg>
                 </Link>
-                <a className="btn btn--ghost btn--lg" href="mailto:sales@pourdex.com">Schedule a Demo</a>
+                <a className="btn btn--ghost btn--lg" href="mailto:pourdex@augmentationcg.com">Schedule a Demo</a>
               </div>
 
               <div className="lp-hero__stats gs-reveal">
@@ -484,7 +484,7 @@ export default function LandingPage() {
                   <li>SLA guarantees</li>
                   <li>On-site training</li>
                 </ul>
-                <a className="btn btn--ghost" href="mailto:sales@pourdex.com">Contact Sales</a>
+                <a className="btn btn--ghost" href="mailto:pourdex@augmentationcg.com">Contact Sales</a>
               </div>
             </div>
           </div>
@@ -503,7 +503,7 @@ export default function LandingPage() {
               <div className="lp-final-cta__actions">
                 <Link className="btn btn--primary btn--lg" href="/login?mode=signup">Start Free Trial</Link>
                 <span className="lp-final-cta__or">or</span>
-                <a className="lp-final-cta__link" href="mailto:sales@pourdex.com">Schedule a Demo →</a>
+                <a className="lp-final-cta__link" href="mailto:pourdex@augmentationcg.com">Schedule a Demo →</a>
               </div>
             </div>
           </div>
@@ -538,8 +538,8 @@ export default function LandingPage() {
               </div>
               <div>
                 <p className="lp-footer__col-title">Company</p>
-                <a className="lp-footer__link" href="mailto:sales@pourdex.com">Contact Sales</a>
-                <a className="lp-footer__link" href="mailto:support@pourdex.com">Support</a>
+                <a className="lp-footer__link" href="mailto:pourdex@augmentationcg.com">Contact Sales</a>
+                <a className="lp-footer__link" href="mailto:pourdex@augmentationcg.com">Support</a>
               </div>
               <div>
                 <p className="lp-footer__col-title">Account</p>
