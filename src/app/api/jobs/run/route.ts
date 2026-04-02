@@ -191,7 +191,8 @@ async function runNixtlaForecast(
   }).filter(Boolean);
 
   if (rows.length > 0) {
-    await sql`insert into demand_forecasts_daily ${sql(rows as Parameters<typeof sql>[0])} on conflict do nothing`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await sql`insert into demand_forecasts_daily ${sql(rows as any[])} on conflict do nothing`;
   }
 }
 

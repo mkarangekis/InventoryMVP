@@ -209,7 +209,7 @@ const run = async () => {
           for (let i = 0; i < qualifiedSeries.length; i += BATCH) {
             const batch = qualifiedSeries.slice(i, i + BATCH);
             const df: NixtlaRow[] = batch.flatMap((s) => s.rows);
-            const nixtlaEvents: NixtlaEvent[] = events.map((e: { unique_id: string; ds: string; impact_pct: number }) => ({ unique_id: e.unique_id, ds: e.ds, impact_pct: e.impact_pct }));
+            const nixtlaEvents: NixtlaEvent[] = events.map((e) => ({ unique_id: String(e.unique_id), ds: String(e.ds), impact_pct: Number(e.impact_pct) }));
             try {
               const preds = await callNixtla(df, HORIZON_DAYS, nixtlaEvents.length ? nixtlaEvents : undefined);
               allForecasts.push(...preds);

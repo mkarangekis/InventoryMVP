@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       .gte("created_at", since),
     buildInsightContext({
       tenantId: scope.tenantId,
-      locationId: scope.locationId ?? scope.scopedLocationIds[0],
+      locationId: scope.locationId ?? scope.scopedLocationIds[0] ?? "",
       locationIds: scope.scopedLocationIds,
     }),
   ]);

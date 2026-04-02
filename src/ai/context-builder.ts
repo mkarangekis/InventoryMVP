@@ -41,13 +41,14 @@ export type InsightContext = {
 };
 
 type ContextOptions = {
-  tenantId: string;
+  tenantId: string | null;
   locationId: string;
   locationIds?: string[]; // for multi-location queries
 };
 
 export async function buildInsightContext(opts: ContextOptions): Promise<InsightContext> {
-  const { tenantId, locationId } = opts;
+  const tenantId = opts.tenantId ?? "";
+  const locationId = opts.locationId;
   const locationIds = opts.locationIds ?? [locationId];
 
   // Run all queries in parallel

@@ -34,7 +34,7 @@ export async function GET(request: Request) {
       .gte("week_start_date", since),
     buildInsightContext({
       tenantId: scope.tenantId,
-      locationId: scope.locationId ?? scope.scopedLocationIds[0],
+      locationId: scope.locationId ?? scope.scopedLocationIds[0] ?? "",
       locationIds: scope.scopedLocationIds,
     }),
   ]);

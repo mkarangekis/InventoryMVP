@@ -57,7 +57,7 @@ export async function GET(request: Request) {
   // Build insight context for reorder context
   const ctx = await buildInsightContext({
     tenantId: scope.tenantId,
-    locationId: scope.locationId ?? scope.scopedLocationIds[0],
+    locationId: scope.locationId ?? scope.scopedLocationIds[0] ?? "",
     locationIds: scope.scopedLocationIds,
   });
 
