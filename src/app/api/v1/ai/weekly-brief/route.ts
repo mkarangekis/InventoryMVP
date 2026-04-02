@@ -6,110 +6,111 @@ import { runAiFeature, hashInput } from "@/ai/run";
 import { validateWeeklyBrief } from "@/ai/validators";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { demoAiWeeklyBrief } from "@/lib/demo";
+import { buildInsightContext } from "@/ai/context-builder";
 
 const daysAgo = (count: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() - count);
-  return date.toISOString();
+  const d = new Date();
+  d.setDate(d.getDate() - count);
+  return d.toISOString();
 };
 
 export async function GET(request: Request) {
   const scope = await getUserScope(request);
   if (!scope.ok) return scope.response;
 
-  if (scope.isDemo) {
-    return Response.json(demoAiWeeklyBrief);
-  }
-
-  if (!aiFeatureFlags.weeklyBrief()) {
-    return new Response("Not found", { status: 404 });
-  }
+  if (scope.isDemo) return Response.json(demoAiWeeklyBrief);
+  if (!aiFeatureFlags.weeklyBrief()) return new Response("Not found", { status: 404 });
 
   if (scope.scopedLocationIds.length === 0) {
+    return Response.json(fallbackWeeklyBrief("No locations available for weekly brief."));
+  }
+
+  const weekStart  = daysAgo(7);
+  const prevStart  = daysAgo(14);
+
+  const [orders, prevOrders, varianceRes, snapshots, ctx] = await Promise.all([
+    supabaseAdmin
+      .from("pos_orders")
+      .select("total,closed_at")
+      .in("location_id", scope.scopedLocationIds)
+      .gte("closed_at", weekStart),
+    supabaseAdmin
+      .from("pos_orders")
+      .select("total,closed_at")
+      .in("location_id", scope.scopedLocationIds)
+      .gte("closed_at", prevStart)
+      .lt("closed_at", weekStart),
+    supabaseAdmin
+      .from("variance_flags")
+      .select("severity,z_score,inventory_item_id")
+      .in("location_id", scope.scopedLocationIds)
+      .gte("week_start_date", weekStart),
+    supabaseAdmin
+      .from("inventory_snapshots")
+      .select("id")
+      .in("location_id", scope.scopedLocationIds)
+      .gte("snapshot_date", weekStart),
+    buildInsightContext({
+      tenantId: scope.tenantId,
+      locationId: scope.locationId ?? scope.scopedLocationIds[0],
+      locationIds: scope.scopedLocationIds,
+    }),
+  ]);
+
+  const revenue     = (orders.data ?? []).reduce((s, r) => s + Number(r.total ?? 0), 0);
+  const prevRevenue = (prevOrders.data ?? []).reduce((s, r) => s + Number(r.total ?? 0), 0);
+  const varFlags    = varianceRes.data ?? [];
+  const highFlags   = varFlags.filter((f) => f.severity === "high").length;
+
+  if (revenue === 0 && varFlags.length === 0 && (snapshots.data ?? []).length === 0) {
     return Response.json(
-      fallbackWeeklyBrief("No locations available for weekly brief."),
+      fallbackWeeklyBrief("Not enough data this week yet. Connect POS and run inventory counts to unlock insights."),
     );
   }
 
-  const weekStart = daysAgo(7);
-  const prevWeekStart = daysAgo(14);
+  const userPrompt = `
+Write a weekly bar operations brief for ${ctx.location_name} (${weekStart.slice(0, 10)} to ${ctx.as_of_date}).
 
-  const orders = await supabaseAdmin
-    .from("pos_orders")
-    .select("total,closed_at")
-    .in("location_id", scope.scopedLocationIds)
-    .gte("closed_at", weekStart);
+REVENUE:
+- This week: $${revenue.toFixed(2)}
+- Last week: $${prevRevenue.toFixed(2)}
+- Change: ${prevRevenue > 0 ? `${(((revenue - prevRevenue) / prevRevenue) * 100).toFixed(1)}%` : "N/A"}
 
-  const prevOrders = await supabaseAdmin
-    .from("pos_orders")
-    .select("total,closed_at")
-    .in("location_id", scope.scopedLocationIds)
-    .gte("closed_at", prevWeekStart)
-    .lt("closed_at", weekStart);
+VARIANCE SUMMARY:
+- Total flags this week: ${varFlags.length} (${highFlags} high-severity)
+- Estimated total shrinkage cost: $${ctx.total_shrinkage_usd?.toFixed(2) ?? "unknown"}
+- Items worsening over 8 weeks: ${ctx.item_trends.filter((t) => t.trend_direction === "worsening").length}
+- Top worsening items: ${ctx.item_trends.filter((t) => t.trend_direction === "worsening").slice(0, 3).map((t) => t.item).join(", ") || "none"}
 
-  const variance = await supabaseAdmin
-    .from("variance_flags")
-    .select("id,severity")
-    .in("location_id", scope.scopedLocationIds)
-    .gte("week_start_date", weekStart);
+INVENTORY COUNTS THIS WEEK: ${(snapshots.data ?? []).length}
 
-  const snapshots = await supabaseAdmin
-    .from("inventory_snapshots")
-    .select("id")
-    .in("location_id", scope.scopedLocationIds)
-    .gte("snapshot_date", weekStart);
+TOP SELLING ITEMS (7-day):
+${JSON.stringify(ctx.top_selling_items.slice(0, 10), null, 2)}
 
-  const revenue = (orders.data ?? []).reduce(
-    (sum, row) => sum + Number(row.total ?? 0),
-    0,
-  );
-  const prevRevenue = (prevOrders.data ?? []).reduce(
-    (sum, row) => sum + Number(row.total ?? 0),
-    0,
-  );
-  const varianceCount = (variance.data ?? []).length;
-  const snapshotsCount = (snapshots.data ?? []).length;
+CATEGORY VARIANCE SUMMARY:
+${JSON.stringify(ctx.category_summary, null, 2)}
 
-  const input = {
-    week_range: weekStart,
-    revenue,
-    prev_revenue: prevRevenue,
-    orders_count: (orders.data ?? []).length,
-    variance_flags: varianceCount,
-    inventory_counts: snapshotsCount,
-  };
+UPCOMING EVENTS:
+${ctx.upcoming_events.length ? JSON.stringify(ctx.upcoming_events) : "None scheduled"}
 
-  if (revenue === 0 && varianceCount === 0 && snapshotsCount === 0) {
-    return Response.json(
-      fallbackWeeklyBrief(
-        "Not enough data this week yet. Connect POS and run inventory counts to unlock insights.",
-      ),
-    );
-  }
+Generate a practical brief with specific wins (anchored to dollar amounts), watchouts (with cost impact), and actionable next steps.
+  `.trim();
+
+  const input = { revenue, prevRevenue, varCount: varFlags.length, highFlags, date: ctx.as_of_date };
 
   const response = await runAiFeature({
     feature: "weekly_brief",
     system: systemPrompts.weeklyBrief,
-    user: `Write a weekly owner brief with wins, watchouts, and next actions. Input: ${JSON.stringify(
-      input,
-    )}`,
-    model: process.env.OPENAI_MODEL_SMALL ?? "gpt-4o-mini",
-    cacheKeyParts: [
-      "weekly",
-      scope.tenantId,
-      scope.locationId ?? scope.scopedLocationIds.join(","),
-      weekStart,
-    ],
+    user: userPrompt,
+    model: process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6",
+    cacheKeyParts: ["weekly", scope.tenantId, scope.locationId ?? scope.scopedLocationIds.join(","), weekStart],
     cacheTtlMs: 6 * 60 * 60_000,
     inputHash: hashInput(input),
     tenantId: scope.tenantId,
     locationId: scope.locationId,
     userId: scope.userId,
     validate: validateWeeklyBrief,
-    fallback: () =>
-      fallbackWeeklyBrief(
-        "Weekly brief is unavailable right now. Please try again later.",
-      ),
+    fallback: () => fallbackWeeklyBrief("Weekly brief is unavailable right now. Please try again later."),
   });
 
   return Response.json(response);

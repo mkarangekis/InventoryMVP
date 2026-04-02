@@ -1,4 +1,5 @@
 import {
+  date,
   integer,
   jsonb,
   numeric,
@@ -389,4 +390,57 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+});
+
+// Phase 2: Per-ingredient rolling variance baselines for Z-score severity
+export const varianceBaselines = pgTable("variance_baselines", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  locationId: uuid("location_id")
+    .notNull()
+    .references(() => locations.id, { onDelete: "cascade" }),
+  inventoryItemId: uuid("inventory_item_id")
+    .notNull()
+    .references(() => inventoryItems.id, { onDelete: "cascade" }),
+  rollingMeanOz: numeric("rolling_mean_oz", { precision: 12, scale: 4 }).notNull().default("0"),
+  rollingStddevOz: numeric("rolling_stddev_oz", { precision: 12, scale: 4 }).notNull().default("0"),
+  sampleCount: integer("sample_count").notNull().default(0),
+  trendSlope: numeric("trend_slope", { precision: 12, scale: 6 }).notNull().default("0"),
+  lastComputedAt: timestamp("last_computed_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Phase 1: Special events affecting demand forecasts
+export const locationEvents = pgTable("location_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  locationId: uuid("location_id")
+    .notNull()
+    .references(() => locations.id, { onDelete: "cascade" }),
+  eventDate: date("event_date").notNull(),
+  eventName: text("event_name").notNull(),
+  eventType: text("event_type").notNull(), // holiday | special | promo | closure | large_party
+  impactPct: numeric("impact_pct", { precision: 6, scale: 2 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Phase 3: User feedback on AI insight quality
+export const aiInsightFeedback = pgTable("ai_insight_feedback", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  locationId: uuid("location_id"),
+  userId: uuid("user_id"),
+  feature: text("feature").notNull(),
+  promptVersion: text("prompt_version").notNull(),
+  inputHash: text("input_hash").notNull(),
+  rating: integer("rating").notNull(), // 1 = thumbs up, -1 = thumbs down
+  comment: text("comment"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

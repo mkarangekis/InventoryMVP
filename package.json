@@ -22,7 +22,10 @@
     "seed:forecast": "node scripts/seed-forecast.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
     "@supabase/supabase-js": "^2.90.1",
+    "@upstash/qstash": "^2.10.1",
+    "@upstash/redis": "^1.37.0",
     "csv-parse": "^6.1.0",
     "drizzle-orm": "^0.45.1",
     "gsap": "^3.14.2",
@@ -30,6 +33,7 @@
     "postgres": "^3.4.8",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "resend": "^6.10.0",
     "stripe": "^16.12.0"
   },
   "devDependencies": {
