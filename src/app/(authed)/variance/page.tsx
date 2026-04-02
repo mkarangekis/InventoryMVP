@@ -5,6 +5,7 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { AiCard } from "@/components/ai/AiCard";
 import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
+import { ShrinkageClusterWidget } from "@/components/ai/ShrinkageClusterWidget";
 import { AiVarianceExplain } from "@/ai/types";
 import {
   isAiTopPanelEnabled,
@@ -408,6 +409,12 @@ export default function VariancePage() {
             </div>
           </div>
         </AiCard>
+      ) : null}
+
+      {enterpriseEnabled ? (
+        <ShrinkageClusterWidget
+          locationId={typeof window !== "undefined" ? (window.localStorage.getItem("barops.locationId") ?? undefined) : undefined}
+        />
       ) : null}
     </section>
   );

@@ -6,6 +6,7 @@ import { supabaseBrowser } from "@/lib/supabase/browser";
 import { isEnterpriseUIEnabled } from "@/config/flags";
 import { AiCard } from "@/components/ai/AiCard";
 import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
+import { AskYourData } from "@/components/ai/AskYourData";
 import { AiDataGap, AiShiftPush, AiWeeklyBrief } from "@/ai/types";
 import { isAiTopPanelEnabled, isGraphsOverviewEnabled } from "@/config/flags";
 import { ViewToggle } from "@/components/ui/ViewToggle";
@@ -860,6 +861,10 @@ export default function DashboardPage() {
           ) : null}
         </div>
       )}
+
+      {enterpriseEnabled ? (
+        <AskYourData locationId={typeof window !== "undefined" ? (window.localStorage.getItem("barops.locationId") ?? undefined) : undefined} />
+      ) : null}
     </section>
   );
 }

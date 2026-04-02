@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
   },
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: PRODUCT_NAME, statusBarStyle: "black-translucent" },
 };
 
 const runtimeFlags = {
@@ -33,10 +35,13 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <script
-          // Expose server env flags to client components at runtime without
-          // requiring NEXT_PUBLIC_* env vars.
           dangerouslySetInnerHTML={{
             __html: `window.__BAROPS_FLAGS=${JSON.stringify(runtimeFlags)};`,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}`,
           }}
         />
         {children}

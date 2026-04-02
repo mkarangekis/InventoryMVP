@@ -45,7 +45,7 @@ const requestAnthropic = async (payload: AiRequest): Promise<string> => {
 
   if (isCircuitOpen(payload.feature)) throw new Error("AI circuit breaker open");
 
-  const rate = consumeRateLimit(payload.feature, rateLimit);
+  const rate = await consumeRateLimit(payload.feature, rateLimit);
   if (!rate.allowed) throw new Error("AI rate limit exceeded");
 
   const cacheKey = buildCacheKey(payload.cacheKeyParts);

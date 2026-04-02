@@ -38,6 +38,15 @@ export type InsightContext = {
   category_summary: { category: string; item_count: number; avg_variance_pct: number }[];
   // Total estimated shrinkage cost across all flagged items
   total_shrinkage_usd: number | null;
+  // Weather context for demand elasticity
+  weather_forecast: {
+    date: string;
+    temp_max_c: number;
+    temp_min_c: number;
+    precipitation_mm: number;
+    weather_code: number;
+    description: string;
+  }[] | null;
 };
 
 type ContextOptions = {
@@ -64,7 +73,7 @@ export async function buildInsightContext(opts: ContextOptions): Promise<Insight
     // 1. Location info
     supabaseAdmin
       .from("locations")
-      .select("name, timezone")
+      .select("name, timezone, address")
       .eq("id", locationId)
       .single(),
 
@@ -122,7 +131,9 @@ export async function buildInsightContext(opts: ContextOptions): Promise<Insight
   ]);
 
   // ── Location ──────────────────────────────────────────────────────────────
-  const locationData = locationResult.status === "fulfilled" ? locationResult.value.data : null;
+  const locationData = locationResult.status === "fulfilled"
+    ? locationResult.value.data as { name: string; timezone: string; address: string } | null
+    : null;
 
   // ── Revenue ───────────────────────────────────────────────────────────────
   let revenue7d: number | null = null;
@@ -219,9 +230,10 @@ export async function buildInsightContext(opts: ContextOptions): Promise<Insight
 
     // Estimate weekly shrinkage cost
     let weeklyShkUsd: number | null = null;
-    if (costPerOz && baseline && baseline.rolling_mean_oz > 0) {
-      const avgVarPct = weeks.slice(0, 4).reduce((s, w) => s + w.variance_pct, 0) / Math.min(weeks.length, 4);
-      weeklyShkUsd = Math.round(baseline.rolling_mean_oz * avgVarPct * costPerOz * 100) / 100;
+    const weekSample = Math.min(weeks.length, 4);
+    if (costPerOz != null && baseline && Number(baseline.rolling_mean_oz) > 0 && weekSample > 0) {
+      const avgVarPct = weeks.slice(0, weekSample).reduce((s, w) => s + w.variance_pct, 0) / weekSample;
+      weeklyShkUsd = Math.round(Number(baseline.rolling_mean_oz) * avgVarPct * costPerOz * 100) / 100;
       totalShrinkageUsd += weeklyShkUsd;
     }
 
@@ -283,6 +295,64 @@ export async function buildInsightContext(opts: ContextOptions): Promise<Insight
     avg_variance_pct: Math.round((totalVar / count) * 1000) / 10,
   }));
 
+  // ── Weather elasticity (Open-Meteo, free, no API key) ────────────────────
+  let weather_forecast: InsightContext["weather_forecast"] = null;
+  try {
+    // Priority: env override → geocode the location address → skip
+    let lat: string | null = process.env.LOCATION_LAT ?? null;
+    let lng: string | null = process.env.LOCATION_LNG ?? null;
+
+    if ((!lat || !lng) && locationData?.address) {
+      // Open-Meteo geocoding — also free, no API key
+      const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationData.address)}&count=1&language=en&format=json`;
+      const geoCtrl = new AbortController();
+      const geoTimer = setTimeout(() => geoCtrl.abort(), 3000);
+      const geoRes = await fetch(geoUrl, { signal: geoCtrl.signal }).finally(() => clearTimeout(geoTimer)).catch(() => null);
+      if (geoRes?.ok) {
+        const geoData = (await geoRes.json()) as { results?: { latitude: number; longitude: number }[] };
+        const first = geoData.results?.[0];
+        if (first) { lat = String(first.latitude); lng = String(first.longitude); }
+      }
+    }
+
+    if (!lat || !lng) throw new Error("No coordinates available");
+
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&forecast_days=7&timezone=auto`;
+    const wCtrl = new AbortController();
+    const wTimer = setTimeout(() => wCtrl.abort(), 4000);
+    const weatherRes = await fetch(weatherUrl, { signal: wCtrl.signal }).finally(() => clearTimeout(wTimer));
+    if (weatherRes.ok) {
+      const weatherData = (await weatherRes.json()) as {
+        daily: {
+          time: string[];
+          temperature_2m_max: number[];
+          temperature_2m_min: number[];
+          precipitation_sum: number[];
+          weathercode: number[];
+        };
+      };
+      const d = weatherData.daily;
+      const WMO_DESC: Record<number, string> = {
+        0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+        45: "Foggy", 48: "Icy fog", 51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle",
+        61: "Light rain", 63: "Rain", 65: "Heavy rain",
+        71: "Light snow", 73: "Snow", 75: "Heavy snow",
+        80: "Light showers", 81: "Showers", 82: "Heavy showers",
+        95: "Thunderstorm", 96: "Thunderstorm+hail", 99: "Severe thunderstorm",
+      };
+      weather_forecast = d.time.map((date, i) => ({
+        date,
+        temp_max_c: d.temperature_2m_max[i] ?? 0,
+        temp_min_c: d.temperature_2m_min[i] ?? 0,
+        precipitation_mm: d.precipitation_sum[i] ?? 0,
+        weather_code: d.weathercode[i] ?? 0,
+        description: WMO_DESC[d.weathercode[i] ?? 0] ?? "Unknown",
+      }));
+    }
+  } catch {
+    // Weather is non-critical; silent fail
+  }
+
   return {
     location_name: locationData?.name ?? "Unknown Location",
     timezone: locationData?.timezone ?? "UTC",
@@ -295,5 +365,6 @@ export async function buildInsightContext(opts: ContextOptions): Promise<Insight
     upcoming_events,
     category_summary,
     total_shrinkage_usd: totalShrinkageUsd > 0 ? Math.round(totalShrinkageUsd * 100) / 100 : null,
+    weather_forecast,
   };
 }

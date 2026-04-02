@@ -1,0 +1,31 @@
+{
+  "name": "Pourdex Bar Ops",
+  "short_name": "Pourdex",
+  "description": "Predictive inventory and bar operations platform",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0C0B09",
+  "theme_color": "#C8943E",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Count Inventory",
+      "url": "/count",
+      "description": "Run a quick inventory count"
+    },
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "View variance and forecasts"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}

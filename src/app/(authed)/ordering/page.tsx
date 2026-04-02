@@ -234,6 +234,33 @@ export default function OrderingPage() {
     )}&body=${encodeURIComponent(body)}`;
   };
 
+  const [sendingPoId, setSendingPoId] = useState<string | null>(null);
+
+  const handleSendToVendor = async (purchaseOrderId: string) => {
+    if (sendingPoId) return; // prevent double-send
+    const { data } = await supabaseBrowser.auth.getSession();
+    const tok = data.session?.access_token;
+    if (!tok) { setStatus("Not signed in"); return; }
+    setSendingPoId(purchaseOrderId);
+    setStatus("Sending PO to vendor...");
+    const res = await fetch("/api/ordering/send-po", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
+      body: JSON.stringify({ purchaseOrderId }),
+    });
+    if (!res.ok) {
+      const msg = await res.text();
+      setStatus(`Error sending PO: ${msg}`);
+      setSendingPoId(null);
+      return;
+    }
+    const payload = (await res.json()) as { sentTo?: string };
+    setStatus(`PO sent to ${payload.sentTo ?? "vendor"}`);
+    setSendingPoId(null);
+    await loadOrders();
+    setTimeout(() => setStatus(null), 5000);
+  };
+
   const totalLines = orders.reduce((sum, po) => sum + po.lines.length, 0);
   const totalCost = orders.reduce(
     (sum, po) =>
@@ -609,12 +636,14 @@ export default function OrderingPage() {
                         PDF
                       </a>
                       {po.vendor?.email ? (
-                        <a
+                        <button
                           className="btn-ghost btn-sm"
-                          href={getMailtoLink(po)}
+                          onClick={() => void handleSendToVendor(po.id)}
+                          disabled={po.status === "sent" || sendingPoId === po.id}
+                          title={po.status === "sent" ? "Already sent" : `Send PO to ${po.vendor.email}`}
                         >
-                          Email vendor
-                        </a>
+                          {sendingPoId === po.id ? "Sending..." : po.status === "sent" ? "Sent ✓" : "Send to Vendor"}
+                        </button>
                       ) : null}
                       <button
                         className="btn-primary btn-sm"

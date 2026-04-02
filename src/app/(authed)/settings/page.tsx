@@ -5,6 +5,8 @@ import { isEnterpriseUIEnabled } from "@/config/flags";
 import { COMPANY_NAME, PRODUCT_NAME } from "@/config/brand";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { AIInsightsTopPanel } from "@/components/ai/AIInsightsTopPanel";
+import { WebhookSettings } from "@/components/settings/WebhookSettings";
+import { NotificationsSettings } from "@/components/settings/NotificationsSettings";
 
 type BillingStatus = {
   stripe_customer_id: string | null;
@@ -172,27 +174,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="app-card">
-          <div className="app-card-header">
-            <div>
-              <h3 className="app-card-title">Notifications</h3>
-              <p className="app-card-subtitle">
-                Configure alerting by connecting your notification provider.
-              </p>
-            </div>
-          </div>
-          <div className="app-card-body">
-            <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4 text-sm">
-              <p className="text-xs uppercase text-[var(--enterprise-muted)]">
-                Status
-              </p>
-              <p className="mt-2 font-semibold">Not configured</p>
-              <p className="text-xs text-[var(--enterprise-muted)]">
-                Add integrations after the MVP rollout.
-              </p>
-            </div>
-          </div>
-        </div>
+        <NotificationsSettings />
       </div>
 
       <div className="app-card">
@@ -205,6 +187,16 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="app-card-body">
+          {/* White-label info */}
+          <div className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4 text-sm mb-4">
+            <p className="text-xs uppercase text-[var(--enterprise-muted)] mb-2">White-label / Franchise Mode</p>
+            <p className="font-semibold text-[var(--enterprise-fg)]">Available on Enterprise</p>
+            <p className="text-xs text-[var(--enterprise-muted)] mt-1">
+              Custom branding, subdomain routing, and multi-location franchise dashboards are available via the Enterprise plan.
+              Contact <span style={{ color: "var(--enterprise-accent)" }}>sales@pourdex.com</span> to enable.
+            </p>
+          </div>
+
           {billingLoading ? (
             <p className="text-sm text-[var(--enterprise-muted)]">
               Loading billing status...
@@ -250,6 +242,8 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <WebhookSettings />
     </section>
   );
 }
