@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   title: `${PRODUCT_NAME} | ${COMPANY_NAME}`,
   description:
     "Predictive inventory and bar operations platform for POS ingestion, forecasting, and ordering.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 const runtimeFlags = {
