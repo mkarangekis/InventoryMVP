@@ -1,6 +1,6 @@
 const dayMs = 24 * 60 * 60 * 1000;
 
-export const DEMO_EMAIL = "mitchellskarangekis@gmail.com";
+export const DEMO_EMAIL = "demo@pourdex.com";
 export const DEMO_TENANT_ID = "demo-tenant-001";
 export const DEMO_LOCATION_ID = "demo-location-001";
 export const DEMO_VENDOR_ID = "demo-vendor-001";
