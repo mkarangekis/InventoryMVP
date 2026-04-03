@@ -424,78 +424,63 @@ export default function DashboardPage() {
   const trackedItems = new Set(
     forecast.map((row) => row.inventory_item_id),
   ).size;
+  const highSeverityCount = flags.filter((f) => f.severity === "high").length;
 
   return (
-    <section className="space-y-6">
-      <div className="app-card">
-        <div className="app-card-header">
-          <div>
-            <h2 className="enterprise-heading text-2xl font-semibold">
-              Leak & Variance Dashboard
-            </h2>
-            <p className="app-card-subtitle">
-              Latest variance flags across your locations.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link className="btn-secondary btn-sm" href="/variance">
-              Export
-            </Link>
-            <button
-              className="btn-primary btn-sm"
-              onClick={() => {
-                setLoading(true);
-                void load();
-              }}
-            >
-              {loading ? "Syncing..." : "Sync now"}
-            </button>
-          </div>
+    <section style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+      {/* ── Page Header ── */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a853", marginBottom: 4 }}>Bar Operations</p>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em", lineHeight: 1 }}>Daily Overview</h1>
+          <p style={{ fontSize: 13, color: "#8b949e", marginTop: 4 }}>Variance, forecasts, and AI insights for this location</p>
         </div>
-        <div className="app-card-body">
-          <div className="app-kpi-grid">
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Variance This Week</p>
-              <p className="app-kpi-value" style={{ color: loading ? undefined : varianceTotalOz > 0 ? "#ef4444" : "#22c55e" }}>
-                {loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`}
-              </p>
-              <p className="app-kpi-meta">
-                {latestVarianceWeek
-                  ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString()}`
-                  : "No variance week yet"}
-              </p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Active Flags</p>
-              <p className="app-kpi-value" style={{ color: loading ? undefined : flags.length > 0 ? "#ef4444" : "#22c55e" }}>
-                {loading ? "—" : flags.length}
-              </p>
-              <p className="app-kpi-meta">Awaiting review</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Items Tracked</p>
-              <p className="app-kpi-value" style={{ color: "#d4a853" }}>
-                {loading ? "—" : trackedItems || "—"}
-              </p>
-              <p className="app-kpi-meta">Forecast coverage</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Next Forecast</p>
-              <p className="app-kpi-value" style={{ color: "#d4a853" }}>
-                {nextForecast
-                  ? new Date(nextForecast.forecast_date).toLocaleDateString()
-                  : "—"}
-              </p>
-              <p className="app-kpi-meta">
-                {nextForecast
-                  ? `${nextForecast.forecast_usage_oz} oz expected`
-                  : "Building forecast"}
-              </p>
-            </div>
-          </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link className="btn-secondary btn-sm" href="/variance">Full Variance Report</Link>
+          <button className="btn-primary btn-sm" onClick={() => { setLoading(true); void load(); }}>
+            {loading ? "Syncing..." : "Sync Now"}
+          </button>
         </div>
       </div>
 
+      {/* ── KPI Strip ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+        {[
+          {
+            label: "Variance This Week",
+            value: loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`,
+            meta: latestVarianceWeek ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "No data yet",
+            color: loading ? "#d4a853" : varianceTotalOz > 0 ? "#ef4444" : "#22c55e",
+          },
+          {
+            label: "Active Flags",
+            value: loading ? "—" : String(flags.length),
+            meta: loading ? "" : highSeverityCount > 0 ? `${highSeverityCount} high severity` : "None critical",
+            color: loading ? "#d4a853" : flags.length > 0 ? "#ef4444" : "#22c55e",
+          },
+          {
+            label: "Items Tracked",
+            value: loading ? "—" : trackedItems ? String(trackedItems) : "—",
+            meta: "14-day forecast active",
+            color: "#d4a853",
+          },
+          {
+            label: "Next Forecast",
+            value: nextForecast ? new Date(nextForecast.forecast_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—",
+            meta: nextForecast ? `${nextForecast.forecast_usage_oz} oz expected` : "Building forecast",
+            color: "#d4a853",
+          },
+        ].map((kpi) => (
+          <div key={kpi.label} style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 18px" }}>
+            <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", marginBottom: 8 }}>{kpi.label}</p>
+            <p style={{ fontSize: 26, fontWeight: 700, color: kpi.color, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{kpi.value}</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 6 }}>{kpi.meta}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── AI Insights ── */}
       <AIInsightsTopPanel
         pageContext="overview"
         loading={aiLoading}
@@ -507,23 +492,9 @@ export default function DashboardPage() {
               : null
         }
         primaryMetrics={[
-          {
-            label: "Variance this week",
-            value: loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`,
-            meta: latestVarianceWeek
-              ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString()}`
-              : "No variance week yet",
-          },
-          {
-            label: "Active flags",
-            value: loading ? "—" : String(flags.length),
-            meta: "Awaiting review",
-          },
-          {
-            label: "Items tracked",
-            value: loading ? "—" : trackedItems ? String(trackedItems) : "—",
-            meta: "Forecast coverage",
-          },
+          { label: "Variance this week", value: loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`, meta: latestVarianceWeek ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString()}` : "No variance week yet" },
+          { label: "Active flags", value: loading ? "—" : String(flags.length), meta: "Awaiting review" },
+          { label: "Items tracked", value: loading ? "—" : trackedItems ? String(trackedItems) : "—", meta: "Forecast coverage" },
         ]}
         summary={
           weeklyBrief
@@ -535,347 +506,283 @@ export default function DashboardPage() {
                 : null
         }
         recommendations={[
-          ...(weeklyBrief?.next_actions ?? []).slice(0, 3).map((a) => ({
-            action: a.action,
-            reason: a.why,
-            urgency: "med",
-          })),
-          ...(dataGap?.gaps ?? []).slice(0, 2).map((g) => ({
-            action: g.gap,
-            reason: g.expected_improvement,
-            urgency: g.priority,
-          })),
-          ...(shiftPush?.push_items ?? []).slice(0, 2).map((i) => ({
-            action: `Spotlight ${i.item}`,
-            reason: i.why,
-            urgency: i.priority,
-          })),
+          ...(weeklyBrief?.next_actions ?? []).slice(0, 3).map((a) => ({ action: a.action, reason: a.why, urgency: "med" })),
+          ...(dataGap?.gaps ?? []).slice(0, 2).map((g) => ({ action: g.gap, reason: g.expected_improvement, urgency: g.priority })),
+          ...(shiftPush?.push_items ?? []).slice(0, 2).map((i) => ({ action: `Spotlight ${i.item}`, reason: i.why, urgency: i.priority })),
         ]}
-        risks={(weeklyBrief?.watchouts ?? []).slice(0, 4).map((w) => ({
-          risk: w.title,
-          impact: w.detail,
-        }))}
+        risks={(weeklyBrief?.watchouts ?? []).slice(0, 4).map((w) => ({ risk: w.title, impact: w.detail }))}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="app-card">
-          <div className="app-card-header">
+      {/* ── Two-column: Variance Flags + Tonight's Push ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 20 }}>
+
+        {/* Variance Flags */}
+        <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid #1f2732" }}>
             <div>
-              <h3 className="app-card-title">Variance flags</h3>
-              <p className="app-card-subtitle">
-                Potential shrink and over-pours to review.
-              </p>
+              <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Variance Flags</p>
+              <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Potential shrink and over-pours to review</p>
             </div>
-            {graphsEnabled ? (
-              <ViewToggle value={varianceView} onChange={setVarianceView} />
-            ) : (
-            <Link className="btn-ghost btn-sm" href="/variance">
-              View all
-            </Link>
-            )}
+            <Link href="/variance" style={{ fontSize: 12, color: "#d4a853", fontWeight: 600, textDecoration: "none" }}>View all →</Link>
           </div>
-          <div className="app-card-body">
+          <div>
             {graphsEnabled && varianceView === "charts" ? (
-              analyticsLoading ? (
-                <p className="text-sm text-[var(--enterprise-muted)]">
-                  Loading variance chart…
-                </p>
-              ) : analyticsError ? (
-                <p className="text-sm text-[var(--enterprise-muted)]">
-                  {analyticsError}
-                </p>
-              ) : analytics?.varianceByWeek?.length ? (
-                <LineChart
-                  series={[
-                    {
-                      name: "Abs variance (oz)",
-                      color: "var(--enterprise-accent)",
-                      data: analytics.varianceByWeek.map((row) => ({
-                        x: new Date(row.week_start_date).getTime(),
-                        y: row.total_abs_variance_oz,
-                        label: new Date(row.week_start_date).toLocaleDateString(),
-                      })),
-                    },
-                  ]}
-                  valueFormat={(v) => `${v.toFixed(1)} oz`}
-                />
-              ) : (
-                <div className="app-empty">
-                  <div className="app-empty-title">No Variance Trend Yet</div>
-                  <p className="app-empty-desc">
-                    Once inventory counts and usage data are available, variance trends will appear here.
-                  </p>
-                </div>
-              )
+              <div style={{ padding: "16px 20px" }}>
+                {analyticsLoading ? (
+                  <p style={{ fontSize: 13, color: "#8b949e" }}>Loading chart…</p>
+                ) : analytics?.varianceByWeek?.length ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: "#8b949e", textTransform: "uppercase", letterSpacing: "0.07em" }}>8-Week Variance Trend</p>
+                      <ViewToggle value={varianceView} onChange={setVarianceView} />
+                    </div>
+                    <LineChart
+                      series={[{ name: "Variance (oz)", color: "#ef4444", data: analytics.varianceByWeek.map((row) => ({ x: new Date(row.week_start_date).getTime(), y: row.total_abs_variance_oz, label: new Date(row.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })) }]}
+                      valueFormat={(v) => `${v.toFixed(1)} oz`}
+                      height={180}
+                    />
+                  </>
+                ) : (
+                  <p style={{ fontSize: 13, color: "#8b949e", textAlign: "center", padding: "20px 0" }}>No variance trend data yet</p>
+                )}
+              </div>
             ) : loading ? (
-              <p className="text-sm text-[var(--enterprise-muted)]">
-                Loading variance...
-              </p>
+              <p style={{ padding: "20px 24px", fontSize: 13, color: "#8b949e" }}>Loading…</p>
             ) : flags.length === 0 ? (
-              <div className="app-empty">
-                <div className="app-empty-title">No Variance Flags Yet</div>
-                <p className="app-empty-desc">
-                  Once your POS is connected and inventory is tracked, variance
-                  flags will appear here showing potential shrinkage and
-                  over-pouring.
-                </p>
-                <div className="app-empty-actions">
-                  <Link className="btn-primary btn-sm" href="/ingest">
-                    Connect POS
-                  </Link>
-                  <Link className="btn-secondary btn-sm" href="/inventory">
-                    Add Inventory
-                  </Link>
+              <div style={{ padding: "32px 24px", textAlign: "center" }}>
+                <p style={{ fontWeight: 600, color: "#f0f6fc", marginBottom: 6 }}>No Variance Flags Yet</p>
+                <p style={{ fontSize: 12, color: "#8b949e", marginBottom: 14 }}>Connect POS and start tracking inventory to surface variance signals.</p>
+                <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                  <Link className="btn-primary btn-sm" href="/ingest">Connect POS</Link>
+                  <Link className="btn-secondary btn-sm" href="/inventory">Add Inventory</Link>
                 </div>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-                <table className="app-table w-full text-left text-sm">
-                  <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-                    <tr>
-                      <th className="px-3 py-2">Item</th>
-                      <th className="px-3 py-2">Week</th>
-                      <th className="px-3 py-2">Variance</th>
-                      <th className="px-3 py-2">Severity</th>
+              <>
+                {graphsEnabled && (
+                  <div style={{ padding: "10px 20px 0", display: "flex", justifyContent: "flex-end" }}>
+                    <ViewToggle value={varianceView} onChange={setVarianceView} />
+                  </div>
+                )}
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid #1f2732" }}>
+                      {["Item", "Week", "Variance", "Severity"].map((h) => (
+                        <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {flags.slice(0, 6).map((flag) => {
+                    {flags.slice(0, 6).map((flag, i) => {
                       const varianceNum = parseFloat(flag.variance_oz);
-                      const severityClass =
-                        flag.severity === "high" ? "app-badge app-badge-red" :
-                        flag.severity === "med" ? "app-badge app-badge-gold" :
-                        "app-badge app-badge-green";
+                      const severityClass = flag.severity === "high" ? "app-badge app-badge-red" : flag.severity === "med" ? "app-badge app-badge-gold" : "app-badge app-badge-green";
                       return (
-                        <tr key={flag.id} className="border-t">
-                          <td className="px-4 py-3 font-medium">{flag.item_name}</td>
-                          <td className="px-4 py-3 text-[var(--enterprise-muted)]">
-                            {new Date(flag.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </td>
-                          <td className="px-4 py-3 font-semibold tabular-nums" style={{ color: varianceNum < 0 ? "#ef4444" : "#22c55e" }}>
-                            {flag.variance_oz} oz
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={severityClass}>{flag.severity}</span>
-                          </td>
+                        <tr key={flag.id} style={{ borderBottom: i < Math.min(flags.length, 6) - 1 ? "1px solid #1a2230" : "none" }}>
+                          <td style={{ padding: "10px 16px", fontWeight: 500, color: "#f0f6fc" }}>{flag.item_name}</td>
+                          <td style={{ padding: "10px 16px", color: "#8b949e" }}>{new Date(flag.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</td>
+                          <td style={{ padding: "10px 16px", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: varianceNum < 0 ? "#ef4444" : "#22c55e" }}>{flag.variance_oz} oz</td>
+                          <td style={{ padding: "10px 16px" }}><span className={severityClass}>{flag.severity}</span></td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
-              </div>
+              </>
             )}
           </div>
         </div>
 
-        <div className="app-card">
-          <div className="app-card-header">
-            <div>
-              <h3 className="app-card-title">Next 14-Day Forecast</h3>
-              <p className="app-card-subtitle">
-                Daily ounces projected by item.
-              </p>
-            </div>
-            {graphsEnabled ? (
-              <ViewToggle value={forecastView} onChange={setForecastView} />
-            ) : null}
-          </div>
-          <div className="app-card-body">
-            {graphsEnabled && forecastView === "charts" ? (
-              analyticsLoading ? (
-                <p className="text-sm text-[var(--enterprise-muted)]">
-                  Loading forecast chart…
-                </p>
-              ) : analyticsError ? (
-                <p className="text-sm text-[var(--enterprise-muted)]">
-                  {analyticsError}
-                </p>
-              ) : analytics?.forecastByDay?.length ? (
-                <div className="space-y-4">
-                  <LineChart
-                    series={[
-                      {
-                        name: "Forecast usage (oz)",
-                        color: "var(--enterprise-accent)",
-                        data: analytics.forecastByDay.map((row) => ({
-                          x: new Date(row.date).getTime(),
-                          y: row.total_usage_oz,
-                          label: new Date(row.date).toLocaleDateString(),
-                        })),
-                      },
-                    ]}
-                    valueFormat={(v) => `${v.toFixed(0)} oz`}
-                  />
-                  {analytics.topForecastItems?.length ? (
-                    <BarChart
-                      data={analytics.topForecastItems.map((row) => ({
-                        label: row.item_name,
-                        value: row.total_usage_oz,
-                        color: "var(--enterprise-accent)",
-                      }))}
-                      valueFormat={(v) => `${v.toFixed(0)} oz`}
-                    />
-                  ) : null}
+        {/* Tonight's Push / Weekly Brief */}
+        <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
+          {shiftPush && aiEnabled.shiftPush ? (
+            <>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid #1f2732", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🍸</span>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Tonight&apos;s Push</p>
+                  <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>AI-recommended items to spotlight this shift</p>
                 </div>
-              ) : (
-                <div className="app-empty">
-                  <div className="app-empty-title">Building Your Forecast</div>
-                  <p className="app-empty-desc">
-                    Forecast charts will appear once there is enough sales history.
-                  </p>
-                </div>
-              )
-            ) : forecast.length === 0 ? (
-              <div className="app-empty">
-                <div className="app-empty-title">Building Your Forecast</div>
-                <p className="app-empty-desc">
-                  Forecast data will appear once we have enough sales history to
-                  generate predictions. Typically requires 2-4 weeks of POS
-                  data.
-                </p>
               </div>
-            ) : (
-              <div className="space-y-3 text-sm">
-                {sortedForecast.slice(0, 8).map((row) => (
-                  <div
-                    key={`${row.inventory_item_id}-${row.forecast_date}`}
-                    className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] px-3 py-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>
-                        {new Date(row.forecast_date).toLocaleDateString()}
-                      </span>
-                      <span className="font-semibold">
-                        {row.forecast_usage_oz} oz
-                      </span>
+              <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+                {shiftPush.push_items.map((item) => (
+                  <div key={item.item} style={{
+                    background: "#1a2230",
+                    border: `1px solid #2a3240`,
+                    borderLeft: `3px solid ${item.priority === "high" ? "#d4a853" : "#2a3240"}`,
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                      <span style={{ fontWeight: 700, fontSize: 13, color: "#f0f6fc" }}>{item.item}</span>
+                      <span className={item.priority === "high" ? "app-badge app-badge-gold" : "app-badge app-badge-muted"}>{item.priority}</span>
                     </div>
+                    <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 6 }}>{item.why}</p>
+                    <p style={{ fontSize: 12, color: "#c9d1d9", fontStyle: "italic" }}>&ldquo;{item.script}&rdquo;</p>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </>
+          ) : weeklyBrief && aiEnabled.weeklyBrief ? (
+            <>
+              <div style={{ padding: "14px 20px", borderBottom: "1px solid rgba(212,168,83,0.2)", background: "rgba(212,168,83,0.04)", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>🧠</span>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: 14, color: "#d4a853" }}>Weekly Brief</p>
+                  <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>{weeklyBrief.week_range}</p>
+                </div>
+              </div>
+              <div style={{ padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#22c55e", marginBottom: 8 }}>Wins</p>
+                  {weeklyBrief.wins.slice(0, 3).map((w) => (
+                    <div key={w.title} style={{ marginBottom: 8 }}>
+                      <p style={{ fontWeight: 600, fontSize: 12, color: "#f0f6fc" }}>{w.title}</p>
+                      <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>{w.detail}</p>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ef4444", marginBottom: 8 }}>Watch</p>
+                  {weeklyBrief.watchouts.slice(0, 3).map((w) => (
+                    <div key={w.title} style={{ marginBottom: 8 }}>
+                      <p style={{ fontWeight: 600, fontSize: 12, color: "#f0f6fc" }}>{w.title}</p>
+                      <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>{w.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              {aiLoading ? (
+                <p style={{ fontSize: 13, color: "#8b949e" }}>Loading AI insights…</p>
+              ) : (
+                <>
+                  <p style={{ fontWeight: 600, color: "#f0f6fc", marginBottom: 6 }}>No AI Insights Yet</p>
+                  <p style={{ fontSize: 12, color: "#8b949e" }}>Staff push and weekly briefs will appear once data is available.</p>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {!aiTopEnabled &&
-        (aiEnabled.shiftPush || aiEnabled.dataGap || aiEnabled.weeklyBrief) && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          {aiEnabled.shiftPush ? (
-            <AiCard
-              title="Tonight’s Push"
-              subtitle="Suggested items to spotlight this shift."
-              loading={aiLoading}
-              error={!shiftPush ? "No shift push suggestions yet." : null}
-            >
-              <div className="space-y-3">
-                {shiftPush?.push_items.map((item) => (
-                  <div
-                    key={`${item.item}-${item.priority}`}
-                    className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold">{item.item}</div>
-                      <span className="app-pill">{item.priority}</span>
+      {/* ── Forecast Charts ── */}
+      {graphsEnabled ? (
+        <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #1f2732", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>14-Day Demand Forecast</p>
+              <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Predicted usage by day and top items</p>
+            </div>
+            <ViewToggle value={forecastView} onChange={setForecastView} />
+          </div>
+          <div style={{ padding: "20px" }}>
+            {analyticsLoading ? (
+              <p style={{ fontSize: 13, color: "#8b949e" }}>Loading forecast…</p>
+            ) : analyticsError ? (
+              <p style={{ fontSize: 13, color: "#8b949e" }}>{analyticsError}</p>
+            ) : analytics?.forecastByDay?.length ? (
+              forecastView === "charts" ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 24 }}>
+                  <div>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 12 }}>Total Usage by Day</p>
+                    <LineChart
+                      series={[{ name: "Forecast usage (oz)", color: "#d4a853", data: analytics.forecastByDay.map((row) => ({ x: new Date(row.date).getTime(), y: row.total_usage_oz, label: new Date(row.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })) }]}
+                      valueFormat={(v) => `${v.toFixed(0)} oz`}
+                      height={200}
+                    />
+                  </div>
+                  {analytics.topForecastItems?.length ? (
+                    <div>
+                      <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 12 }}>Top Items (14-Day)</p>
+                      <BarChart
+                        data={analytics.topForecastItems.map((row) => ({ label: row.item_name, value: row.total_usage_oz, color: "#d4a853" }))}
+                        valueFormat={(v) => `${v.toFixed(0)} oz`}
+                        variant="horizontal"
+                      />
                     </div>
-                    <p className="text-xs text-[var(--enterprise-muted)]">
-                      {item.why}
-                    </p>
-                    <p className="mt-2 text-sm">{item.script}</p>
-                  </div>
-                ))}
-              </div>
-            </AiCard>
-          ) : null}
-
-          {aiEnabled.dataGap ? (
-            <AiCard
-              title="Data Gap Advisor"
-              subtitle="What to capture next for better accuracy."
-              loading={aiLoading}
-              error={!dataGap ? "No data gap insights available yet." : null}
-            >
-              <div className="space-y-3">
-                {dataGap?.gaps.map((gap) => (
-                  <div
-                    key={`${gap.gap}-${gap.priority}`}
-                    className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="font-semibold">{gap.gap}</div>
-                      <span className="app-pill">{gap.priority}</span>
-                    </div>
-                    <p className="text-xs text-[var(--enterprise-muted)]">
-                      {gap.why_it_matters}
-                    </p>
-                    <p className="mt-2 text-sm">{gap.how_to_collect}</p>
-                  </div>
-                ))}
-              </div>
-            </AiCard>
-          ) : null}
-
-          {aiEnabled.weeklyBrief ? (
-            <AiCard
-              title="Weekly Owner Brief"
-              subtitle={weeklyBrief?.week_range ?? "Weekly summary"}
-              loading={aiLoading}
-              error={!weeklyBrief ? "Weekly brief not ready yet." : null}
-            >
-              <div className="space-y-4 text-sm">
-                {weeklyBrief?.wins.length ? (
-                  <div>
-                    <div className="font-semibold">Wins</div>
-                    <ul className="mt-2 space-y-2 text-[var(--enterprise-muted)]">
-                      {weeklyBrief.wins.map((win) => (
-                        <li key={win.title}>
-                          <span className="font-semibold text-[var(--enterprise-ink)]">
-                            {win.title}
-                          </span>{" "}
-                          — {win.detail}
-                        </li>
+                  ) : null}
+                </div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #1f2732" }}>
+                        {["Date", "Forecast Usage"].map((h) => (
+                          <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analytics.forecastByDay.slice(0, 14).map((row, i) => (
+                        <tr key={row.date} style={{ borderBottom: i < analytics.forecastByDay.length - 1 ? "1px solid #1a2230" : "none" }}>
+                          <td style={{ padding: "9px 16px", color: "#c9d1d9" }}>{new Date(row.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</td>
+                          <td style={{ padding: "9px 16px", color: "#d4a853", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{row.total_usage_oz.toFixed(1)} oz</td>
+                        </tr>
                       ))}
-                    </ul>
-                  </div>
-                ) : null}
-                {weeklyBrief?.watchouts.length ? (
-                  <div>
-                    <div className="font-semibold">Watchouts</div>
-                    <ul className="mt-2 space-y-2 text-[var(--enterprise-muted)]">
-                      {weeklyBrief.watchouts.map((item) => (
-                        <li key={item.title}>
-                          <span className="font-semibold text-[var(--enterprise-ink)]">
-                            {item.title}
-                          </span>{" "}
-                          — {item.detail}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-                {weeklyBrief?.next_actions.length ? (
-                  <div>
-                    <div className="font-semibold">Next actions</div>
-                    <ul className="mt-2 space-y-2 text-[var(--enterprise-muted)]">
-                      {weeklyBrief.next_actions.map((action) => (
-                        <li key={action.action}>
-                          <span className="font-semibold text-[var(--enterprise-ink)]">
-                            {action.action}
-                          </span>{" "}
-                          — {action.why}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : (
+              <div style={{ padding: "24px 0", textAlign: "center" }}>
+                <p style={{ fontWeight: 600, color: "#f0f6fc", marginBottom: 6 }}>Building Your Forecast</p>
+                <p style={{ fontSize: 12, color: "#8b949e" }}>Forecast charts appear once we have 2–4 weeks of POS data.</p>
               </div>
-            </AiCard>
-          ) : null}
+            )}
+          </div>
         </div>
+      ) : forecast.length > 0 ? (
+        <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #1f2732" }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Next 14-Day Forecast</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Daily ounces projected by item</p>
+          </div>
+          <div style={{ padding: "0" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #1f2732" }}>
+                  {["Date", "Forecast Usage"].map((h) => (
+                    <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedForecast.slice(0, 10).map((row, i) => (
+                  <tr key={`${row.inventory_item_id}-${row.forecast_date}`} style={{ borderBottom: i < 9 ? "1px solid #1a2230" : "none" }}>
+                    <td style={{ padding: "9px 16px", color: "#c9d1d9" }}>{new Date(row.forecast_date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</td>
+                    <td style={{ padding: "9px 16px", color: "#d4a853", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{row.forecast_usage_oz} oz</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Data Gap Advisor (when no top panel) ── */}
+      {!aiTopEnabled && aiEnabled.dataGap && dataGap && (
+        <AiCard title="Data Gap Advisor" subtitle="What to capture next for better accuracy." loading={false} error={null}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {dataGap.gaps.map((gap) => (
+              <div key={gap.gap} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 12px", background: "#1a2230", borderRadius: 8, border: "1px solid #2a3240" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: "#f0f6fc" }}>{gap.gap}</div>
+                  <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>{gap.why_it_matters}</p>
+                  <p style={{ fontSize: 12, color: "#c9d1d9", marginTop: 4 }}>{gap.how_to_collect}</p>
+                </div>
+                <span className={gap.priority === "high" ? "app-badge app-badge-red" : "app-badge app-badge-gold"}>{gap.priority}</span>
+              </div>
+            ))}
+          </div>
+        </AiCard>
       )}
 
-      {enterpriseEnabled ? (
+      {/* ── Ask Your Data ── */}
+      {enterpriseEnabled && (
         <AskYourData locationId={typeof window !== "undefined" ? (window.localStorage.getItem("barops.locationId") ?? undefined) : undefined} />
-      ) : null}
+      )}
     </section>
   );
 }

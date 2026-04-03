@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { AiCard } from "@/components/ai/AiCard";
+import { BarChart } from "@/components/charts/BarChart";
 import { AiMenuSuggestions } from "@/ai/types";
 
 type ProfitRow = {
@@ -251,53 +252,34 @@ export default function ProfitPage() {
     ? ((totalProfit / totalRevenue) * 100).toFixed(1)
     : "—";
 
+  const marginPctNum = parseFloat(marginPct as string);
+
   return (
     <section className="space-y-6">
-      <div className="app-card">
-        <div className="app-card-header">
-          <div>
-            <h2 className="enterprise-heading text-2xl font-semibold">
-              Profit Intelligence
-            </h2>
-            <p className="app-card-subtitle">
-              Ranked by profit per serving with margin and recommendations.
-            </p>
-          </div>
-        </div>
-        <div className="app-card-body">
-          <div className="app-kpi-grid">
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Revenue</p>
-              <p className="app-kpi-value" style={{ color: "#22c55e" }}>
-                {loading ? "—" : formatCurrency(totalRevenue)}
-              </p>
-              <p className="app-kpi-meta">This period</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Pour Cost</p>
-              <p className="app-kpi-value" style={{ color: "#8b949e" }}>
-                {loading ? "—" : formatCurrency(totalCost)}
-              </p>
-              <p className="app-kpi-meta">Based on specs</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Profit</p>
-              <p className="app-kpi-value" style={{ color: "#22c55e" }}>
-                {loading ? "—" : formatCurrency(totalProfit)}
-              </p>
-              <p className="app-kpi-meta">Gross margin</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Margin</p>
-              <p className="app-kpi-value" style={{ color: loading ? undefined : parseFloat(marginPct as string) >= 65 ? "#22c55e" : parseFloat(marginPct as string) >= 50 ? "#d4a853" : "#ef4444" }}>
-                {loading ? "—" : `${marginPct}%`}
-              </p>
-              <p className="app-kpi-meta">Avg across menu</p>
-            </div>
-          </div>
-        </div>
+      {/* ── Page Header ── */}
+      <div>
+        <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a853", marginBottom: 6 }}>Menu Analytics</p>
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f0f6fc", letterSpacing: "-0.02em", lineHeight: 1.1 }}>Profit Intelligence</h1>
+        <p style={{ fontSize: 13, color: "#8b949e", marginTop: 6 }}>Menu item ranking by margin. Optimize pricing and identify high-value pours.</p>
       </div>
 
+      {/* ── KPI Strip ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+        {[
+          { label: "Revenue", value: loading ? "—" : formatCurrency(totalRevenue), meta: "This period", color: "#22c55e" },
+          { label: "Pour Cost", value: loading ? "—" : formatCurrency(totalCost), meta: "Based on specs", color: "#8b949e" },
+          { label: "Profit", value: loading ? "—" : formatCurrency(totalProfit), meta: "Gross margin", color: "#22c55e" },
+          { label: "Margin", value: loading ? "—" : `${marginPct}%`, meta: "Avg across menu", color: loading ? "#8b949e" : marginPctNum >= 65 ? "#22c55e" : marginPctNum >= 50 ? "#d4a853" : "#ef4444" },
+        ].map((kpi) => (
+          <div key={kpi.label} style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
+            <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{kpi.label}</p>
+            <p style={{ fontSize: 26, fontWeight: 800, color: kpi.color, marginTop: 6, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>{kpi.value}</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 4 }}>{kpi.meta}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── AI Suggestions ── */}
       {aiEnabled ? (
         <AiCard
           title="Menu Profitability Suggestions"
@@ -305,75 +287,54 @@ export default function ProfitPage() {
           loading={aiLoading}
           error={!aiSuggestions ? "Menu suggestions not available yet." : null}
         >
-          <div className="space-y-3 text-sm">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {aiSuggestions?.suggestions.map((suggestion) => (
               <div
                 key={`${suggestion.drink}-${suggestion.suggested_price}`}
-                className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-3"
+                style={{ background: "#1a2230", border: "1px solid #2a3240", borderRadius: 8, padding: "12px 14px" }}
               >
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold">{suggestion.drink}</div>
-                  <span className="app-pill">
-                    +{formatCurrency(suggestion.margin_impact_monthly)}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#f0f6fc" }}>{suggestion.drink}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#22c55e", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 6, padding: "2px 8px", fontVariantNumeric: "tabular-nums" }}>
+                    +{formatCurrency(suggestion.margin_impact_monthly)}/mo
                   </span>
                 </div>
-                <p className="text-xs text-[var(--enterprise-muted)]">
-                  Current: {formatCurrency(suggestion.current_price)} → Proposed:{" "}
-                  {formatCurrency(suggestion.suggested_price)}
+                <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 6 }}>
+                  {formatCurrency(suggestion.current_price)} → {formatCurrency(suggestion.suggested_price)}
                 </p>
-                <p className="mt-2 text-sm">{suggestion.rationale}</p>
-                <p className="mt-1 text-xs text-[var(--enterprise-muted)]">
-                  Risk: {suggestion.risk}
-                </p>
+                <p style={{ fontSize: 12, color: "#c9d1d9", lineHeight: 1.5 }}>{suggestion.rationale}</p>
+                <p style={{ fontSize: 11, color: "#8b949e", marginTop: 4 }}>Risk: {suggestion.risk}</p>
               </div>
             ))}
           </div>
         </AiCard>
       ) : null}
 
-      <div className="app-card">
-        <div className="app-card-header">
-          <div>
-            <h3 className="app-card-title">Menu Profit Ranking</h3>
-            <p className="app-card-subtitle">
-              Prioritize high-margin items and review low performers.
-            </p>
+      {/* ── Two-column: Table + Visual Ranking ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16 }}>
+        {/* Full table */}
+        <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #1f2732" }}>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Menu Profit Ranking</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Sorted by profit per serving</p>
           </div>
-        </div>
-        <div className="app-card-body">
           {errorMessage ? (
-            <div className="app-empty">
-              <div className="app-empty-title">Unable to load profit data</div>
-              <p className="app-empty-desc">
-                Please check your connection and try again, or contact support
-                if the issue persists.
-              </p>
-            </div>
-          ) : null}
-
-          {loading ? (
-            <p className="text-sm text-[var(--enterprise-muted)]">
-              Loading profit ranking...
-            </p>
+            <p style={{ padding: "20px 24px", color: "#ef4444", fontSize: 13 }}>Unable to load profit data. Check your connection.</p>
+          ) : loading ? (
+            <p style={{ padding: "20px 24px", color: "#8b949e", fontSize: 13 }}>Loading profit ranking...</p>
           ) : items.length === 0 ? (
-            <div className="app-empty">
-              <div className="app-empty-title">No Sales Data Yet</div>
-              <p className="app-empty-desc">
-                Once sales data is ingested, margin intelligence appears here.
-              </p>
-              <div className="app-empty-actions">
-                <Link className="btn-primary btn-sm" href="/ingest">
-                  Connect POS
-                </Link>
-              </div>
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              <p style={{ fontWeight: 600, color: "#f0f6fc", marginBottom: 6 }}>No Sales Data Yet</p>
+              <p style={{ fontSize: 12, color: "#8b949e", marginBottom: 12 }}>Once sales data is ingested, margin intelligence appears here.</p>
+              <Link className="btn-primary btn-sm" href="/ingest">Connect POS</Link>
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid #1f2732" }}>
-                    {["#", "Drink", "Sold", "Price", "Cost/Serve", "Profit", "Margin", "Rec"].map((h) => (
-                      <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", whiteSpace: "nowrap" }}>{h}</th>
+                    {["#", "Drink", "Sold", "Price", "Cost", "Profit", "Margin"].map((h) => (
+                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -382,17 +343,14 @@ export default function ProfitPage() {
                     const marginColor = row.margin_pct >= 70 ? "#22c55e" : row.margin_pct >= 60 ? "#d4a853" : "#ef4444";
                     return (
                       <tr key={row.menu_item_id} style={{ borderBottom: i < items.length - 1 ? "1px solid #1a2230" : "none" }}>
-                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{i + 1}</td>
-                        <td style={{ padding: "10px 16px", fontWeight: 600, color: "#f0f6fc" }}>{row.name}</td>
-                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{row.qty_sold}</td>
-                        <td style={{ padding: "10px 16px", color: "#c9d1d9", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.price_each)}</td>
-                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.cost_per_serv)}</td>
-                        <td style={{ padding: "10px 16px", color: "#22c55e", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.profit_per_serv)}</td>
-                        <td style={{ padding: "10px 16px" }}>
+                        <td style={{ padding: "9px 14px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{i + 1}</td>
+                        <td style={{ padding: "9px 14px", fontWeight: 600, color: "#f0f6fc" }}>{row.name}</td>
+                        <td style={{ padding: "9px 14px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{row.qty_sold}</td>
+                        <td style={{ padding: "9px 14px", color: "#c9d1d9", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.price_each)}</td>
+                        <td style={{ padding: "9px 14px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.cost_per_serv)}</td>
+                        <td style={{ padding: "9px 14px", color: "#22c55e", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.profit_per_serv)}</td>
+                        <td style={{ padding: "9px 14px" }}>
                           <span style={{ color: marginColor, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{row.margin_pct}%</span>
-                        </td>
-                        <td style={{ padding: "10px 16px", color: "#8b949e", fontSize: 12, maxWidth: 180 }}>
-                          {row.recommendations.join(", ") || "—"}
                         </td>
                       </tr>
                     );
@@ -402,129 +360,134 @@ export default function ProfitPage() {
             </div>
           )}
         </div>
+
+        {/* Visual margin bar breakdown */}
+        <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc", marginBottom: 4 }}>Margin by Item</p>
+          <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 16 }}>Visual margin breakdown</p>
+          {loading ? (
+            <p style={{ fontSize: 13, color: "#8b949e" }}>Loading…</p>
+          ) : items.length === 0 ? (
+            <p style={{ fontSize: 13, color: "#8b949e" }}>No data yet.</p>
+          ) : (
+            <BarChart
+              variant="horizontal"
+              data={[...items]
+                .sort((a, b) => b.margin_pct - a.margin_pct)
+                .slice(0, 10)
+                .map((row) => ({
+                  label: row.name,
+                  value: row.margin_pct,
+                  color: row.margin_pct >= 70 ? "#22c55e" : row.margin_pct >= 60 ? "#d4a853" : "#ef4444",
+                }))}
+              valueFormat={(v) => `${v.toFixed(1)}%`}
+            />
+          )}
+        </div>
       </div>
 
-      <div className="app-card">
-        <div className="app-card-header">
-          <div>
-            <h3 className="app-card-title">Create Drink Spec</h3>
-            <p className="app-card-subtitle">
-              Add a new versioned spec for a menu item.
-            </p>
-          </div>
+      {/* ── Create Drink Spec ── */}
+      <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #1f2732" }}>
+          <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Create Drink Spec</p>
+          <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Add a new versioned spec for a menu item to track cost accuracy.</p>
         </div>
-        <div className="app-card-body">
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-sm text-[var(--enterprise-muted)]">
-              Location
-              <select
-                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                value={selectedLocation}
-                onChange={(event) => setSelectedLocation(event.target.value)}
-              >
-                {locations.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm text-[var(--enterprise-muted)]">
-              Menu item
-              <select
-                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                value={selectedMenuItem}
-                onChange={(event) => setSelectedMenuItem(event.target.value)}
-              >
-                <option value="">Select menu item</option>
-                {menuItems
-                  .filter((item) =>
-                    selectedLocation
-                      ? item.location_id === selectedLocation
-                      : true,
-                  )
-                  .map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <label className="text-sm text-[var(--enterprise-muted)]">
-              Glass type
-              <input
-                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                value={glassType}
-                onChange={(event) => setGlassType(event.target.value)}
-              />
-            </label>
-            <label className="text-sm text-[var(--enterprise-muted)]">
-              Ice type
-              <input
-                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                value={iceType}
-                onChange={(event) => setIceType(event.target.value)}
-              />
-            </label>
-            <label className="text-sm text-[var(--enterprise-muted)]">
-              Target pour (oz)
-              <input
-                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                value={targetPourOz}
-                onChange={(event) => setTargetPourOz(event.target.value)}
-              />
-            </label>
-            <label className="text-sm text-[var(--enterprise-muted)]">
-              Notes
-              <input
-                className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="mt-4 space-y-2">
-            {lines.map((line, index) => (
-              <div key={`line-${index}`} className="flex gap-2">
+        <div style={{ padding: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+            {[
+              { label: "Location", field: (
                 <select
-                  className="w-2/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                  value={line.ingredientId}
-                  onChange={(event) =>
-                    handleLineChange(index, "ingredientId", event.target.value)
-                  }
+                  style={{ marginTop: 6, width: "100%", background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
                 >
-                  <option value="">Select ingredient</option>
-                  {ingredients.map((ingredient) => (
-                    <option key={ingredient.id} value={ingredient.id}>
-                      {ingredient.name}
-                    </option>
+                  {locations.map((loc) => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                </select>
+              )},
+              { label: "Menu Item", field: (
+                <select
+                  style={{ marginTop: 6, width: "100%", background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                  value={selectedMenuItem}
+                  onChange={(e) => setSelectedMenuItem(e.target.value)}
+                >
+                  <option value="">Select menu item</option>
+                  {menuItems.filter((item) => selectedLocation ? item.location_id === selectedLocation : true).map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
                   ))}
                 </select>
+              )},
+              { label: "Glass Type", field: (
                 <input
-                  className="w-1/3 rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
-                  placeholder="oz"
-                  value={line.ounces}
-                  onChange={(event) =>
-                    handleLineChange(index, "ounces", event.target.value)
-                  }
+                  style={{ marginTop: 6, width: "100%", background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                  value={glassType}
+                  onChange={(e) => setGlassType(e.target.value)}
                 />
-              </div>
+              )},
+              { label: "Ice Type", field: (
+                <input
+                  style={{ marginTop: 6, width: "100%", background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                  value={iceType}
+                  onChange={(e) => setIceType(e.target.value)}
+                />
+              )},
+              { label: "Target Pour (oz)", field: (
+                <input
+                  style={{ marginTop: 6, width: "100%", background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                  value={targetPourOz}
+                  onChange={(e) => setTargetPourOz(e.target.value)}
+                />
+              )},
+              { label: "Notes", field: (
+                <input
+                  style={{ marginTop: 6, width: "100%", background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              )},
+            ].map(({ label, field }) => (
+              <label key={label} style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e" }}>
+                {label}
+                {field}
+              </label>
             ))}
-            <button className="btn-ghost btn-sm" onClick={handleAddLine}>
-              Add ingredient line
+          </div>
+
+          <div style={{ borderTop: "1px solid #1f2732", paddingTop: 16, marginBottom: 16 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 10 }}>Ingredient Lines</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {lines.map((line, index) => (
+                <div key={`line-${index}`} style={{ display: "flex", gap: 8 }}>
+                  <select
+                    style={{ flex: 2, background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                    value={line.ingredientId}
+                    onChange={(e) => handleLineChange(index, "ingredientId", e.target.value)}
+                  >
+                    <option value="">Select ingredient</option>
+                    {ingredients.map((ingredient) => (
+                      <option key={ingredient.id} value={ingredient.id}>{ingredient.name}</option>
+                    ))}
+                  </select>
+                  <input
+                    style={{ flex: 1, background: "#0b1016", border: "1px solid #2a3240", borderRadius: 6, color: "#f0f6fc", padding: "8px 12px", fontSize: 13 }}
+                    placeholder="oz"
+                    value={line.ounces}
+                    onChange={(e) => handleLineChange(index, "ounces", e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={handleAddLine}
+              style={{ marginTop: 8, fontSize: 12, color: "#d4a853", background: "transparent", border: "1px solid rgba(212,168,83,0.3)", borderRadius: 6, padding: "5px 12px", cursor: "pointer" }}
+            >
+              + Add ingredient line
             </button>
           </div>
 
-          <button className="btn-primary btn-sm mt-4" onClick={handleSubmitSpec}>
-            Save spec
-          </button>
-
-          {status ? (
-            <p className="mt-2 text-sm text-[var(--enterprise-muted)]">
-              {status}
-            </p>
-          ) : null}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button className="btn-primary btn-sm" onClick={handleSubmitSpec}>Save Spec</button>
+            {status && <p style={{ fontSize: 12, color: status === "Spec saved" ? "#22c55e" : "#8b949e" }}>{status}</p>}
+          </div>
         </div>
       </div>
     </section>

@@ -10,7 +10,6 @@ type AiCardProps = {
   loading?: boolean;
   error?: string | null;
   footer?: ReactNode;
-  // Feedback props — optional; omit to disable
   feedbackFeature?: string;
   feedbackInputHash?: string;
   feedbackPromptVersion?: string;
@@ -43,12 +42,7 @@ export function AiCard({
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          feature: feedbackFeature,
-          inputHash: feedbackInputHash,
-          promptVersion: feedbackPromptVersion,
-          rating,
-        }),
+        body: JSON.stringify({ feature: feedbackFeature, inputHash: feedbackInputHash, promptVersion: feedbackPromptVersion, rating }),
       });
     } catch {}
     setSending(false);
@@ -57,15 +51,33 @@ export function AiCard({
   const feedbackEnabled = !!(feedbackFeature && feedbackInputHash && feedbackPromptVersion);
 
   return (
-    <div className="app-card">
-      <div className="app-card-header">
-        <div>
-          <h3 className="app-card-title">{title}</h3>
-          {subtitle ? <p className="app-card-subtitle">{subtitle}</p> : null}
-        </div>
+    <div style={{
+      background: "#141a22",
+      border: "1px solid #2a3240",
+      borderRadius: 12,
+      overflow: "hidden",
+    }}>
+      {/* Header — gold-tinted */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "14px 20px",
+        borderBottom: "1px solid rgba(212,168,83,0.15)",
+        background: "rgba(212,168,83,0.04)",
+      }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 15 }}>🧠</span>
+          <div>
+            <h3 style={{ fontWeight: 700, fontSize: 14, color: "#d4a853", lineHeight: 1.2 }}>{title}</h3>
+            {subtitle && <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>{subtitle}</p>}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {feedbackEnabled && !loading && !error && (
-            <div style={{ display: "flex", gap: 4 }}>
+            <>
               <button
                 type="button"
                 disabled={vote !== null || sending}
@@ -73,14 +85,12 @@ export function AiCard({
                 title="Helpful"
                 style={{
                   background: vote === 1 ? "rgba(34,197,94,0.15)" : "transparent",
-                  border: "1px solid",
-                  borderColor: vote === 1 ? "#22c55e" : "var(--enterprise-border)",
+                  border: `1px solid ${vote === 1 ? "#22c55e" : "#2a3240"}`,
                   borderRadius: 6,
-                  padding: "2px 6px",
+                  padding: "3px 7px",
                   cursor: vote !== null ? "default" : "pointer",
                   fontSize: 12,
-                  lineHeight: 1.2,
-                  color: vote === 1 ? "#22c55e" : "var(--enterprise-muted)",
+                  color: vote === 1 ? "#22c55e" : "#8b949e",
                   transition: "all 0.15s",
                 }}
               >
@@ -93,36 +103,50 @@ export function AiCard({
                 title="Not helpful"
                 style={{
                   background: vote === -1 ? "rgba(239,68,68,0.15)" : "transparent",
-                  border: "1px solid",
-                  borderColor: vote === -1 ? "#ef4444" : "var(--enterprise-border)",
+                  border: `1px solid ${vote === -1 ? "#ef4444" : "#2a3240"}`,
                   borderRadius: 6,
-                  padding: "2px 6px",
+                  padding: "3px 7px",
                   cursor: vote !== null ? "default" : "pointer",
                   fontSize: 12,
-                  lineHeight: 1.2,
-                  color: vote === -1 ? "#ef4444" : "var(--enterprise-muted)",
+                  color: vote === -1 ? "#ef4444" : "#8b949e",
                   transition: "all 0.15s",
                 }}
               >
                 👎
               </button>
-            </div>
+            </>
           )}
-          <span className="app-pill">AI</span>
+          <span style={{
+            fontSize: 10,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            background: "rgba(212,168,83,0.15)",
+            color: "#d4a853",
+            border: "1px solid rgba(212,168,83,0.3)",
+            borderRadius: 4,
+            padding: "2px 7px",
+          }}>
+            AI
+          </span>
         </div>
       </div>
-      <div className="app-card-body">
+
+      {/* Body */}
+      <div style={{ padding: "16px 20px" }}>
         {loading ? (
-          <p className="text-sm text-[var(--enterprise-muted)]">Loading AI insights...</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#d4a853", animation: "pulse 1.2s infinite" }} />
+            <span style={{ fontSize: 13, color: "#8b949e" }}>Loading AI insights...</span>
+          </div>
         ) : error ? (
-          <div className="app-empty">
-            <div className="app-empty-title">AI insight unavailable</div>
-            <p className="app-empty-desc">{error}</p>
+          <div style={{ padding: "20px 0", textAlign: "center" }}>
+            <p style={{ fontSize: 13, color: "#8b949e", fontStyle: "italic" }}>{error}</p>
           </div>
         ) : (
           children
         )}
-        {footer ? <div className="mt-4">{footer}</div> : null}
+        {footer && <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #1f2732" }}>{footer}</div>}
       </div>
     </div>
   );

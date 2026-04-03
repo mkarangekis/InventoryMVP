@@ -95,36 +95,29 @@ export default function AuditPage() {
   }
 
   return (
-    <section className="space-y-6">
-      {/* Header */}
-      <div className="app-card">
-        <div className="app-card-header">
-          <div>
-            <h2 className="enterprise-heading text-2xl font-semibold">Audit Trail</h2>
-            <p className="app-card-subtitle">All workspace actions logged with user, entity, and timestamp.</p>
-          </div>
-          <span style={{ fontSize: 12, color: "var(--enterprise-muted)" }}>
-            {total.toLocaleString()} total events
-          </span>
+    <section style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* ── Page Header ── */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a853", marginBottom: 6 }}>Compliance</p>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f0f6fc", letterSpacing: "-0.02em", lineHeight: 1.1 }}>Audit Trail</h1>
+          <p style={{ fontSize: 13, color: "#8b949e", marginTop: 6 }}>Every workspace action — who did what, when, and to which record.</p>
         </div>
+        {!loading && (
+          <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 10, padding: "10px 18px", textAlign: "right" }}>
+            <p style={{ fontSize: 22, fontWeight: 800, color: "#d4a853", fontVariantNumeric: "tabular-nums" }}>{total.toLocaleString()}</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>total events</p>
+          </div>
+        )}
       </div>
 
-      {/* Filters */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-        <span style={{ fontSize: 12, color: "#8b949e", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>Filter:</span>
+      {/* ── Filter Bar ── */}
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", background: "#141a22", border: "1px solid #2a3240", borderRadius: 10, padding: "12px 16px" }}>
+        <span style={{ fontSize: 11, color: "#8b949e", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginRight: 4 }}>Filter</span>
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
-          style={{
-            background: "#141a22",
-            border: "1px solid #2a3240",
-            borderRadius: 8,
-            color: "#f0f6fc",
-            padding: "7px 14px",
-            fontSize: 13,
-            outline: "none",
-            cursor: "pointer",
-          }}
+          style={{ background: "#0b1016", border: "1px solid #2a3240", borderRadius: 7, color: "#f0f6fc", padding: "7px 14px", fontSize: 13, outline: "none", cursor: "pointer" }}
         >
           <option value="">All actions</option>
           {uniqueActions.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -132,16 +125,7 @@ export default function AuditPage() {
         <select
           value={filterEntity}
           onChange={(e) => setFilterEntity(e.target.value)}
-          style={{
-            background: "#141a22",
-            border: "1px solid #2a3240",
-            borderRadius: 8,
-            color: "#f0f6fc",
-            padding: "7px 14px",
-            fontSize: 13,
-            outline: "none",
-            cursor: "pointer",
-          }}
+          style={{ background: "#0b1016", border: "1px solid #2a3240", borderRadius: 7, color: "#f0f6fc", padding: "7px 14px", fontSize: 13, outline: "none", cursor: "pointer" }}
         >
           <option value="">All entity types</option>
           {uniqueEntities.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -149,10 +133,15 @@ export default function AuditPage() {
         {(filterAction || filterEntity) && (
           <button
             onClick={() => { setFilterAction(""); setFilterEntity(""); }}
-            style={{ fontSize: 12, color: "#8b949e", background: "none", border: "1px solid #2a3240", borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}
+            style={{ fontSize: 12, color: "#d4a853", background: "rgba(212,168,83,0.08)", border: "1px solid rgba(212,168,83,0.3)", borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}
           >
-            Clear
+            Clear filters
           </button>
+        )}
+        {(filterAction || filterEntity) && (
+          <span style={{ fontSize: 12, color: "#8b949e", marginLeft: "auto" }}>
+            Showing {logs.length} of {total.toLocaleString()} events
+          </span>
         )}
       </div>
 

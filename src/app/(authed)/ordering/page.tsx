@@ -431,55 +431,41 @@ export default function OrderingPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <div className="app-card">
-        <div className="app-card-header">
-          <div>
-            <h2 className="enterprise-heading text-2xl font-semibold">
-              Ordering Recommendations
-            </h2>
-            <p className="app-card-subtitle">
-              Draft purchase orders generated from forecasts and current stock.
-            </p>
-          </div>
-          <button
-            className="btn-primary btn-sm"
-            onClick={handleGenerateDrafts}
-            disabled={generating}
-          >
-            {generating ? "Generating..." : "Generate Draft POs"}
-          </button>
+    <section style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+      {/* ── Page Header ── */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a853", marginBottom: 6 }}>Procurement</p>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f0f6fc", letterSpacing: "-0.02em", lineHeight: 1.1 }}>Ordering</h1>
+          <p style={{ fontSize: 13, color: "#8b949e", marginTop: 6 }}>AI-generated draft POs from forecasts. Review, approve, and send to vendors.</p>
         </div>
-        <div className="app-card-body">
-          <div className="app-kpi-grid">
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Items to Reorder</p>
-              <p className="app-kpi-value" style={{ color: "#d4a853" }}>{loading ? "—" : totalLines}</p>
-              <p className="app-kpi-meta">Across draft orders</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Estimated Cost</p>
-              <p className="app-kpi-value" style={{ color: "#f0f6fc" }}>
-                {loading ? "—" : formatCurrency(totalCost)}
-              </p>
-              <p className="app-kpi-meta">Totals before tax</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Vendors</p>
-              <p className="app-kpi-value" style={{ color: "#d4a853" }}>{loading ? "—" : vendorCount}</p>
-              <p className="app-kpi-meta">Drafts ready to send</p>
-            </div>
-            <div className="app-kpi-card">
-              <p className="app-kpi-label">Last Sync</p>
-              <p className="app-kpi-value" style={{ color: "#22c55e" }}>
-                {loading ? "—" : new Date().toLocaleTimeString()}
-              </p>
-              <p className="app-kpi-meta">Auto refresh active</p>
-            </div>
-          </div>
-        </div>
+        <button
+          style={{ background: "#d4a853", color: "#0b1016", border: "none", borderRadius: 8, padding: "9px 18px", fontWeight: 700, fontSize: 13, cursor: generating ? "not-allowed" : "pointer", opacity: generating ? 0.6 : 1, flexShrink: 0 }}
+          onClick={handleGenerateDrafts}
+          disabled={generating}
+        >
+          {generating ? "Generating…" : "Generate Draft POs"}
+        </button>
       </div>
 
+      {/* ── KPI Strip ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+        {[
+          { label: "Items to Reorder", value: loading ? "—" : String(totalLines), meta: "Across all vendors", color: "#d4a853" },
+          { label: "Estimated Cost", value: loading ? "—" : formatCurrency(totalCost), meta: "Before tax", color: "#f0f6fc" },
+          { label: "Vendors", value: loading ? "—" : String(vendorCount), meta: "Drafts ready to send", color: "#d4a853" },
+          { label: "Last Sync", value: loading ? "—" : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), meta: "Auto-refresh active", color: "#22c55e" },
+        ].map((kpi) => (
+          <div key={kpi.label} style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
+            <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{kpi.label}</p>
+            <p style={{ fontSize: 26, fontWeight: 800, color: kpi.color, marginTop: 6, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em" }}>{kpi.value}</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 4 }}>{kpi.meta}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* ── AI Insights ── */}
       <AIInsightsTopPanel
         pageContext="ordering"
         loading={aiLoading}
@@ -502,82 +488,40 @@ export default function OrderingPage() {
         }))}
       />
 
-      {graphsEnabled ? (
-        <div className="app-card">
-          <div className="app-card-header">
-            <div>
-              <h3 className="app-card-title">Ordering Breakdown</h3>
-              <p className="app-card-subtitle">
-                Chart-first view of recommended draft orders.
-              </p>
-            </div>
+      {/* ── Ordering Breakdown Charts ── */}
+      {graphsEnabled && orders.length > 0 ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 16 }}>Cost by Vendor</p>
+            <BarChart
+              variant="horizontal"
+              data={vendorTotals.map((v) => ({ label: v.label, value: v.total, color: "#d4a853" }))}
+              valueFormat={(v) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v)}
+            />
           </div>
-          <div className="app-card-body">
-            {loading ? (
-              <p className="text-sm text-[var(--enterprise-muted)]">
-                Loading ordering charts…
-              </p>
-            ) : orders.length === 0 ? (
-              <div className="app-empty">
-                <div className="app-empty-title">No Draft Orders</div>
-                <p className="app-empty-desc">
-                  Generate draft POs to see breakdown charts.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div>
-                  <div className="text-sm font-semibold text-[var(--enterprise-ink)]">
-                    Estimated cost by vendor
-                  </div>
-                  <div className="mt-2">
-                    <BarChart
-                      data={vendorTotals.map((v) => ({
-                        label: v.label,
-                        value: v.total,
-                        color: "var(--enterprise-accent)",
-                      }))}
-                      valueFormat={(v) =>
-                        new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: "USD",
-                          maximumFractionDigits: 0,
-                        }).format(v)
-                      }
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-[var(--enterprise-ink)]">
-                    Top items by units
-                  </div>
-                  <div className="mt-2">
-                    <BarChart
-                      data={topItems.map((i) => ({
-                        label: i.label,
-                        value: i.total,
-                        color: "var(--enterprise-accent)",
-                      }))}
-                      valueFormat={(v) => `${v.toFixed(0)} units`}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+          <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 16 }}>Top Items by Units</p>
+            <BarChart
+              variant="horizontal"
+              data={topItems.map((i) => ({ label: i.label, value: i.total, color: "#22c55e" }))}
+              valueFormat={(v) => `${v.toFixed(0)} units`}
+            />
           </div>
         </div>
       ) : null}
 
-      <div className="app-card">
-        <div className="app-card-header">
+      {/* ── Draft Purchase Orders ── */}
+      <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ padding: "14px 20px", borderBottom: "1px solid #1f2732", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h3 className="app-card-title">Draft Purchase Orders</h3>
-            <p className="app-card-subtitle">
-              Review and approve orders grouped by vendor.
-            </p>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Draft Purchase Orders</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Review and approve orders grouped by vendor</p>
           </div>
+          {!loading && orders.length > 0 && (
+            <span style={{ fontSize: 12, color: "#d4a853", fontWeight: 600 }}>{orders.length} draft{orders.length !== 1 ? "s" : ""}</span>
+          )}
         </div>
-        <div className="app-card-body">
+        <div style={{ padding: "16px 20px" }}>
           {loading ? (
             <p className="text-sm text-[var(--enterprise-muted)]">
               Loading draft POs...
@@ -681,64 +625,55 @@ export default function OrderingPage() {
         </div>
       </div>
 
-      {!aiTopEnabled && aiEnabled ? (
+      {!aiTopEnabled && aiEnabled && aiSummary ? (
         <AiCard
           title="AI Ordering Copilot"
           subtitle="Natural-language summary of reorder recommendations."
           loading={aiLoading}
           error={!aiSummary ? "AI summary not available yet." : null}
           footer={
-            aiSummary ? (
-              <button
-                className="btn-secondary btn-sm"
-                onClick={() => {
-                  void navigator.clipboard.writeText(aiSummary.summary);
-                }}
-              >
-                Copy summary
-              </button>
-            ) : null
+            <button
+              style={{ fontSize: 12, color: "#d4a853", background: "transparent", border: "1px solid rgba(212,168,83,0.3)", borderRadius: 6, padding: "5px 12px", cursor: "pointer" }}
+              onClick={() => void navigator.clipboard.writeText(aiSummary.summary)}
+            >
+              Copy summary
+            </button>
           }
         >
-          <div className="space-y-4 text-sm">
-            <p className="text-[var(--enterprise-muted)]">{aiSummary?.summary}</p>
-            {aiSummary?.top_actions.length ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {aiSummary.summary && (
+              <p style={{ fontSize: 13, color: "#c9d1d9", lineHeight: 1.6, borderLeft: "2px solid rgba(212,168,83,0.4)", paddingLeft: 12 }}>
+                {aiSummary.summary}
+              </p>
+            )}
+            {aiSummary.top_actions.length > 0 && (
               <div>
-                <div className="text-xs uppercase text-[var(--enterprise-muted)]">
-                  Top actions
-                </div>
-                <ul className="mt-2 space-y-2">
-                  {aiSummary.top_actions.map((action) => (
-                    <li key={action.action} className="flex items-start gap-2">
-                      <span className="app-pill">{action.urgency}</span>
-                      <div>
-                        <div className="font-semibold">{action.action}</div>
-                        <div className="text-xs text-[var(--enterprise-muted)]">
-                          {action.reason}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#22c55e", marginBottom: 8 }}>Top Actions</p>
+                {aiSummary.top_actions.map((action) => (
+                  <div key={action.action} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", padding: "2px 7px", borderRadius: 4, background: action.urgency === "high" ? "rgba(239,68,68,0.12)" : "rgba(212,168,83,0.12)", color: action.urgency === "high" ? "#ef4444" : "#d4a853", border: `1px solid ${action.urgency === "high" ? "#ef444433" : "#d4a85333"}`, flexShrink: 0, marginTop: 1 }}>{action.urgency}</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f0f6fc" }}>{action.action}</div>
+                      <div style={{ fontSize: 11, color: "#8b949e", marginTop: 1 }}>{action.reason}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : null}
-            {aiSummary?.risk_notes.length ? (
+            )}
+            {aiSummary.risk_notes.length > 0 && (
               <div>
-                <div className="text-xs uppercase text-[var(--enterprise-muted)]">
-                  Risks to watch
-                </div>
-                <ul className="mt-2 list-disc pl-4 text-[var(--enterprise-muted)]">
-                  {aiSummary.risk_notes.map((risk) => (
-                    <li key={risk.risk}>
-                      <span className="font-semibold text-[var(--enterprise-ink)]">
-                        {risk.risk}
-                      </span>{" "}
-                      — {risk.impact}
-                    </li>
-                  ))}
-                </ul>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#ef4444", marginBottom: 8 }}>Risks to Watch</p>
+                {aiSummary.risk_notes.map((risk) => (
+                  <div key={risk.risk} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+                    <span style={{ color: "#ef4444", fontSize: 14, flexShrink: 0, marginTop: 1 }}>⚠</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#f0f6fc" }}>{risk.risk}</div>
+                      <div style={{ fontSize: 11, color: "#8b949e", marginTop: 1 }}>{risk.impact}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : null}
+            )}
           </div>
         </AiCard>
       ) : null}

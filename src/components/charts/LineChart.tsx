@@ -3,9 +3,9 @@
 import { useMemo, useRef, useState } from "react";
 
 type Point = {
-  x: number; // domain value (e.g. time ms)
-  y: number; // metric value
-  label?: string; // display label
+  x: number;
+  y: number;
+  label?: string;
 };
 
 export type LineSeries = {
@@ -53,19 +53,20 @@ export function LineChart({
     const ys = allPoints.map((p) => p.y);
     const minX = xs.length ? Math.min(...xs) : 0;
     const maxX = xs.length ? Math.max(...xs) : 1;
-    const minY = ys.length ? Math.min(...ys) : 0;
-    const maxY = ys.length ? Math.max(...ys) : 1;
+    const minY = 0; // always start y-axis at 0 for readability
+    const rawMax = ys.length ? Math.max(...ys) : 1;
+    const maxY = rawMax === 0 ? 1 : rawMax * 1.1; // 10% headroom
     return {
       minX,
       maxX: maxX === minX ? minX + 1 : maxX,
       minY,
-      maxY: maxY === minY ? minY + 1 : maxY,
+      maxY,
     };
   }, [allPoints]);
 
   const w = 900;
   const h = height;
-  const pad = { l: 44, r: 18, t: 10, b: 26 };
+  const pad = { l: 48, r: 20, t: 12, b: 30 };
   const plotW = w - pad.l - pad.r;
   const plotH = h - pad.t - pad.b;
 
@@ -85,22 +86,47 @@ export function LineChart({
 
   const fmt = valueFormat ?? ((v: number) => v.toFixed(1));
 
-  const buildPath = (pts: Point[]) => {
+  // Smooth bezier path
+  const buildSmoothPath = (pts: Point[]) => {
     if (pts.length === 0) return "";
     const sorted = [...pts].sort((a, b) => a.x - b.x);
+    if (sorted.length === 1) {
+      const x = xToPx(sorted[0].x);
+      const y = yToPx(sorted[0].y);
+      return `M ${x} ${y}`;
+    }
     const parts: string[] = [];
     sorted.forEach((p, idx) => {
       const x = xToPx(p.x);
       const y = yToPx(p.y);
-      parts.push(`${idx === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`);
+      if (idx === 0) {
+        parts.push(`M ${x.toFixed(2)} ${y.toFixed(2)}`);
+      } else {
+        const prev = sorted[idx - 1];
+        const px = xToPx(prev.x);
+        const py = yToPx(prev.y);
+        const cpX = (px + x) / 2;
+        parts.push(`C ${cpX.toFixed(2)} ${py.toFixed(2)}, ${cpX.toFixed(2)} ${y.toFixed(2)}, ${x.toFixed(2)} ${y.toFixed(2)}`);
+      }
     });
     return parts.join(" ");
   };
 
+  // Gradient fill area path
+  const buildAreaPath = (pts: Point[], color: string) => {
+    if (pts.length === 0) return { path: "", gradId: "" };
+    const sorted = [...pts].sort((a, b) => a.x - b.x);
+    const linePath = buildSmoothPath(sorted);
+    const lastX = xToPx(sorted[sorted.length - 1].x);
+    const firstX = xToPx(sorted[0].x);
+    const baseline = yToPx(domain.minY);
+    const areaPath = `${linePath} L ${lastX.toFixed(2)} ${baseline.toFixed(2)} L ${firstX.toFixed(2)} ${baseline.toFixed(2)} Z`;
+    const gradId = `lineGrad-${color.replace(/[^a-z0-9]/gi, "")}`;
+    return { path: areaPath, gradId };
+  };
+
   const nearestPoint = (xPx: number) => {
-    let best:
-      | { seriesName: string; point: Point; dist: number }
-      | null = null;
+    let best: { seriesName: string; point: Point; dist: number } | null = null;
     for (const s of activeSeries) {
       for (const p of s.data) {
         const px = xToPx(p.x);
@@ -118,106 +144,106 @@ export function LineChart({
     const x = clamp(clientX - rect.left, 0, rect.width);
     const xPx = (x / rect.width) * w;
     const best = nearestPoint(xPx);
-    if (!best) {
-      setHover(null);
-      return;
-    }
+    if (!best) { setHover(null); return; }
     setHover({ xPx, seriesName: best.seriesName, point: best.point });
   };
 
   if (series.length === 0) {
-    return (
-      <div className="text-sm text-[var(--enterprise-muted)]">No data.</div>
-    );
+    return <div className="text-sm text-[var(--enterprise-muted)]">No data.</div>;
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        {series.map((s) => {
-          const isOff = Boolean(hidden[s.name]);
-          return (
-            <button
-              key={s.name}
-              className={
-                isOff
-                  ? "rounded-full border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-3 py-1 text-[var(--enterprise-muted)]"
-                  : "rounded-full border border-[var(--enterprise-border)] bg-[var(--enterprise-accent-soft)] px-3 py-1 font-semibold text-[var(--enterprise-ink)]"
-              }
-              onClick={() =>
-                setHidden((prev) => ({ ...prev, [s.name]: !prev[s.name] }))
-              }
-              type="button"
-            >
-              <span
-                className="mr-2 inline-block h-2 w-2 rounded-full"
-                style={{ background: s.color, opacity: isOff ? 0.35 : 1 }}
-              />
-              {s.name}
-            </button>
-          );
-        })}
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Legend */}
+      {series.length > 1 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {series.map((s) => {
+            const isOff = Boolean(hidden[s.name]);
+            return (
+              <button
+                key={s.name}
+                type="button"
+                onClick={() => setHidden((prev) => ({ ...prev, [s.name]: !prev[s.name] }))}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "3px 10px",
+                  borderRadius: 20,
+                  border: "1px solid",
+                  borderColor: isOff ? "#2a3240" : s.color,
+                  background: isOff ? "transparent" : `${s.color}18`,
+                  color: isOff ? "#8b949e" : "#f0f6fc",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, opacity: isOff ? 0.3 : 1, flexShrink: 0 }} />
+                {s.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div
         ref={containerRef}
-        className="relative"
+        style={{ position: "relative" }}
         onMouseMove={(e) => handleMove(e.clientX)}
         onMouseLeave={() => setHover(null)}
         onTouchMove={(e) => handleMove(e.touches[0]?.clientX ?? 0)}
         onTouchEnd={() => setHover(null)}
       >
-        <svg
-          viewBox={`0 0 ${w} ${h}`}
-          width="100%"
-          height={h}
-          role="img"
-          aria-label="Line chart"
-        >
+        <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} role="img" aria-label="Line chart">
+          <defs>
+            {activeSeries.map((s) => {
+              const gradId = `lineGrad-${s.color.replace(/[^a-z0-9]/gi, "")}`;
+              return (
+                <linearGradient key={gradId} id={gradId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={s.color} stopOpacity="0.25" />
+                  <stop offset="85%" stopColor={s.color} stopOpacity="0.03" />
+                </linearGradient>
+              );
+            })}
+          </defs>
+
           <rect x="0" y="0" width={w} height={h} fill="transparent" />
 
-          {/* grid + y axis labels */}
+          {/* Y-axis grid lines */}
           {yTicks.map((t) => {
             const y = yToPx(t);
             return (
               <g key={t}>
-                <line
-                  x1={pad.l}
-                  x2={w - pad.r}
-                  y1={y}
-                  y2={y}
-                  stroke="var(--enterprise-border)"
-                  strokeOpacity={0.6}
-                />
-                <text
-                  x={pad.l - 8}
-                  y={y + 4}
-                  fontSize="11"
-                  textAnchor="end"
-                  fill="var(--enterprise-muted)"
-                >
+                <line x1={pad.l} x2={w - pad.r} y1={y} y2={y} stroke="#1f2732" strokeWidth="1" />
+                <text x={pad.l - 8} y={y + 4} fontSize="11" textAnchor="end" fill="#8b949e">
                   {fmt(t)}
                 </text>
               </g>
             );
           })}
 
-          {yLabel ? (
-            <text
-              x={pad.l}
-              y={pad.t + 10}
-              fontSize="11"
-              fill="var(--enterprise-muted)"
-            >
-              {yLabel}
-            </text>
-          ) : null}
+          {yLabel && (
+            <text x={pad.l} y={pad.t + 10} fontSize="11" fill="#8b949e">{yLabel}</text>
+          )}
 
-          {/* series */}
+          {/* X-axis baseline */}
+          <line x1={pad.l} x2={w - pad.r} y1={yToPx(domain.minY)} y2={yToPx(domain.minY)} stroke="#2a3240" strokeWidth="1" />
+
+          {/* Gradient area fills */}
+          {activeSeries.map((s) => {
+            const { path, gradId } = buildAreaPath(s.data, s.color);
+            return (
+              <path key={`area-${s.name}`} d={path} fill={`url(#${gradId})`} />
+            );
+          })}
+
+          {/* Smooth lines */}
           {activeSeries.map((s) => (
             <path
-              key={s.name}
-              d={buildPath(s.data)}
+              key={`line-${s.name}`}
+              d={buildSmoothPath(s.data)}
               fill="none"
               stroke={s.color}
               strokeWidth="2.5"
@@ -226,43 +252,55 @@ export function LineChart({
             />
           ))}
 
-          {/* hover marker */}
-          {hover ? (
+          {/* Hover crosshair + dot */}
+          {hover && (
             <g>
               <line
-                x1={hover.xPx}
-                x2={hover.xPx}
-                y1={pad.t}
-                y2={h - pad.b}
-                stroke="var(--enterprise-accent)"
-                strokeOpacity={0.5}
+                x1={hover.xPx} x2={hover.xPx}
+                y1={pad.t} y2={h - pad.b}
+                stroke="#d4a853" strokeOpacity="0.4" strokeDasharray="4 3"
               />
-              <circle
-                cx={xToPx(hover.point.x)}
-                cy={yToPx(hover.point.y)}
-                r="5"
-                fill="var(--enterprise-accent)"
-              />
+              {activeSeries.map((s) => {
+                const pt = [...s.data].sort((a, b) => a.x - b.x).find((p) => p === hover.point);
+                if (!pt) return null;
+                return (
+                  <circle
+                    key={`dot-${s.name}`}
+                    cx={xToPx(hover.point.x)} cy={yToPx(hover.point.y)}
+                    r="5" fill={s.color}
+                    stroke="#0b1016" strokeWidth="2"
+                  />
+                );
+              })}
             </g>
-          ) : null}
+          )}
         </svg>
 
-        {hover ? (
+        {/* Tooltip */}
+        {hover && (
           <div
-            className="pointer-events-none absolute top-2 rounded-lg border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-3 py-2 text-xs text-[var(--enterprise-ink)] shadow"
             style={{
-              left: `${clamp((hover.xPx / w) * 100, 0, 92)}%`,
+              position: "absolute",
+              top: 8,
+              left: `${clamp((hover.xPx / w) * 100, 2, 85)}%`,
+              pointerEvents: "none",
+              background: "#141a22",
+              border: "1px solid #2a3240",
+              borderRadius: 8,
+              padding: "8px 12px",
+              fontSize: 12,
+              color: "#f0f6fc",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+              whiteSpace: "nowrap",
             }}
           >
-            <div className="font-semibold">{hover.seriesName}</div>
-            <div className="text-[var(--enterprise-muted)]">
-              {hover.point.label ?? new Date(hover.point.x).toLocaleDateString()}
+            <div style={{ color: "#8b949e", fontSize: 11 }}>
+              {hover.point.label ?? new Date(hover.point.x).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </div>
-            <div className="mt-1">{fmt(hover.point.y)}</div>
+            <div style={{ fontWeight: 700, color: "#d4a853", marginTop: 2 }}>{fmt(hover.point.y)}</div>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
 }
-
