@@ -332,22 +332,27 @@ textarea:focus-visible {
 }
 
 .enterprise-theme .app-kpi-card {
-  background: #1b222b;
+  background: #141a22;
   border: 1px solid #2a3240;
+  border-radius: 12px;
+  padding: 18px 20px;
   color: #f8fafc;
 }
 
+/* Demo style: no left-border accent — color lives in the value instead */
 .enterprise-theme .app-kpi-card::before {
-  background: #d4a853;
+  display: none;
 }
 
 .enterprise-theme .app-kpi-label,
 .enterprise-theme .app-kpi-meta {
-  color: #9ca3af;
+  color: #8b949e;
 }
 
+/* Default value color — individual cards override via inline style */
 .enterprise-theme .app-kpi-value {
-  color: #ffffff;
+  color: #d4a853;
+  font-size: 1.6rem;
 }
 
 .enterprise-theme .app-empty {
@@ -730,9 +735,8 @@ textarea:focus-visible {
 .table thead,
 .app-table thead {
   background-color: var(--color-bg-tertiary);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  /* sticky removed — shell header+tabbar already sticky, table thead stacking
+     on top causes visual overlap */
 }
 
 .table th,
@@ -2441,4 +2445,140 @@ textarea:focus-visible {
 .landing-footer-legal {
   display: flex;
   gap: var(--space-5);
+}
+
+/* ─────────────────────────────────────────────
+   SEVERITY / STATUS BADGES
+   ───────────────────────────────────────────── */
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.app-badge-red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.app-badge-gold {
+  background: rgba(212, 168, 83, 0.15);
+  color: #d4a853;
+  border: 1px solid rgba(212, 168, 83, 0.3);
+}
+
+.app-badge-green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.app-badge-blue {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.app-badge-purple {
+  background: rgba(167, 139, 250, 0.12);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.25);
+}
+
+.app-badge-muted {
+  background: rgba(139, 148, 158, 0.1);
+  color: #8b949e;
+  border: 1px solid rgba(139, 148, 158, 0.2);
+}
+
+/* ─────────────────────────────────────────────
+   ENTERPRISE DARK-THEME FORM ELEMENTS
+   ───────────────────────────────────────────── */
+.enterprise-theme label {
+  color: #9ca3af;
+}
+
+.enterprise-theme input,
+.enterprise-theme select,
+.enterprise-theme textarea {
+  background: #141a22;
+  border-color: #2a3240;
+  color: #f8fafc;
+}
+
+.enterprise-theme input::placeholder,
+.enterprise-theme textarea::placeholder {
+  color: #4b5563;
+}
+
+/* ─────────────────────────────────────────────
+   APP TAB BAR — demo-style underline navigation
+   ───────────────────────────────────────────── */
+.app-tab-bar {
+  background: rgba(11, 16, 22, 0.96);
+  border-bottom: 1px solid #1f2732;
+  backdrop-filter: blur(16px);
+}
+
+.app-tab-bar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.app-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #8b949e;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: -1px;
+  text-decoration: none;
+  transition: color 150ms ease;
+  white-space: nowrap;
+}
+
+.app-tab:hover {
+  color: #f8fafc;
+}
+
+.app-tab-active {
+  font-weight: 700;
+  color: #d4a853;
+  border-bottom: 2px solid #d4a853;
+}
+
+.app-tab-divider {
+  width: 1px;
+  height: 16px;
+  background: #2a3240;
+  margin: 0 8px;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.app-tab-secondary {
+  font-size: 12px;
+  opacity: 0.65;
+}
+
+.app-tab-secondary:hover {
+  opacity: 1;
 }

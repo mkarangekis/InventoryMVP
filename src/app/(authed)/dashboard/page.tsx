@@ -456,7 +456,7 @@ export default function DashboardPage() {
           <div className="app-kpi-grid">
             <div className="app-kpi-card">
               <p className="app-kpi-label">Variance This Week</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: loading ? undefined : varianceTotalOz > 0 ? "#ef4444" : "#22c55e" }}>
                 {loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`}
               </p>
               <p className="app-kpi-meta">
@@ -467,19 +467,21 @@ export default function DashboardPage() {
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Active Flags</p>
-              <p className="app-kpi-value">{loading ? "—" : flags.length}</p>
+              <p className="app-kpi-value" style={{ color: loading ? undefined : flags.length > 0 ? "#ef4444" : "#22c55e" }}>
+                {loading ? "—" : flags.length}
+              </p>
               <p className="app-kpi-meta">Awaiting review</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Items Tracked</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: "#d4a853" }}>
                 {loading ? "—" : trackedItems || "—"}
               </p>
               <p className="app-kpi-meta">Forecast coverage</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Next Forecast</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: "#d4a853" }}>
                 {nextForecast
                   ? new Date(nextForecast.forecast_date).toLocaleDateString()
                   : "—"}
@@ -638,18 +640,27 @@ export default function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {flags.slice(0, 6).map((flag) => (
-                      <tr key={flag.id} className="border-t">
-                        <td className="px-3 py-2">{flag.item_name}</td>
-                        <td className="px-3 py-2">
-                          {new Date(flag.week_start_date).toLocaleDateString()}
-                        </td>
-                        <td className="px-3 py-2">{flag.variance_oz}</td>
-                        <td className="px-3 py-2 font-semibold">
-                          {flag.severity}
-                        </td>
-                      </tr>
-                    ))}
+                    {flags.slice(0, 6).map((flag) => {
+                      const varianceNum = parseFloat(flag.variance_oz);
+                      const severityClass =
+                        flag.severity === "high" ? "app-badge app-badge-red" :
+                        flag.severity === "med" ? "app-badge app-badge-gold" :
+                        "app-badge app-badge-green";
+                      return (
+                        <tr key={flag.id} className="border-t">
+                          <td className="px-4 py-3 font-medium">{flag.item_name}</td>
+                          <td className="px-4 py-3 text-[var(--enterprise-muted)]">
+                            {new Date(flag.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </td>
+                          <td className="px-4 py-3 font-semibold tabular-nums" style={{ color: varianceNum < 0 ? "#ef4444" : "#22c55e" }}>
+                            {flag.variance_oz} oz
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={severityClass}>{flag.severity}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

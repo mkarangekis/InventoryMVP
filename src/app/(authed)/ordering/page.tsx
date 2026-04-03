@@ -454,24 +454,24 @@ export default function OrderingPage() {
           <div className="app-kpi-grid">
             <div className="app-kpi-card">
               <p className="app-kpi-label">Items to Reorder</p>
-              <p className="app-kpi-value">{loading ? "—" : totalLines}</p>
+              <p className="app-kpi-value" style={{ color: "#d4a853" }}>{loading ? "—" : totalLines}</p>
               <p className="app-kpi-meta">Across draft orders</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Estimated Cost</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: "#f0f6fc" }}>
                 {loading ? "—" : formatCurrency(totalCost)}
               </p>
               <p className="app-kpi-meta">Totals before tax</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Vendors</p>
-              <p className="app-kpi-value">{loading ? "—" : vendorCount}</p>
+              <p className="app-kpi-value" style={{ color: "#d4a853" }}>{loading ? "—" : vendorCount}</p>
               <p className="app-kpi-meta">Drafts ready to send</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Last Sync</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: "#22c55e" }}>
                 {loading ? "—" : new Date().toLocaleTimeString()}
               </p>
               <p className="app-kpi-meta">Auto refresh active</p>
@@ -601,84 +601,75 @@ export default function OrderingPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {orders.map((po) => (
-                <div
-                  key={po.id}
-                  className="rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface-elevated)] p-4"
-                >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-[var(--enterprise-muted)]">
-                        Vendor
-                      </p>
-                      <p className="text-lg font-semibold">
-                        {po.vendor?.name ?? "Unknown vendor"}
-                      </p>
-                      <p className="text-xs text-[var(--enterprise-muted)]">
-                        {po.vendor?.email ?? ""}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <a
-                        className="btn-secondary btn-sm"
-                        href={getPoLink(po.id)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Print
-                      </a>
-                      <a
-                        className="btn-secondary btn-sm"
-                        href={getPoLink(po.id, true)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        PDF
-                      </a>
-                      {po.vendor?.email ? (
-                        <button
-                          className="btn-ghost btn-sm"
-                          onClick={() => void handleSendToVendor(po.id)}
-                          disabled={po.status === "sent" || sendingPoId === po.id}
-                          title={po.status === "sent" ? "Already sent" : `Send PO to ${po.vendor.email}`}
-                        >
-                          {sendingPoId === po.id ? "Sending..." : po.status === "sent" ? "Sent ✓" : "Send to Vendor"}
+              {orders.map((po) => {
+                const poTotal = po.lines.reduce((s, l) => s + (l.line_total || 0), 0);
+                const statusClass =
+                  po.status === "approved" ? "app-badge app-badge-green" :
+                  po.status === "sent" ? "app-badge app-badge-blue" :
+                  "app-badge app-badge-gold";
+                return (
+                  <div
+                    key={po.id}
+                    style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}
+                  >
+                    {/* PO card header */}
+                    <div style={{ padding: "16px 20px", borderBottom: "1px solid #1f2732", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                        <div>
+                          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", marginBottom: 3 }}>Vendor</p>
+                          <p style={{ fontWeight: 700, fontSize: 15, color: "#f0f6fc" }}>{po.vendor?.name ?? "Unknown vendor"}</p>
+                          {po.vendor?.email && (
+                            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 1 }}>{po.vendor.email}</p>
+                          )}
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 3 }}>{po.lines.length} line{po.lines.length !== 1 ? "s" : ""}</p>
+                          <p style={{ fontWeight: 700, fontSize: 15, color: "#f0f6fc", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(poTotal)}</p>
+                          <span className={statusClass} style={{ marginTop: 4, display: "inline-block" }}>{po.status}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <a className="btn-secondary btn-sm" href={getPoLink(po.id)} target="_blank" rel="noreferrer">Print</a>
+                        <a className="btn-secondary btn-sm" href={getPoLink(po.id, true)} target="_blank" rel="noreferrer">PDF</a>
+                        {po.vendor?.email ? (
+                          <button
+                            className="btn-ghost btn-sm"
+                            onClick={() => void handleSendToVendor(po.id)}
+                            disabled={po.status === "sent" || sendingPoId === po.id}
+                            title={po.status === "sent" ? "Already sent" : `Send PO to ${po.vendor.email}`}
+                          >
+                            {sendingPoId === po.id ? "Sending..." : po.status === "sent" ? "Sent ✓" : "Send to Vendor"}
+                          </button>
+                        ) : null}
+                        <button className="btn-primary btn-sm" onClick={() => handleApprove(po.id)}>
+                          Approve PO
                         </button>
-                      ) : null}
-                      <button
-                        className="btn-primary btn-sm"
-                        onClick={() => handleApprove(po.id)}
-                      >
-                        Approve
-                      </button>
+                      </div>
                     </div>
-                  </div>
 
-                  <table className="app-table mt-4 w-full text-left text-sm">
-                    <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-                      <tr>
-                        <th className="py-1">Item</th>
-                        <th className="py-1">Qty</th>
-                        <th className="py-1">Unit</th>
-                        <th className="py-1">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {po.lines.map((line) => (
-                        <tr
-                          key={`${po.id}-${line.inventory_item_id}`}
-                          className="border-t"
-                        >
-                          <td className="py-1">{line.item_name}</td>
-                          <td className="py-1">{line.qty_units}</td>
-                          <td className="py-1">${line.unit_price}</td>
-                          <td className="py-1">${line.line_total}</td>
+                    {/* PO line items table */}
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ borderBottom: "1px solid #1f2732" }}>
+                          {["Item", "Qty", "Unit Price", "Line Total"].map((h) => (
+                            <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{h}</th>
+                          ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
+                      </thead>
+                      <tbody>
+                        {po.lines.map((line, j) => (
+                          <tr key={`${po.id}-${line.inventory_item_id}`} style={{ borderBottom: j < po.lines.length - 1 ? "1px solid #1a2230" : "none" }}>
+                            <td style={{ padding: "9px 16px", color: "#f0f6fc" }}>{line.item_name}</td>
+                            <td style={{ padding: "9px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{line.qty_units}</td>
+                            <td style={{ padding: "9px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(line.unit_price)}</td>
+                            <td style={{ padding: "9px 16px", color: "#d4a853", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{formatCurrency(line.line_total)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
             </div>
           )}
 

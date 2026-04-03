@@ -110,17 +110,20 @@ export default function AuditPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{ fontSize: 12, color: "#8b949e", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em" }}>Filter:</span>
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
           style={{
-            background: "var(--app-surface-elevated)",
-            border: "1px solid var(--enterprise-border)",
+            background: "#141a22",
+            border: "1px solid #2a3240",
             borderRadius: 8,
-            color: "var(--enterprise-fg)",
-            padding: "6px 12px",
-            fontSize: 12,
+            color: "#f0f6fc",
+            padding: "7px 14px",
+            fontSize: 13,
+            outline: "none",
+            cursor: "pointer",
           }}
         >
           <option value="">All actions</option>
@@ -130,17 +133,27 @@ export default function AuditPage() {
           value={filterEntity}
           onChange={(e) => setFilterEntity(e.target.value)}
           style={{
-            background: "var(--app-surface-elevated)",
-            border: "1px solid var(--enterprise-border)",
+            background: "#141a22",
+            border: "1px solid #2a3240",
             borderRadius: 8,
-            color: "var(--enterprise-fg)",
-            padding: "6px 12px",
-            fontSize: 12,
+            color: "#f0f6fc",
+            padding: "7px 14px",
+            fontSize: 13,
+            outline: "none",
+            cursor: "pointer",
           }}
         >
           <option value="">All entity types</option>
           {uniqueEntities.map((e) => <option key={e} value={e}>{e}</option>)}
         </select>
+        {(filterAction || filterEntity) && (
+          <button
+            onClick={() => { setFilterAction(""); setFilterEntity(""); }}
+            style={{ fontSize: 12, color: "#8b949e", background: "none", border: "1px solid #2a3240", borderRadius: 6, padding: "6px 12px", cursor: "pointer" }}
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Table */}

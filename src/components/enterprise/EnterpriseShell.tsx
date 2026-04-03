@@ -93,13 +93,19 @@ const SignOutIcon = () => (
   </svg>
 );
 
-const navItems: NavItem[] = [
-  {
-    label: "Overview",
-    href: "/dashboard",
-    description: "Variance and near-term demand",
-    icon: <OverviewIcon />,
-  },
+type PrimaryTab = { label: string; href: string; key: string };
+type UtilityTab = NavItem;
+
+const primaryTabs: PrimaryTab[] = [
+  { key: "dashboard", label: "Dashboard", href: "/dashboard" },
+  { key: "variance", label: "Variance & Shrinkage", href: "/variance" },
+  { key: "profit", label: "Profit", href: "/profit" },
+  { key: "ordering", label: "Ordering", href: "/ordering" },
+  { key: "audit", label: "Audit Trail", href: "/audit" },
+  { key: "ai", label: "AI Insights", href: "/dashboard" },
+];
+
+const utilityTabs: UtilityTab[] = [
   {
     label: "Inventory",
     href: "/inventory",
@@ -107,34 +113,10 @@ const navItems: NavItem[] = [
     icon: <InventoryIcon />,
   },
   {
-    label: "Ordering",
-    href: "/ordering",
-    description: "Draft purchase orders",
-    icon: <OrderingIcon />,
-  },
-  {
-    label: "Variance",
-    href: "/variance",
-    description: "Shrink + variance flags",
-    icon: <VarianceIcon />,
-  },
-  {
-    label: "Ingestion",
+    label: "Ingest",
     href: "/ingest",
     description: "POS imports",
     icon: <IngestIcon />,
-  },
-  {
-    label: "Profit",
-    href: "/profit",
-    description: "Menu rankings",
-    icon: <ProfitIcon />,
-  },
-  {
-    label: "Audit",
-    href: "/audit",
-    description: "Action history",
-    icon: <AuditIcon />,
   },
   {
     label: "Settings",
@@ -167,62 +149,86 @@ export default function EnterpriseShell({
 
   return (
     <div className="enterprise-theme min-h-screen">
-      <header className="app-header">
-        <div className="app-header-inner">
-          <div className="app-brand">
-            <div className="app-logo">P</div>
-            <div className="app-brand-text">
-              <span className="app-brand-name">{COMPANY_NAME}</span>
-              <span className="app-brand-product">{PRODUCT_NAME}</span>
+      {/* ── Sticky wrapper keeps header + tab bar together ── */}
+      <div style={{ position: "sticky", top: 0, zIndex: 50 }}>
+        <header className="app-header" style={{ position: "relative" }}>
+          <div className="app-header-inner">
+            <div className="app-brand">
+              <div className="app-logo">P</div>
+              <div className="app-brand-text">
+                <span className="app-brand-name">{COMPANY_NAME}</span>
+                <span className="app-brand-product">{PRODUCT_NAME}</span>
+              </div>
+            </div>
+
+            <div style={{ flex: 1 }} />
+
+            <div className="app-header-actions">
+              <NotificationCenter locationId={activeLocation || undefined} />
+              {locations.length > 0 ? (
+                <div className="location-selector">
+                  <LocationPinIcon />
+                  <select
+                    className="location-select"
+                    value={activeLocation}
+                    onChange={(event) => onLocationChange(event.target.value)}
+                  >
+                    {locations.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                className="app-header-signout"
+                onClick={() => void handleSignOut()}
+                title="Sign out"
+              >
+                <SignOutIcon />
+              </button>
             </div>
           </div>
+        </header>
 
-          <nav className="app-nav">
-            {navItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+        {/* ── Demo-style underline tab bar ── */}
+        <nav className="app-tab-bar">
+          <div className="app-tab-bar-inner">
+            {primaryTabs.map((tab) => {
+              const isActive =
+                tab.key !== "ai" && pathname.startsWith(tab.href);
               return (
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`app-nav-link${isActive ? " app-nav-link-active" : ""}`}
+                  key={tab.key}
+                  href={tab.href}
+                  className={`app-tab${isActive ? " app-tab-active" : ""}`}
                 >
-                  <span className="nav-icon">{item.icon}</span>
-                  {item.label}
+                  {tab.label}
                 </Link>
               );
             })}
-          </nav>
 
-          <div className="app-header-actions">
-            <NotificationCenter locationId={activeLocation || undefined} />
-            {locations.length > 0 ? (
-              <div className="location-selector">
-                <LocationPinIcon />
-                <select
-                  className="location-select"
-                  value={activeLocation}
-                  onChange={(event) => onLocationChange(event.target.value)}
+            <div className="app-tab-divider" />
+
+            {utilityTabs.map((tab) => {
+              const isActive = pathname.startsWith(tab.href);
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={`app-tab app-tab-secondary${isActive ? " app-tab-active" : ""}`}
                 >
-                  {locations.map((location) => (
-                    <option key={location.id} value={location.id}>
-                      {location.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              className="app-header-signout"
-              onClick={() => void handleSignOut()}
-              title="Sign out"
-            >
-              <SignOutIcon />
-            </button>
+                  <span className="nav-icon">{tab.icon}</span>
+                  {tab.label}
+                </Link>
+              );
+            })}
           </div>
-        </div>
-      </header>
+        </nav>
+      </div>
 
       <main className="mx-auto w-full max-w-6xl px-6 py-8">{children}</main>
     </div>

@@ -182,26 +182,33 @@ export default function VariancePage() {
     );
   }
 
+  const totalVarianceOz = flags.reduce((sum, f) => sum + Math.abs(parseFloat(f.variance_oz) || 0), 0);
+
   return (
     <section className="space-y-6">
       <div className="app-card">
         <div className="app-card-header">
           <div>
             <h2 className="enterprise-heading text-2xl font-semibold">
-              Variance & Shrink
+              Variance & Shrinkage
             </h2>
             <p className="app-card-subtitle">
               Weekly variance flags by inventory item.
             </p>
           </div>
+          {!loading && flags.length > 0 && (
+            <span style={{ fontSize: 13, color: "#ef4444", fontWeight: 600 }}>
+              {totalVarianceOz.toFixed(1)} oz total this week
+            </span>
+          )}
         </div>
-        <div className="app-card-body">
+        <div className="app-card-body" style={{ padding: 0 }}>
           {loading ? (
-            <p className="text-sm text-[var(--enterprise-muted)]">
+            <p className="text-sm text-[var(--enterprise-muted)]" style={{ padding: "20px 24px" }}>
               Loading variance...
             </p>
           ) : flags.length === 0 ? (
-            <div className="app-empty">
+            <div className="app-empty" style={{ margin: 20 }}>
               <div className="app-empty-title">No Variance Flags Yet</div>
               <p className="app-empty-desc">
                 Connect your POS and complete inventory counts to surface
@@ -209,35 +216,39 @@ export default function VariancePage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)]">
-              <table className="app-table w-full text-left text-sm">
-                <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-                  <tr>
-                    <th className="px-3 py-2">Item</th>
-                    <th className="px-3 py-2">Week</th>
-                    <th className="px-3 py-2">Expected</th>
-                    <th className="px-3 py-2">Actual</th>
-                    <th className="px-3 py-2">Variance</th>
-                    <th className="px-3 py-2">Severity</th>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #1f2732" }}>
+                    {["Item", "Week", "Expected", "Actual", "Variance", "Severity"].map((h) => (
+                      <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {flags.map((flag) => (
-                    <tr key={flag.id} className="border-t">
-                      <td className="px-3 py-2">{flag.item_name}</td>
-                      <td className="px-3 py-2">
-                        {new Date(flag.week_start_date).toLocaleDateString()}
-                      </td>
-                      <td className="px-3 py-2">
-                        {flag.expected_remaining_oz}
-                      </td>
-                      <td className="px-3 py-2">{flag.actual_remaining_oz}</td>
-                      <td className="px-3 py-2">{flag.variance_oz}</td>
-                      <td className="px-3 py-2 font-semibold">
-                        {flag.severity}
-                      </td>
-                    </tr>
-                  ))}
+                  {flags.map((flag, i) => {
+                    const varianceNum = parseFloat(flag.variance_oz);
+                    const severityClass =
+                      flag.severity === "high" ? "app-badge app-badge-red" :
+                      flag.severity === "med" ? "app-badge app-badge-gold" :
+                      "app-badge app-badge-green";
+                    return (
+                      <tr key={flag.id} style={{ borderBottom: i < flags.length - 1 ? "1px solid #1a2230" : "none" }}>
+                        <td style={{ padding: "10px 16px", fontWeight: 500, color: "#f0f6fc" }}>{flag.item_name}</td>
+                        <td style={{ padding: "10px 16px", color: "#8b949e" }}>
+                          {new Date(flag.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </td>
+                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{flag.expected_remaining_oz} oz</td>
+                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{flag.actual_remaining_oz} oz</td>
+                        <td style={{ padding: "10px 16px", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: varianceNum < 0 ? "#ef4444" : "#22c55e" }}>
+                          {flag.variance_oz} oz
+                        </td>
+                        <td style={{ padding: "10px 16px" }}>
+                          <span className={severityClass}>{flag.severity}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

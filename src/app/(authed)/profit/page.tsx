@@ -268,28 +268,30 @@ export default function ProfitPage() {
           <div className="app-kpi-grid">
             <div className="app-kpi-card">
               <p className="app-kpi-label">Revenue</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: "#22c55e" }}>
                 {loading ? "—" : formatCurrency(totalRevenue)}
               </p>
               <p className="app-kpi-meta">This period</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Pour Cost</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: "#8b949e" }}>
                 {loading ? "—" : formatCurrency(totalCost)}
               </p>
               <p className="app-kpi-meta">Based on specs</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Profit</p>
-              <p className="app-kpi-value">
+              <p className="app-kpi-value" style={{ color: "#22c55e" }}>
                 {loading ? "—" : formatCurrency(totalProfit)}
               </p>
               <p className="app-kpi-meta">Gross margin</p>
             </div>
             <div className="app-kpi-card">
               <p className="app-kpi-label">Margin</p>
-              <p className="app-kpi-value">{loading ? "—" : `${marginPct}%`}</p>
+              <p className="app-kpi-value" style={{ color: loading ? undefined : parseFloat(marginPct as string) >= 65 ? "#22c55e" : parseFloat(marginPct as string) >= 50 ? "#d4a853" : "#ef4444" }}>
+                {loading ? "—" : `${marginPct}%`}
+              </p>
               <p className="app-kpi-meta">Avg across menu</p>
             </div>
           </div>
@@ -366,39 +368,35 @@ export default function ProfitPage() {
               </div>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-[var(--enterprise-border)] bg-[var(--app-surface)]">
-              <table className="app-table w-full text-left text-sm">
-                <thead className="text-xs uppercase text-[var(--enterprise-muted)]">
-                  <tr>
-                    <th className="px-3 py-2">Drink</th>
-                    <th className="px-3 py-2">Sold</th>
-                    <th className="px-3 py-2">Price</th>
-                    <th className="px-3 py-2">Cost</th>
-                    <th className="px-3 py-2">Profit</th>
-                    <th className="px-3 py-2">Margin</th>
-                    <th className="px-3 py-2">Rec</th>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #1f2732" }}>
+                    {["#", "Drink", "Sold", "Price", "Cost/Serve", "Profit", "Margin", "Rec"].map((h) => (
+                      <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((row) => (
-                    <tr key={row.menu_item_id} className="border-t">
-                      <td className="px-3 py-2">{row.name}</td>
-                      <td className="px-3 py-2">{row.qty_sold}</td>
-                      <td className="px-3 py-2">
-                        {formatCurrency(row.price_each)}
-                      </td>
-                      <td className="px-3 py-2">
-                        {formatCurrency(row.cost_per_serv)}
-                      </td>
-                      <td className="px-3 py-2">
-                        {formatCurrency(row.profit_per_serv)}
-                      </td>
-                      <td className="px-3 py-2">{row.margin_pct}%</td>
-                      <td className="px-3 py-2">
-                        {row.recommendations.join(", ") || "-"}
-                      </td>
-                    </tr>
-                  ))}
+                  {items.map((row, i) => {
+                    const marginColor = row.margin_pct >= 70 ? "#22c55e" : row.margin_pct >= 60 ? "#d4a853" : "#ef4444";
+                    return (
+                      <tr key={row.menu_item_id} style={{ borderBottom: i < items.length - 1 ? "1px solid #1a2230" : "none" }}>
+                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 16px", fontWeight: 600, color: "#f0f6fc" }}>{row.name}</td>
+                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{row.qty_sold}</td>
+                        <td style={{ padding: "10px 16px", color: "#c9d1d9", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.price_each)}</td>
+                        <td style={{ padding: "10px 16px", color: "#8b949e", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.cost_per_serv)}</td>
+                        <td style={{ padding: "10px 16px", color: "#22c55e", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{formatCurrency(row.profit_per_serv)}</td>
+                        <td style={{ padding: "10px 16px" }}>
+                          <span style={{ color: marginColor, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{row.margin_pct}%</span>
+                        </td>
+                        <td style={{ padding: "10px 16px", color: "#8b949e", fontSize: 12, maxWidth: 180 }}>
+                          {row.recommendations.join(", ") || "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -417,7 +415,7 @@ export default function ProfitPage() {
         </div>
         <div className="app-card-body">
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-sm text-gray-700">
+            <label className="text-sm text-[var(--enterprise-muted)]">
               Location
               <select
                 className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
@@ -431,7 +429,7 @@ export default function ProfitPage() {
                 ))}
               </select>
             </label>
-            <label className="text-sm text-gray-700">
+            <label className="text-sm text-[var(--enterprise-muted)]">
               Menu item
               <select
                 className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
@@ -452,7 +450,7 @@ export default function ProfitPage() {
                   ))}
               </select>
             </label>
-            <label className="text-sm text-gray-700">
+            <label className="text-sm text-[var(--enterprise-muted)]">
               Glass type
               <input
                 className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
@@ -460,7 +458,7 @@ export default function ProfitPage() {
                 onChange={(event) => setGlassType(event.target.value)}
               />
             </label>
-            <label className="text-sm text-gray-700">
+            <label className="text-sm text-[var(--enterprise-muted)]">
               Ice type
               <input
                 className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
@@ -468,7 +466,7 @@ export default function ProfitPage() {
                 onChange={(event) => setIceType(event.target.value)}
               />
             </label>
-            <label className="text-sm text-gray-700">
+            <label className="text-sm text-[var(--enterprise-muted)]">
               Target pour (oz)
               <input
                 className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
@@ -476,7 +474,7 @@ export default function ProfitPage() {
                 onChange={(event) => setTargetPourOz(event.target.value)}
               />
             </label>
-            <label className="text-sm text-gray-700">
+            <label className="text-sm text-[var(--enterprise-muted)]">
               Notes
               <input
                 className="mt-1 w-full rounded border border-[var(--enterprise-border)] bg-[var(--app-surface)] px-2 py-1 text-sm text-[var(--enterprise-ink)]"
