@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getUserScope } from "@/ai/context";
 
+type WebhookRouteContext = { params: Promise<{ id: string }> };
+
 // PATCH /api/v1/webhooks/[id] — update endpoint
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: WebhookRouteContext) {
   const _scope = await getUserScope(req);
   if (!_scope.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const scope = _scope;
+  const { id } = await context.params;
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
@@ -25,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { error } = await supabaseAdmin
     .from("webhook_endpoints")
     .update(update)
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("tenant_id", scope.tenantId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -33,15 +36,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE /api/v1/webhooks/[id] — remove endpoint
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: WebhookRouteContext) {
   const _scope = await getUserScope(req);
   if (!_scope.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const scope = _scope;
+  const { id } = await context.params;
 
   const { error } = await supabaseAdmin
     .from("webhook_endpoints")
     .delete()
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("tenant_id", scope.tenantId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

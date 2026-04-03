@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +11,13 @@ export async function POST(request: Request) {
   if (!signature || !webhookSecret) {
     return new Response("Missing webhook signature", { status: 400 });
   }
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return new Response("STRIPE_SECRET_KEY is not set", { status: 500 });
+  }
 
   const body = await request.text();
   let event;
+  const stripe = getStripe();
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);

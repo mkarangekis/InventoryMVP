@@ -1,4 +1,4 @@
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +20,11 @@ export async function POST(request: Request) {
   if (!appUrl) {
     return new Response("APP_URL is not set", { status: 500 });
   }
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return new Response("STRIPE_SECRET_KEY is not set", { status: 500 });
+  }
+
+  const stripe = getStripe();
 
   const metadata = (userData.user.user_metadata ?? {}) as Record<string, any>;
   const billing = (metadata.billing ?? {}) as Record<string, any>;
@@ -36,4 +41,3 @@ export async function POST(request: Request) {
 
   return Response.json({ url: session.url });
 }
-
