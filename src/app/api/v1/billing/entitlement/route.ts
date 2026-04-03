@@ -1,5 +1,9 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { computeEntitlementFromBillingMetadata } from "@/lib/billing/entitlement";
+import {
+  computeEntitlementFromBillingMetadata,
+  type Entitlement,
+} from "@/lib/billing/entitlement";
+import { isDemoEmail } from "@/lib/demo";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +20,20 @@ export async function GET(request: Request) {
     return new Response("Invalid auth token", { status: 401 });
   }
 
+  if (isDemoEmail(userData.user.email)) {
+    const entitlement: Entitlement = {
+      entitlementStatus: "trialing",
+      entitlementSource: "mock",
+      trialEnd: null,
+      currentPeriodEnd: null,
+      customerId: null,
+      subscriptionId: null,
+      stripeStatusRaw: "demo",
+    };
+
+    return Response.json(entitlement);
+  }
+
   const metadata = (userData.user.user_metadata ?? {}) as Record<string, any>;
   const billing = (metadata.billing ?? {}) as Record<string, unknown>;
 
@@ -23,4 +41,3 @@ export async function GET(request: Request) {
 
   return Response.json(entitlement);
 }
-

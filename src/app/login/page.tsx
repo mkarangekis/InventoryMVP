@@ -29,6 +29,15 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SITE_URL ??
     (typeof window !== "undefined" ? window.location.origin : "");
 
+  const redirectAfterAuth = (href: string) => {
+    if (typeof window !== "undefined") {
+      window.location.replace(href);
+      return;
+    }
+
+    router.replace(href);
+  };
+
   const handleStartTrial = async (token: string) => {
     const response = await fetch("/api/billing/checkout", {
       method: "POST",
@@ -53,10 +62,11 @@ export default function LoginPage() {
     setLoading(true);
 
     let errorMessage = "";
+    let token: string | null = null;
 
     try {
       if (mode === "signup") {
-        const { error } = await supabaseBrowser.auth.signUp({
+        const { data: signUpData, error } = await supabaseBrowser.auth.signUp({
           email,
           password,
           options: {
@@ -71,7 +81,9 @@ export default function LoginPage() {
               ? error.message
               : JSON.stringify(error);
         } else {
-          const { error: signInError } =
+          token = signUpData.session?.access_token ?? null;
+
+          const { data: signInData, error: signInError } =
             await supabaseBrowser.auth.signInWithPassword({
               email,
               password,
@@ -82,10 +94,12 @@ export default function LoginPage() {
               signInError.message.length > 0
                 ? signInError.message
                 : JSON.stringify(signInError);
+          } else {
+            token = signInData.session?.access_token ?? token;
           }
         }
       } else {
-        const { error } = await supabaseBrowser.auth.signInWithPassword({
+        const { data: signInData, error } = await supabaseBrowser.auth.signInWithPassword({
           email,
           password,
         });
@@ -95,6 +109,8 @@ export default function LoginPage() {
             typeof error.message === "string" && error.message.length > 0
               ? error.message
               : JSON.stringify(error);
+        } else {
+          token = signInData.session?.access_token ?? null;
         }
       }
 
@@ -114,8 +130,10 @@ export default function LoginPage() {
         : `Error: ${errorMessage}`;
       setStatus(friendlyMessage);
     } else {
-      const { data } = await supabaseBrowser.auth.getSession();
-      const token = data.session?.access_token;
+      if (!token) {
+        const { data } = await supabaseBrowser.auth.getSession();
+        token = data.session?.access_token ?? null;
+      }
 
       if (!token) {
         setStatus(
@@ -153,26 +171,32 @@ export default function LoginPage() {
                 ent.entitlementStatus === "trialing"
               ) {
                 setStatus("Signed in. Redirecting to dashboard...");
-                router.replace("/dashboard");
+                redirectAfterAuth("/dashboard");
+                return;
               } else {
                 setStatus("Subscription required. Redirecting...");
-                router.replace("/subscribe");
+                redirectAfterAuth("/subscribe");
+                return;
               }
             } else {
               setStatus("Subscription required. Redirecting...");
-              router.replace("/subscribe");
+              redirectAfterAuth("/subscribe");
+              return;
             }
           } else {
             setStatus("Signed in. Redirecting to dashboard...");
-            router.replace("/dashboard");
+            redirectAfterAuth("/dashboard");
+            return;
           }
         } else {
           setStatus("Welcome back! Let’s finish onboarding.");
-          router.replace("/onboarding");
+          redirectAfterAuth("/onboarding");
+          return;
         }
       } else {
         setStatus("Signed in. Redirecting to dashboard...");
-        router.replace("/dashboard");
+        redirectAfterAuth("/dashboard");
+        return;
       }
     }
 
