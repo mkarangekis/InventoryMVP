@@ -36,6 +36,11 @@ export async function GET(req: NextRequest) {
   const rl = await consumeRateLimit(`shrinkage-cluster:${scope.userId}`, 10);
   if (!rl.allowed) return NextResponse.json({ error: "Rate limit exceeded. Try again in a minute." }, { status: 429 });
 
+  if (scope.isDemo) {
+    const { demoShrinkageClusters } = await import("@/lib/demo");
+    return NextResponse.json(demoShrinkageClusters);
+  }
+
   const url = new URL(req.url);
   const locationId = url.searchParams.get("locationId") ?? scope.locationId ?? scope.scopedLocationIds?.[0] ?? "";
 

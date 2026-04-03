@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { demoForecast, demoVarianceFlags, isDemoEmail } from "@/lib/demo";
+import { isDemoEmail } from "@/lib/demo";
 
 export const dynamic = "force-dynamic";
 
@@ -39,47 +39,8 @@ export async function GET(request: Request) {
   const requestedLocation = url.searchParams.get("locationId");
 
   if (isDemoEmail(userData.user.email)) {
-    const forecast = demoForecast;
-    const flags = demoVarianceFlags;
-
-    const forecastByDayMap = new Map<string, number>();
-    for (const row of forecast) {
-      const prev = forecastByDayMap.get(row.forecast_date) ?? 0;
-      forecastByDayMap.set(row.forecast_date, prev + (row.forecast_usage_oz ?? 0));
-    }
-
-    const varianceByWeekMap = new Map<string, { total: number; count: number }>();
-    for (const row of flags) {
-      const key = row.week_start_date;
-      const prev = varianceByWeekMap.get(key) ?? { total: 0, count: 0 };
-      const v = Number.parseFloat(String(row.variance_oz ?? "0"));
-      varianceByWeekMap.set(key, {
-        total: prev.total + (Number.isNaN(v) ? 0 : Math.abs(v)),
-        count: prev.count + 1,
-      });
-    }
-
-    const response: OverviewAnalytics = {
-      forecastByDay: Array.from(forecastByDayMap.entries())
-        .map(([date, total_usage_oz]) => ({ date, total_usage_oz }))
-        .sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-        ),
-      varianceByWeek: Array.from(varianceByWeekMap.entries())
-        .map(([week_start_date, v]) => ({
-          week_start_date,
-          total_abs_variance_oz: v.total,
-          flag_count: v.count,
-        }))
-        .sort(
-          (a, b) =>
-            new Date(a.week_start_date).getTime() -
-            new Date(b.week_start_date).getTime(),
-        ),
-      topForecastItems: [],
-      stockoutRisk: [],
-    };
-    return Response.json(response);
+    const { demoAnalyticsOverview } = await import("@/lib/demo");
+    return Response.json(demoAnalyticsOverview);
   }
 
   const userId = userData.user.id;

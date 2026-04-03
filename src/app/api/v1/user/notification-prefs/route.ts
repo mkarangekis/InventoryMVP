@@ -7,6 +7,11 @@ export async function GET(req: NextRequest) {
   if (!_scope.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const scope = _scope;
 
+  if (scope.isDemo) {
+    const { demoNotificationPrefs } = await import("@/lib/demo");
+    return NextResponse.json({ prefs: demoNotificationPrefs });
+  }
+
   const { data } = await supabaseAdmin
     .from("user_notification_prefs")
     .select("variance_alerts, reorder_alerts, weekly_digest, digest_day, alert_threshold")

@@ -27,6 +27,13 @@ export async function POST(req: NextRequest) {
   const rl = await consumeRateLimit(`ask:${scope.userId}`, 20);
   if (!rl.allowed) return NextResponse.json({ error: "Rate limit exceeded. Try again in a minute." }, { status: 429 });
 
+  if (scope.isDemo) {
+    const { demoAskAnswers } = await import("@/lib/demo");
+    const q = (question ?? "").toLowerCase().trim();
+    const answer = demoAskAnswers[q] ?? demoAskAnswers["default"] ?? "Demo answer not found.";
+    return NextResponse.json({ answer, inputHash: "demo-hash", promptVersion: "demo", model: "demo" });
+  }
+
   const locationId = reqLocationId ?? scope.locationId ?? scope.scopedLocationIds?.[0] ?? "";
 
   // Build context

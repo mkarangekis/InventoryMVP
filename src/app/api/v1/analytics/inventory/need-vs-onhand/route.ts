@@ -26,10 +26,10 @@ export async function GET(request: Request) {
     return new Response("Invalid auth token", { status: 401 });
   }
 
-  // Demo mode: this endpoint is best-effort; return empty.
+  // Demo mode: return rich demo data.
   if (isDemoEmail(userData.user.email)) {
-    const empty: NeedVsOnhandResponse = { snapshotDate: null, items: [] };
-    return Response.json(empty);
+    const { demoNeedVsOnhand } = await import("@/lib/demo");
+    return Response.json(demoNeedVsOnhand);
   }
 
   const userId = userData.user.id;

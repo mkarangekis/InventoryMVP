@@ -7,6 +7,11 @@ export async function GET(req: NextRequest) {
   if (!_scope.ok) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const scope = _scope;
 
+  if (scope.isDemo) {
+    const { demoAuditLogs } = await import("@/lib/demo");
+    return NextResponse.json(demoAuditLogs);
+  }
+
   const url = new URL(req.url);
   const locationId = url.searchParams.get("locationId");
   const limit = Math.min(Number(url.searchParams.get("limit") ?? "50"), 200);
