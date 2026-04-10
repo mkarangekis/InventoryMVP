@@ -6,7 +6,7 @@ export type EntitlementStatus =
   | "canceled"
   | "unknown";
 
-export type EntitlementSource = "quickbooks" | "db" | "mock";
+export type EntitlementSource = "stripe" | "db" | "mock";
 
 export type Entitlement = {
   entitlementStatus: EntitlementStatus;
@@ -15,7 +15,7 @@ export type Entitlement = {
   currentPeriodEnd: string | null;
   customerId: string | null;
   subscriptionId: string | null;
-  /** Raw billing status string as received from QuickBooks. */
+  /** Raw billing status string as received from Stripe. */
   billingStatusRaw: string | null;
 };
 
@@ -39,7 +39,7 @@ export function computeEntitlementFromBillingMetadata(
   billing: Record<string, unknown>,
   now = new Date(),
 ): Entitlement {
-  const billingStatusRaw = normalizeStatus(billing.qb_status);
+  const billingStatusRaw = normalizeStatus(billing.stripe_status);
   const trialEnd =
     typeof billing.trial_ends_at === "string" ? billing.trial_ends_at : null;
   const currentPeriodEnd =
@@ -47,13 +47,15 @@ export function computeEntitlementFromBillingMetadata(
       ? billing.current_period_end
       : null;
 
-  // qb_customer_id is the QuickBooks customer entity ID
   const customerId =
-    typeof billing.qb_customer_id === "string" ? billing.qb_customer_id : null;
+    typeof billing.stripe_customer_id === "string"
+      ? billing.stripe_customer_id
+      : null;
 
-  // qb_invoice_id tracks the latest QB invoice (analogous to subscription ID)
   const subscriptionId =
-    typeof billing.qb_invoice_id === "string" ? billing.qb_invoice_id : null;
+    typeof billing.stripe_subscription_id === "string"
+      ? billing.stripe_subscription_id
+      : null;
 
   const entitlementSource: EntitlementSource = "db";
 
@@ -71,26 +73,6 @@ export function computeEntitlementFromBillingMetadata(
 
   const nowMs = now.getTime();
   const hasLiveTrial = isFutureIsoDate(trialEnd, nowMs);
-
-  // QB does not automatically push a "past_due" event when a trial expires
-  // without payment. We detect it here: if the stored status is "trialing"
-  // but the trial end date has passed, treat as past_due so the UI gates access.
-  const trialExpiredUnpaid =
-    billingStatusRaw === "trialing" &&
-    trialEnd !== null &&
-    !hasLiveTrial;
-
-  if (trialExpiredUnpaid) {
-    return {
-      entitlementStatus: "past_due",
-      entitlementSource,
-      trialEnd,
-      currentPeriodEnd,
-      customerId,
-      subscriptionId,
-      billingStatusRaw,
-    };
-  }
 
   if (billingStatusRaw === "active") {
     return {

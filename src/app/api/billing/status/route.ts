@@ -13,14 +13,13 @@ export async function GET(request: Request) {
     return new Response("Invalid auth token", { status: 401 });
   }
 
-  const metadata = (userData.user.user_metadata ?? {}) as Record<string, any>;
-  const billing = (metadata.billing ?? {}) as Record<string, any>;
+  const metadata = (userData.user.user_metadata ?? {}) as Record<string, unknown>;
+  const billing = (metadata.billing ?? {}) as Record<string, unknown>;
 
   return Response.json({
-    qb_customer_id: billing.qb_customer_id ?? null,
-    qb_invoice_id: billing.qb_invoice_id ?? null,
-    qb_realm_id: billing.qb_realm_id ?? null,
-    qb_status: billing.qb_status ?? null,
+    stripe_customer_id: billing.stripe_customer_id ?? null,
+    stripe_subscription_id: billing.stripe_subscription_id ?? null,
+    stripe_status: billing.stripe_status ?? null,
     trial_ends_at: billing.trial_ends_at ?? null,
     current_period_end: billing.current_period_end ?? null,
   });

@@ -1,12 +1,9 @@
+import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import {
-  createQbCustomer,
-  createQbInvoice,
-  sendQbInvoice,
-} from "@/lib/quickbooks-api";
 
-const TRIAL_DAYS = 14;
-const SUBSCRIPTION_PRICE = parseFloat(process.env.QB_SUBSCRIPTION_PRICE ?? "99");
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
+  apiVersion: "2025-03-31.basil",
+});
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -21,82 +18,60 @@ export async function POST(request: Request) {
     return new Response("Invalid auth token", { status: 401 });
   }
 
+  const priceId = process.env.STRIPE_PRICE_ID;
   const appUrl = process.env.APP_URL ?? "https://www.pourdex.com";
-  const realmId = process.env.QB_REALM_ID;
 
-  if (!realmId) {
-    return new Response("QB_REALM_ID is not set", { status: 500 });
+  if (!priceId) {
+    return new Response("STRIPE_PRICE_ID is not set", { status: 500 });
   }
 
   const user = userData.user;
-  const email = user.email ?? "";
-  const displayName = (user.user_metadata?.full_name as string | undefined)
-    ?? email.split("@")[0]
-    ?? user.id;
-
   const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
   const billing = (metadata.billing ?? {}) as Record<string, unknown>;
 
-  // ── If already trialing or active, redirect to portal instead ──
-  const existingStatus = billing.qb_status as string | undefined;
+  // If already active or trialing, redirect to portal
+  const existingStatus = billing.stripe_status as string | undefined;
   if (existingStatus === "active" || existingStatus === "trialing") {
-    return Response.json({
-      url: `${appUrl}/settings?billing=already-active`,
-    });
+    return Response.json({ url: `${appUrl}/settings?billing=already-active` });
   }
 
   try {
-    // ── 1. Create QB Customer (or reuse existing) ──────────────────────────
-    let qbCustomerId = billing.qb_customer_id as string | undefined;
+    // Reuse existing Stripe customer if present
+    let customerId = billing.stripe_customer_id as string | undefined;
 
-    if (!qbCustomerId) {
-      const customer = await createQbCustomer(displayName, email);
-      qbCustomerId = customer.Id;
-    }
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: (user.user_metadata?.full_name as string | undefined) ?? undefined,
+        metadata: { supabase_uid: user.id },
+      });
+      customerId = customer.id;
 
-    // ── 2. Trial period: 14 days from now ─────────────────────────────────
-    const trialEnd = new Date();
-    trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
-    const trialEndIso = trialEnd.toISOString();
-
-    // ── 3. Create QB Invoice due at end of trial ───────────────────────────
-    //    QB does NOT auto-charge — it emails the customer a "Pay Now" link.
-    //    The customer pays before the due date to stay active.
-    const invoice = await createQbInvoice(
-      qbCustomerId,
-      SUBSCRIPTION_PRICE,
-      trialEndIso,
-    );
-
-    // ── 4. Email the invoice to the customer via QB ────────────────────────
-    if (email) {
-      await sendQbInvoice(invoice.Id, email);
-    }
-
-    // ── 5. Store billing state in Supabase user metadata ──────────────────
-    await supabaseAdmin.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        ...metadata,
-        billing: {
-          ...(billing ?? {}),
-          qb_customer_id: qbCustomerId,
-          qb_invoice_id: invoice.Id,
-          qb_realm_id: realmId,
-          qb_status: "trialing",
-          trial_ends_at: trialEndIso,
-          // current_period_end will be set by QB webhook when payment is confirmed
+      // Persist customer ID immediately so we can match webhooks
+      await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        user_metadata: {
+          ...metadata,
+          billing: { ...(billing ?? {}), stripe_customer_id: customerId },
         },
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      subscription_data: {
+        trial_period_days: 14,
       },
+      success_url: `${appUrl}/onboarding?trial=started`,
+      cancel_url: `${appUrl}/settings?billing=canceled`,
     });
 
-    // Redirect to onboarding — trial has started, invoice sent via email
-    return Response.json({
-      url: `${appUrl}/onboarding?trial=started`,
-    });
+    return Response.json({ url: session.url });
   } catch (err) {
-    console.error("QB checkout error", err);
+    console.error("Stripe checkout error", err);
     return new Response(
-      err instanceof Error ? err.message : "Failed to start trial",
+      err instanceof Error ? err.message : "Failed to create checkout session",
       { status: 500 },
     );
   }
