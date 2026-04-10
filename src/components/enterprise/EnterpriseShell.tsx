@@ -102,7 +102,7 @@ const primaryTabs: PrimaryTab[] = [
   { key: "profit", label: "Profit", href: "/profit" },
   { key: "ordering", label: "Ordering", href: "/ordering" },
   { key: "audit", label: "Audit Trail", href: "/audit" },
-  { key: "ai", label: "AI Insights", href: "/dashboard" },
+  { key: "ai-insights", label: "AI Insights", href: "/ai-insights" },
 ];
 
 const utilityTabs: UtilityTab[] = [
@@ -198,8 +198,7 @@ export default function EnterpriseShell({
         <nav className="app-tab-bar">
           <div className="app-tab-bar-inner">
             {primaryTabs.map((tab) => {
-              const isActive =
-                tab.key !== "ai" && pathname.startsWith(tab.href);
+              const isActive = pathname.startsWith(tab.href);
               return (
                 <Link
                   key={tab.key}
