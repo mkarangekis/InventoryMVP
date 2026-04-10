@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const secret = new URL(request.url).searchParams.get("secret");
-  if (!secret || secret !== process.env.QB_CONNECT_SECRET) {
+  if (!secret || secret.trim() !== (process.env.QB_CONNECT_SECRET ?? "").trim()) {
     return new Response("Forbidden", { status: 403 });
   }
 

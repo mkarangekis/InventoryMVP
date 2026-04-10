@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const state = url.searchParams.get("state");
 
   // Basic CSRF check
-  if (state !== (process.env.QB_CONNECT_SECRET ?? "qb-connect")) {
+  if ((state ?? "").trim() !== (process.env.QB_CONNECT_SECRET ?? "").trim()) {
     return new Response("Invalid state", { status: 400 });
   }
 
