@@ -72,6 +72,26 @@ export function computeEntitlementFromBillingMetadata(
   const nowMs = now.getTime();
   const hasLiveTrial = isFutureIsoDate(trialEnd, nowMs);
 
+  // QB does not automatically push a "past_due" event when a trial expires
+  // without payment. We detect it here: if the stored status is "trialing"
+  // but the trial end date has passed, treat as past_due so the UI gates access.
+  const trialExpiredUnpaid =
+    billingStatusRaw === "trialing" &&
+    trialEnd !== null &&
+    !hasLiveTrial;
+
+  if (trialExpiredUnpaid) {
+    return {
+      entitlementStatus: "past_due",
+      entitlementSource,
+      trialEnd,
+      currentPeriodEnd,
+      customerId,
+      subscriptionId,
+      billingStatusRaw,
+    };
+  }
+
   if (billingStatusRaw === "active") {
     return {
       entitlementStatus: "active",
