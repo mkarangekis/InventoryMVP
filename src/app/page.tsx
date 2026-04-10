@@ -551,8 +551,8 @@ export default function LandingPage() {
           <div className="lp-footer__bottom">
             <span className="lp-footer__copy">&copy; 2026 Augmentation Consulting Group Inc. All rights reserved.</span>
             <div className="lp-footer__legal">
-              <a className="lp-footer__link" href="/privacy">Privacy</a>
-              <a className="lp-footer__link" href="/terms">Terms</a>
+              <a className="lp-footer__link" href="/privacy">Privacy Policy</a>
+              <a className="lp-footer__link" href="/eula">EULA</a>
             </div>
           </div>
         </div>
