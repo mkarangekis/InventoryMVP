@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 export const dynamic = "force-dynamic";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "", {
-  apiVersion: "2025-03-31.basil",
+  apiVersion: "2024-06-20",
 });
 
 const updateUserBilling = async (
