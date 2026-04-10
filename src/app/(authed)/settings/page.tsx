@@ -127,7 +127,7 @@ export default function SettingsPage() {
         error={billingError}
         summary={
           billing?.qb_status
-            ? `Billing status: ${billing.stripe_status}`
+            ? `Billing status: ${billing.qb_status}`
             : "Billing status not started yet."
         }
         recommendations={[
