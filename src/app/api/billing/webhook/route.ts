@@ -1,102 +1,116 @@
 import { headers } from "next/headers";
-import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { verifyQuickBooksSignature, qbEventToStatus } from "@/lib/quickbooks";
 
 export const dynamic = "force-dynamic";
 
+type QbEntity = {
+  name: string;
+  id: string;
+  operation: string;
+  lastUpdated: string;
+};
+
+type QbEventNotification = {
+  realmId: string;
+  dataChangeEvent: {
+    entities: QbEntity[];
+  };
+};
+
+type QbWebhookPayload = {
+  eventNotifications: QbEventNotification[];
+};
+
 export async function POST(request: Request) {
-  const signature = (await headers()).get("stripe-signature");
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const headersList = await headers();
+  const signature = headersList.get("intuit-signature");
+  const verifierToken = process.env.QB_WEBHOOK_VERIFIER_TOKEN;
 
-  if (!signature || !webhookSecret) {
-    return new Response("Missing webhook signature", { status: 400 });
-  }
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return new Response("STRIPE_SECRET_KEY is not set", { status: 500 });
+  if (!verifierToken) {
+    return new Response("QB_WEBHOOK_VERIFIER_TOKEN is not set", { status: 500 });
   }
 
-  const body = await request.text();
-  let event;
-  const stripe = getStripe();
+  if (!signature) {
+    return new Response("Missing intuit-signature header", { status: 400 });
+  }
 
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (error) {
-    console.error("Stripe webhook signature error", error);
+  const rawBody = await request.text();
+
+  if (!verifyQuickBooksSignature(rawBody, signature, verifierToken)) {
+    console.error("QuickBooks webhook signature verification failed");
     return new Response("Invalid signature", { status: 400 });
+  }
+
+  let payload: QbWebhookPayload;
+  try {
+    payload = JSON.parse(rawBody) as QbWebhookPayload;
+  } catch {
+    return new Response("Invalid JSON body", { status: 400 });
   }
 
   const updateUserBilling = async (
     userId: string,
-    billing: Record<string, any>,
+    billing: Record<string, unknown>,
   ) => {
     const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
-    const metadata = (data.user?.user_metadata ?? {}) as Record<string, any>;
+    const metadata = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
     await supabaseAdmin.auth.admin.updateUserById(userId, {
       user_metadata: {
         ...metadata,
         billing: {
-          ...(metadata.billing ?? {}),
+          ...(metadata.billing as Record<string, unknown> ?? {}),
           ...billing,
         },
       },
     });
   };
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as any;
-    const userId = session.client_reference_id as string | undefined;
-    if (userId) {
-      await updateUserBilling(userId, {
-        stripe_customer_id: session.customer,
-        stripe_subscription_id: session.subscription,
-        stripe_status: "trialing",
-      });
-    }
-  }
+  // Find a user by their stored qb_realm_id
+  const findUserByRealmId = async (realmId: string) => {
+    const { data } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    return data.users.find((u) => {
+      const billing = (u.user_metadata?.billing ?? {}) as Record<string, unknown>;
+      return billing.qb_realm_id === realmId;
+    }) ?? null;
+  };
 
-  if (
-    event.type === "customer.subscription.created" ||
-    event.type === "customer.subscription.updated" ||
-    event.type === "customer.subscription.deleted"
-  ) {
-    const subscription = event.data.object as any;
-    const userId = subscription.metadata?.user_id as string | undefined;
-    if (userId) {
-      await updateUserBilling(userId, {
-        stripe_customer_id: subscription.customer,
-        stripe_subscription_id: subscription.id,
-        stripe_status: subscription.status,
-        trial_ends_at: subscription.trial_end
-          ? new Date(subscription.trial_end * 1000).toISOString()
-          : null,
-        current_period_end: subscription.current_period_end
-          ? new Date(subscription.current_period_end * 1000).toISOString()
-          : null,
-      });
-    }
-  }
+  for (const notification of payload.eventNotifications ?? []) {
+    const { realmId, dataChangeEvent } = notification;
 
-  if (event.type === "invoice.payment_failed") {
-    const invoice = event.data.object as any;
-    const subscriptionId = invoice.subscription as string | undefined;
-    const customerId = invoice.customer as string | undefined;
-    if (subscriptionId || customerId) {
-      const userList = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-      const user = userList.data.users.find((item) => {
-        const billing = (item.user_metadata?.billing ?? {}) as Record<string, any>;
-        return (
-          billing.stripe_subscription_id === subscriptionId ||
-          billing.stripe_customer_id === customerId
-        );
-      });
-      if (user) {
-        await updateUserBilling(user.id, {
-          stripe_status: "past_due",
-        });
+    const user = await findUserByRealmId(realmId);
+    if (!user) {
+      // No user linked to this realm yet — store realm for later linking
+      console.warn(`QB webhook: no user found for realmId ${realmId}`);
+      continue;
+    }
+
+    for (const entity of dataChangeEvent?.entities ?? []) {
+      const status = qbEventToStatus(entity.name, entity.operation);
+      if (!status) continue;
+
+      const billingUpdate: Record<string, unknown> = {
+        qb_status: status,
+        qb_realm_id: realmId,
+        qb_last_event_entity: entity.name,
+        qb_last_event_operation: entity.operation,
+        qb_last_event_at: entity.lastUpdated,
+      };
+
+      // Track invoice ID as the subscription reference
+      if (entity.name.toLowerCase() === "invoice") {
+        billingUpdate.qb_invoice_id = entity.id;
       }
+
+      await updateUserBilling(user.id, billingUpdate);
+
+      console.log(
+        `QB webhook: updated user ${user.id} status → ${status} ` +
+          `(${entity.name} ${entity.operation}, realm ${realmId})`,
+      );
     }
   }
 
-  return new Response("ok", { status: 200 });
+  // QuickBooks expects a 200 with no body to acknowledge receipt
+  return new Response(null, { status: 200 });
 }

@@ -1,4 +1,3 @@
-import { getStripe } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -16,28 +15,10 @@ export async function POST(request: Request) {
     return new Response("Invalid auth token", { status: 401 });
   }
 
-  const appUrl = process.env.APP_URL;
-  if (!appUrl) {
-    return new Response("APP_URL is not set", { status: 500 });
-  }
-  if (!process.env.STRIPE_SECRET_KEY) {
-    return new Response("STRIPE_SECRET_KEY is not set", { status: 500 });
+  const portalUrl = process.env.QB_CUSTOMER_PORTAL_URL;
+  if (!portalUrl) {
+    return new Response("QB_CUSTOMER_PORTAL_URL is not set", { status: 500 });
   }
 
-  const stripe = getStripe();
-
-  const metadata = (userData.user.user_metadata ?? {}) as Record<string, any>;
-  const billing = (metadata.billing ?? {}) as Record<string, any>;
-  const customerId = billing.stripe_customer_id as string | undefined;
-
-  if (!customerId) {
-    return new Response("No Stripe customer found", { status: 400 });
-  }
-
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${appUrl}/subscribe?portal=return`,
-  });
-
-  return Response.json({ url: session.url });
+  return Response.json({ url: portalUrl });
 }

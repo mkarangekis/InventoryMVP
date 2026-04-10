@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       currentPeriodEnd: null,
       customerId: null,
       subscriptionId: null,
-      stripeStatusRaw: "demo",
+      billingStatusRaw: "demo",
     };
 
     return Response.json(entitlement);

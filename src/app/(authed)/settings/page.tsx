@@ -9,9 +9,10 @@ import { WebhookSettings } from "@/components/settings/WebhookSettings";
 import { NotificationsSettings } from "@/components/settings/NotificationsSettings";
 
 type BillingStatus = {
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
-  stripe_status: string | null;
+  qb_customer_id: string | null;
+  qb_invoice_id: string | null;
+  qb_realm_id: string | null;
+  qb_status: string | null;
   trial_ends_at: string | null;
   current_period_end: string | null;
 };
@@ -125,22 +126,22 @@ export default function SettingsPage() {
         loading={billingLoading}
         error={billingError}
         summary={
-          billing?.stripe_status
+          billing?.qb_status
             ? `Billing status: ${billing.stripe_status}`
             : "Billing status not started yet."
         }
         recommendations={[
           {
             action:
-              billing?.stripe_status === "past_due"
+              billing?.qb_status === "past_due"
                 ? "Update payment method"
                 : "Manage subscription",
             reason: "Open the billing portal to update your plan and payment method.",
-            urgency: billing?.stripe_status === "past_due" ? "high" : "med",
+            urgency: billing?.qb_status === "past_due" ? "high" : "med",
           },
         ]}
         risks={
-          billing?.stripe_status === "past_due"
+          billing?.qb_status === "past_due"
             ? [
                 {
                   risk: "Past-due subscription",
@@ -212,7 +213,7 @@ export default function SettingsPage() {
                   Subscription
                 </p>
                 <p className="mt-2 font-semibold">
-                  {billing?.stripe_status ?? "Not started"}
+                  {billing?.qb_status ?? "Not started"}
                 </p>
                 {billing?.trial_ends_at ? (
                   <p className="text-xs text-[var(--enterprise-muted)]">

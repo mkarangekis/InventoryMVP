@@ -6,7 +6,7 @@ export type EntitlementStatus =
   | "canceled"
   | "unknown";
 
-export type EntitlementSource = "stripe" | "db" | "mock";
+export type EntitlementSource = "quickbooks" | "db" | "mock";
 
 export type Entitlement = {
   entitlementStatus: EntitlementStatus;
@@ -15,7 +15,8 @@ export type Entitlement = {
   currentPeriodEnd: string | null;
   customerId: string | null;
   subscriptionId: string | null;
-  stripeStatusRaw: string | null;
+  /** Raw billing status string as received from QuickBooks. */
+  billingStatusRaw: string | null;
 };
 
 export const isEntitledStatus = (status: EntitlementStatus) =>
@@ -28,7 +29,7 @@ const isFutureIsoDate = (value: unknown, nowMs: number) => {
   return t > nowMs;
 };
 
-const normalizeStripeStatus = (value: unknown): string | null => {
+const normalizeStatus = (value: unknown): string | null => {
   if (typeof value !== "string") return null;
   const v = value.trim().toLowerCase();
   return v.length ? v : null;
@@ -38,26 +39,25 @@ export function computeEntitlementFromBillingMetadata(
   billing: Record<string, unknown>,
   now = new Date(),
 ): Entitlement {
-  const stripeStatusRaw = normalizeStripeStatus(billing.stripe_status);
-  const trialEnd = typeof billing.trial_ends_at === "string" ? billing.trial_ends_at : null;
+  const billingStatusRaw = normalizeStatus(billing.qb_status);
+  const trialEnd =
+    typeof billing.trial_ends_at === "string" ? billing.trial_ends_at : null;
   const currentPeriodEnd =
     typeof billing.current_period_end === "string"
       ? billing.current_period_end
       : null;
 
+  // qb_customer_id is the QuickBooks customer entity ID
   const customerId =
-    typeof billing.stripe_customer_id === "string"
-      ? billing.stripe_customer_id
-      : null;
-  const subscriptionId =
-    typeof billing.stripe_subscription_id === "string"
-      ? billing.stripe_subscription_id
-      : null;
+    typeof billing.qb_customer_id === "string" ? billing.qb_customer_id : null;
 
-  // Default to db because current implementation stores billing in Supabase user_metadata.
+  // qb_invoice_id tracks the latest QB invoice (analogous to subscription ID)
+  const subscriptionId =
+    typeof billing.qb_invoice_id === "string" ? billing.qb_invoice_id : null;
+
   const entitlementSource: EntitlementSource = "db";
 
-  if (!stripeStatusRaw) {
+  if (!billingStatusRaw) {
     return {
       entitlementStatus: "unknown",
       entitlementSource,
@@ -65,15 +65,14 @@ export function computeEntitlementFromBillingMetadata(
       currentPeriodEnd,
       customerId,
       subscriptionId,
-      stripeStatusRaw,
+      billingStatusRaw,
     };
   }
 
-  // Treat an unexpired trial as trialing even if status is stale.
   const nowMs = now.getTime();
   const hasLiveTrial = isFutureIsoDate(trialEnd, nowMs);
 
-  if (stripeStatusRaw === "active") {
+  if (billingStatusRaw === "active") {
     return {
       entitlementStatus: "active",
       entitlementSource,
@@ -81,11 +80,11 @@ export function computeEntitlementFromBillingMetadata(
       currentPeriodEnd,
       customerId,
       subscriptionId,
-      stripeStatusRaw,
+      billingStatusRaw,
     };
   }
 
-  if (stripeStatusRaw === "trialing" || hasLiveTrial) {
+  if (billingStatusRaw === "trialing" || hasLiveTrial) {
     return {
       entitlementStatus: "trialing",
       entitlementSource,
@@ -93,11 +92,11 @@ export function computeEntitlementFromBillingMetadata(
       currentPeriodEnd,
       customerId,
       subscriptionId,
-      stripeStatusRaw,
+      billingStatusRaw,
     };
   }
 
-  if (stripeStatusRaw === "past_due" || stripeStatusRaw === "unpaid") {
+  if (billingStatusRaw === "past_due" || billingStatusRaw === "unpaid") {
     return {
       entitlementStatus: "past_due",
       entitlementSource,
@@ -105,11 +104,11 @@ export function computeEntitlementFromBillingMetadata(
       currentPeriodEnd,
       customerId,
       subscriptionId,
-      stripeStatusRaw,
+      billingStatusRaw,
     };
   }
 
-  if (stripeStatusRaw === "canceled" || stripeStatusRaw === "cancelled") {
+  if (billingStatusRaw === "canceled" || billingStatusRaw === "cancelled") {
     return {
       entitlementStatus: "canceled",
       entitlementSource,
@@ -117,11 +116,10 @@ export function computeEntitlementFromBillingMetadata(
       currentPeriodEnd,
       customerId,
       subscriptionId,
-      stripeStatusRaw,
+      billingStatusRaw,
     };
   }
 
-  // Incomplete, incomplete_expired, paused, etc.
   return {
     entitlementStatus: "inactive",
     entitlementSource,
@@ -129,6 +127,6 @@ export function computeEntitlementFromBillingMetadata(
     currentPeriodEnd,
     customerId,
     subscriptionId,
-    stripeStatusRaw,
+    billingStatusRaw,
   };
 }
