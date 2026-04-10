@@ -23,7 +23,21 @@ type VarianceFlag = {
   variance_oz: string;
   variance_pct: string;
   severity: string;
+  unaccounted_cost_usd?: number;
+  cost_per_oz?: number;
 };
+
+function severityLabel(s: string) {
+  if (s === "high") return "Needs immediate attention";
+  if (s === "med") return "Worth investigating";
+  return "Monitor";
+}
+
+function severityBadgeClass(s: string) {
+  if (s === "high") return "app-badge app-badge-red";
+  if (s === "med") return "app-badge app-badge-gold";
+  return "app-badge app-badge-green";
+}
 
 export default function VariancePage() {
   const [flags, setFlags] = useState<VarianceFlag[]>([]);
@@ -114,9 +128,9 @@ export default function VariancePage() {
   if (!enterpriseEnabled) {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-semibold">Variance & Shrink</h1>
+        <h1 className="text-2xl font-semibold">Unaccounted Usage & Shrinkage</h1>
         <p className="text-sm text-gray-600">
-          Weekly variance flags by inventory item.
+          Weekly flags for items where poured amounts don't match what was sold.
         </p>
 
         <AIInsightsTopPanel
@@ -124,23 +138,23 @@ export default function VariancePage() {
           loading={aiLoading}
           error={
             !aiEnabled
-              ? "AI variance explanation is not enabled for this workspace."
+              ? "AI explanation is not enabled for this workspace."
               : !aiExplain
-                ? "No variance explanation available yet."
+                ? "No explanation available yet."
                 : null
           }
           summary={aiExplain?.non_accusatory_note ?? null}
           recommendations={(aiExplain?.findings ?? []).slice(0, 6).map((f) => ({
-            action: `Review ${f.item}`,
-            reason: `Variance ${f.variance_pct.toFixed(1)}%`,
+            action: `Check ${f.item}`,
+            reason: `About ${Math.abs(f.variance_pct).toFixed(0)}% more used than expected`,
             urgency: f.severity,
           }))}
           risks={(aiExplain?.findings ?? [])
             .filter((f) => f.severity === "high")
             .slice(0, 3)
             .map((f) => ({
-              risk: `${f.item} variance`,
-              impact: `${f.variance_pct.toFixed(1)}% flagged`,
+              risk: `${f.item} — unaccounted usage`,
+              impact: `${Math.abs(f.variance_pct).toFixed(0)}% above expected`,
             }))}
         />
 
@@ -157,8 +171,8 @@ export default function VariancePage() {
                   <th className="px-3 py-2">Week</th>
                   <th className="px-3 py-2">Expected</th>
                   <th className="px-3 py-2">Actual</th>
-                  <th className="px-3 py-2">Variance</th>
-                  <th className="px-3 py-2">Severity</th>
+                  <th className="px-3 py-2">Unaccounted</th>
+                  <th className="px-3 py-2">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -168,10 +182,10 @@ export default function VariancePage() {
                     <td className="px-3 py-2">
                       {new Date(flag.week_start_date).toLocaleDateString()}
                     </td>
-                    <td className="px-3 py-2">{flag.expected_remaining_oz}</td>
-                    <td className="px-3 py-2">{flag.actual_remaining_oz}</td>
-                    <td className="px-3 py-2">{flag.variance_oz}</td>
-                    <td className="px-3 py-2 font-semibold">{flag.severity}</td>
+                    <td className="px-3 py-2">{flag.expected_remaining_oz} oz</td>
+                    <td className="px-3 py-2">{flag.actual_remaining_oz} oz</td>
+                    <td className="px-3 py-2">{flag.variance_oz} oz</td>
+                    <td className="px-3 py-2 font-semibold">{severityLabel(flag.severity)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -183,6 +197,8 @@ export default function VariancePage() {
   }
 
   const totalVarianceOz = flags.reduce((sum, f) => sum + Math.abs(parseFloat(f.variance_oz) || 0), 0);
+  const totalLostDollars = flags.reduce((sum, f) => sum + (f.unaccounted_cost_usd ?? 0), 0);
+  const hasDollarData = flags.some((f) => f.unaccounted_cost_usd != null);
   const highSeverityCount = flags.filter((f) => f.severity === "high").length;
   const medSeverityCount = flags.filter((f) => f.severity === "med").length;
   const weekSet = new Set(flags.map((f) => f.week_start_date));
@@ -193,18 +209,38 @@ export default function VariancePage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#d4a853", marginBottom: 6 }}>Shrinkage Control</p>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f0f6fc", letterSpacing: "-0.02em", lineHeight: 1.1 }}>Variance &amp; Shrinkage</h1>
-          <p style={{ fontSize: 13, color: "#8b949e", marginTop: 6 }}>Weekly variance flags by inventory item. Identify over-pours, theft, and measurement issues.</p>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: "#f0f6fc", letterSpacing: "-0.02em", lineHeight: 1.1 }}>Unaccounted Usage &amp; Shrinkage</h1>
+          <p style={{ fontSize: 13, color: "#8b949e", marginTop: 6 }}>Items where what was poured doesn&apos;t match what was sold — flags over-pours, spillage, and potential theft.</p>
         </div>
       </div>
 
       {/* ── KPI Strip ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         {[
-          { label: "Total Variance", value: loading ? "—" : `${totalVarianceOz.toFixed(1)} oz`, meta: "Absolute this week", color: loading ? "#8b949e" : totalVarianceOz > 10 ? "#ef4444" : "#22c55e" },
-          { label: "Active Flags", value: loading ? "—" : String(flags.length), meta: "Awaiting review", color: loading ? "#8b949e" : flags.length > 0 ? "#ef4444" : "#22c55e" },
-          { label: "High Severity", value: loading ? "—" : String(highSeverityCount), meta: `${medSeverityCount} medium`, color: highSeverityCount > 0 ? "#ef4444" : "#22c55e" },
-          { label: "Weeks Covered", value: loading ? "—" : String(weekSet.size), meta: "In dataset", color: "#d4a853" },
+          {
+            label: "Estimated Money Lost",
+            value: loading ? "—" : hasDollarData ? `$${totalLostDollars.toFixed(2)}` : `${totalVarianceOz.toFixed(1)} oz`,
+            meta: hasDollarData ? "Unaccounted this week" : "Unaccounted oz this week",
+            color: loading ? "#8b949e" : totalVarianceOz > 10 ? "#ef4444" : "#22c55e",
+          },
+          {
+            label: "Items Flagged",
+            value: loading ? "—" : String(flags.length),
+            meta: "Need review",
+            color: loading ? "#8b949e" : flags.length > 0 ? "#ef4444" : "#22c55e",
+          },
+          {
+            label: "Needs Attention Now",
+            value: loading ? "—" : String(highSeverityCount),
+            meta: `${medSeverityCount} worth investigating`,
+            color: highSeverityCount > 0 ? "#ef4444" : "#22c55e",
+          },
+          {
+            label: "Weeks Tracked",
+            value: loading ? "—" : String(weekSet.size),
+            meta: "In dataset",
+            color: "#d4a853",
+          },
         ].map((kpi) => (
           <div key={kpi.label} style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
             <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{kpi.label}</p>
@@ -227,56 +263,52 @@ export default function VariancePage() {
         }
         summary={aiExplain?.non_accusatory_note ?? null}
         recommendations={(aiExplain?.findings ?? []).slice(0, 6).map((f) => ({
-          action: `Review ${f.item}`,
-          reason: `Variance ${f.variance_pct.toFixed(1)}%`,
+          action: `Check ${f.item}`,
+          reason: `You may be losing ${Math.abs(f.variance_pct).toFixed(0)}% more than expected`,
           urgency: f.severity,
         }))}
         risks={(aiExplain?.findings ?? [])
           .filter((f) => f.severity === "high")
           .slice(0, 3)
           .map((f) => ({
-            risk: `${f.item} variance`,
-            impact: `${f.variance_pct.toFixed(1)}% flagged`,
+            risk: `${f.item} — unaccounted usage`,
+            impact: `${Math.abs(f.variance_pct).toFixed(0)}% above expected`,
           }))}
       />
 
-      {/* ── Variance Flags Table ── */}
+      {/* ── Unaccounted Usage Table ── */}
       <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
         <div style={{ padding: "14px 20px", borderBottom: "1px solid #1f2732", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Variance Flags</p>
-            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Potential shrink and over-pours to investigate</p>
+            <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Unaccounted Usage</p>
+            <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Items where poured amounts don't match what was sold — possible over-pours, spillage, or theft</p>
           </div>
           {!loading && flags.length > 0 && (
             <span style={{ fontSize: 12, color: "#ef4444", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-              {totalVarianceOz.toFixed(1)} oz total
+              {hasDollarData ? `$${totalLostDollars.toFixed(2)} estimated loss` : `${totalVarianceOz.toFixed(1)} oz unaccounted`}
             </span>
           )}
         </div>
         {loading ? (
-          <p style={{ padding: "20px 24px", color: "#8b949e", fontSize: 13 }}>Loading variance...</p>
+          <p style={{ padding: "20px 24px", color: "#8b949e", fontSize: 13 }}>Loading...</p>
         ) : flags.length === 0 ? (
           <div style={{ padding: "40px 20px", textAlign: "center" }}>
-            <p style={{ fontWeight: 600, color: "#f0f6fc", marginBottom: 6 }}>No Variance Flags Yet</p>
-            <p style={{ fontSize: 12, color: "#8b949e" }}>Connect your POS and complete inventory counts to surface variance signals.</p>
+            <p style={{ fontWeight: 600, color: "#f0f6fc", marginBottom: 6 }}>Everything Looks Good</p>
+            <p style={{ fontSize: 12, color: "#8b949e" }}>No unaccounted usage detected. Connect your POS and complete inventory counts to monitor this over time.</p>
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #1f2732" }}>
-                  {["Item", "Week", "Expected", "Actual", "Variance", "Severity"].map((h) => (
-                    <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", whiteSpace: "nowrap" }}>{h}</th>
+                  {["Item", "Week", "Expected", "Actual", "Unaccounted", hasDollarData ? "Est. Loss" : null, "Action"].filter(Boolean).map((h) => (
+                    <th key={h!} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {flags.map((flag, i) => {
                   const varianceNum = parseFloat(flag.variance_oz);
-                  const severityClass =
-                    flag.severity === "high" ? "app-badge app-badge-red" :
-                    flag.severity === "med" ? "app-badge app-badge-gold" :
-                    "app-badge app-badge-green";
                   return (
                     <tr key={flag.id} style={{ borderBottom: i < flags.length - 1 ? "1px solid #1a2230" : "none" }}>
                       <td style={{ padding: "10px 16px", fontWeight: 500, color: "#f0f6fc" }}>{flag.item_name}</td>
@@ -288,8 +320,13 @@ export default function VariancePage() {
                       <td style={{ padding: "10px 16px", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: varianceNum < 0 ? "#ef4444" : "#22c55e" }}>
                         {flag.variance_oz} oz
                       </td>
+                      {hasDollarData && (
+                        <td style={{ padding: "10px 16px", fontWeight: 700, fontVariantNumeric: "tabular-nums", color: "#ef4444" }}>
+                          {flag.unaccounted_cost_usd != null ? `$${flag.unaccounted_cost_usd.toFixed(2)}` : "—"}
+                        </td>
+                      )}
                       <td style={{ padding: "10px 16px" }}>
-                        <span className={severityClass}>{flag.severity}</span>
+                        <span className={severityBadgeClass(flag.severity)}>{severityLabel(flag.severity)}</span>
                       </td>
                     </tr>
                   );
@@ -305,7 +342,7 @@ export default function VariancePage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {/* Trend line */}
           <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 14 }}>Abs Variance by Week (oz)</p>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 14 }}>Unaccounted Usage by Week (oz)</p>
             <LineChart
               series={[{
                 name: "Abs variance (oz)",
@@ -328,7 +365,7 @@ export default function VariancePage() {
           </div>
           {/* Horizontal bar: top items by variance % */}
           <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 14 }}>Top Items by Variance %</p>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#8b949e", marginBottom: 14 }}>Biggest Shrinkage Items</p>
             <BarChart
               variant="horizontal"
               data={[...flags]
@@ -348,10 +385,10 @@ export default function VariancePage() {
       {/* ── AI Explain Card (fallback) ── */}
       {!aiTopEnabled && aiEnabled ? (
         <AiCard
-          title="AI Variance Explanation"
-          subtitle="Possible causes and recommended checks."
+          title="What's Going On With Your Inventory"
+          subtitle="Plain-English breakdown of where product may be going and what to check."
           loading={aiLoading}
-          error={!aiExplain ? "No variance explanation available yet." : null}
+          error={!aiExplain ? "No explanation available yet." : null}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {aiExplain?.non_accusatory_note && (
@@ -363,9 +400,11 @@ export default function VariancePage() {
               <div key={`${finding.item}-${finding.severity}`} style={{ background: "#1a2230", borderRadius: 8, border: "1px solid #2a3240", padding: "12px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                   <span style={{ fontWeight: 600, fontSize: 13, color: "#f0f6fc" }}>{finding.item}</span>
-                  <span className={finding.severity === "high" ? "app-badge app-badge-red" : finding.severity === "med" ? "app-badge app-badge-gold" : "app-badge app-badge-green"}>{finding.severity}</span>
+                  <span className={severityBadgeClass(finding.severity)}>{severityLabel(finding.severity)}</span>
                 </div>
-                <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 8 }}>Variance: {finding.variance_pct.toFixed(1)}%</p>
+                <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 8 }}>
+                  About {Math.abs(finding.variance_pct).toFixed(0)}% more used than expected
+                </p>
                 {finding.hypotheses.length > 0 && (
                   <div style={{ marginBottom: 6 }}>
                     <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#d4a853", marginBottom: 4 }}>Possible Causes</p>
@@ -376,7 +415,7 @@ export default function VariancePage() {
                 )}
                 {finding.recommended_checks.length > 0 && (
                   <div>
-                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#22c55e", marginBottom: 4 }}>Recommended Checks</p>
+                    <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#22c55e", marginBottom: 4 }}>What To Do</p>
                     {finding.recommended_checks.map((c) => (
                       <p key={c} style={{ fontSize: 12, color: "#c9d1d9", marginBottom: 2 }}>• {c}</p>
                     ))}

@@ -267,9 +267,9 @@ export default function ProfitPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
         {[
           { label: "Revenue", value: loading ? "—" : formatCurrency(totalRevenue), meta: "This period", color: "#22c55e" },
-          { label: "Pour Cost", value: loading ? "—" : formatCurrency(totalCost), meta: "Based on specs", color: "#8b949e" },
-          { label: "Profit", value: loading ? "—" : formatCurrency(totalProfit), meta: "Gross margin", color: "#22c55e" },
-          { label: "Margin", value: loading ? "—" : `${marginPct}%`, meta: "Avg across menu", color: loading ? "#8b949e" : marginPctNum >= 65 ? "#22c55e" : marginPctNum >= 50 ? "#d4a853" : "#ef4444" },
+          { label: "Ingredient Cost", value: loading ? "—" : formatCurrency(totalCost), meta: "What you paid to make it", color: "#8b949e" },
+          { label: "Profit", value: loading ? "—" : formatCurrency(totalProfit), meta: "After ingredient cost", color: "#22c55e" },
+          { label: "Profit Margin", value: loading ? "—" : `${marginPct}%`, meta: marginPctNum >= 65 ? "On target" : marginPctNum >= 50 ? "Could be better" : "Needs attention", color: loading ? "#8b949e" : marginPctNum >= 65 ? "#22c55e" : marginPctNum >= 50 ? "#d4a853" : "#ef4444" },
         ].map((kpi) => (
           <div key={kpi.label} style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, padding: "16px 20px" }}>
             <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{kpi.label}</p>
@@ -282,10 +282,10 @@ export default function ProfitPage() {
       {/* ── AI Suggestions ── */}
       {aiEnabled ? (
         <AiCard
-          title="Menu Profitability Suggestions"
-          subtitle="Scenario ideas for price and margin adjustments."
+          title="Ways to Make More Money"
+          subtitle="Pricing and recipe adjustments that could increase your take-home profit."
           loading={aiLoading}
-          error={!aiSuggestions ? "Menu suggestions not available yet." : null}
+          error={!aiSuggestions ? "Suggestions not available yet." : null}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {aiSuggestions?.suggestions.map((suggestion) => (
@@ -300,10 +300,12 @@ export default function ProfitPage() {
                   </span>
                 </div>
                 <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 6 }}>
-                  {formatCurrency(suggestion.current_price)} → {formatCurrency(suggestion.suggested_price)}
+                  Current price {formatCurrency(suggestion.current_price)} → Suggested {formatCurrency(suggestion.suggested_price)}
                 </p>
                 <p style={{ fontSize: 12, color: "#c9d1d9", lineHeight: 1.5 }}>{suggestion.rationale}</p>
-                <p style={{ fontSize: 11, color: "#8b949e", marginTop: 4 }}>Risk: {suggestion.risk}</p>
+                {suggestion.risk && (
+                  <p style={{ fontSize: 11, color: "#d4a853", marginTop: 4 }}>Heads up: {suggestion.risk}</p>
+                )}
               </div>
             ))}
           </div>

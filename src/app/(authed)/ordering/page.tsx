@@ -551,6 +551,10 @@ export default function OrderingPage() {
                   po.status === "approved" ? "app-badge app-badge-green" :
                   po.status === "sent" ? "app-badge app-badge-blue" :
                   "app-badge app-badge-gold";
+                const statusLabel =
+                  po.status === "approved" ? "Approved" :
+                  po.status === "sent" ? "Sent to vendor" :
+                  "Ready to review";
                 return (
                   <div
                     key={po.id}
@@ -569,7 +573,7 @@ export default function OrderingPage() {
                         <div style={{ textAlign: "right" }}>
                           <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 3 }}>{po.lines.length} line{po.lines.length !== 1 ? "s" : ""}</p>
                           <p style={{ fontWeight: 700, fontSize: 15, color: "#f0f6fc", fontVariantNumeric: "tabular-nums" }}>{formatCurrency(poTotal)}</p>
-                          <span className={statusClass} style={{ marginTop: 4, display: "inline-block" }}>{po.status}</span>
+                          <span className={statusClass} style={{ marginTop: 4, display: "inline-block" }}>{statusLabel}</span>
                         </div>
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -651,7 +655,7 @@ export default function OrderingPage() {
                 <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#22c55e", marginBottom: 8 }}>Top Actions</p>
                 {aiSummary.top_actions.map((action) => (
                   <div key={action.action} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", padding: "2px 7px", borderRadius: 4, background: action.urgency === "high" ? "rgba(239,68,68,0.12)" : "rgba(212,168,83,0.12)", color: action.urgency === "high" ? "#ef4444" : "#d4a853", border: `1px solid ${action.urgency === "high" ? "#ef444433" : "#d4a85333"}`, flexShrink: 0, marginTop: 1 }}>{action.urgency}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", padding: "2px 7px", borderRadius: 4, background: action.urgency === "high" ? "rgba(239,68,68,0.12)" : "rgba(212,168,83,0.12)", color: action.urgency === "high" ? "#ef4444" : "#d4a853", border: `1px solid ${action.urgency === "high" ? "#ef444433" : "#d4a85333"}`, flexShrink: 0, marginTop: 1 }}>{action.urgency === "high" ? "Do now" : action.urgency === "med" ? "Soon" : "Optional"}</span>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#f0f6fc" }}>{action.action}</div>
                       <div style={{ fontSize: 11, color: "#8b949e", marginTop: 1 }}>{action.reason}</div>

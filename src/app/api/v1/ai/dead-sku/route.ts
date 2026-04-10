@@ -4,10 +4,13 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildInsightContext } from "@/ai/context-builder";
 import { scoreDeadSku } from "@/lib/ai/dead-sku";
 import { getSeason } from "@/lib/ai/seasonal-specials";
+import { demoAiDeadSku } from "@/lib/demo";
 
 export async function GET(request: Request) {
   const scope = await getUserScope(request);
   if (!scope.ok) return scope.response;
+
+  if (scope.isDemo) return Response.json(demoAiDeadSku);
 
   if (scope.scopedLocationIds.length === 0) {
     return Response.json({ dead_skus: [], error: "No locations available." });

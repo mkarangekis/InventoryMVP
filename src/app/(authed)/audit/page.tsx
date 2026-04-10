@@ -23,10 +23,86 @@ const ACTION_COLORS: Record<string, string> = {
   approve: "#3b82f6",
   ingest: "#a78bfa",
   snapshot: "#06b6d4",
+  ordering: "#d4a853",
+  variance: "#ef4444",
+  settings: "#8b949e",
 };
 
 const actionColor = (action: string) =>
   ACTION_COLORS[action.split(".")[0]] ?? "var(--enterprise-muted)";
+
+const ACTION_LABELS: Record<string, string> = {
+  "ordering.approved":              "Purchase order approved",
+  "ordering.sent":                  "PO sent to vendor",
+  "ordering.draft_created":         "Draft PO created",
+  "inventory.snapshot":             "Inventory count taken",
+  "variance.flagged":               "Unaccounted usage flagged",
+  "ingest.completed":               "POS data imported",
+  "ingest.warning":                 "Import warning",
+  "settings.webhook_created":       "Webhook connected",
+  "settings.notifications_updated": "Notification settings changed",
+  "create":                         "Record created",
+  "update":                         "Record updated",
+  "delete":                         "Record deleted",
+  "approve":                        "Approved",
+  "snapshot":                       "Snapshot taken",
+};
+
+function actionLabel(action: string) {
+  return ACTION_LABELS[action] ?? action;
+}
+
+const ENTITY_LABELS: Record<string, string> = {
+  purchase_orders:          "Purchase Order",
+  purchase_order:           "Purchase Order",
+  inventory_snapshots:      "Inventory Count",
+  variance_flags:           "Shrinkage Flag",
+  pos_import_runs:          "POS Import",
+  webhook_endpoints:        "Webhook",
+  user_notification_prefs:  "Notification Settings",
+  inventory_item:           "Product",
+  menu_item:                "Menu Item",
+  drink_spec:               "Drink Spec",
+  ingredient:               "Ingredient",
+};
+
+function entityLabel(entityType: string) {
+  return ENTITY_LABELS[entityType] ?? entityType.replace(/_/g, " ");
+}
+
+function renderDetails(action: string, details: Record<string, unknown> | null): string {
+  if (!details) return "—";
+  const d = details as Record<string, unknown>;
+  if (action.startsWith("variance")) {
+    const item = d.item as string | undefined;
+    const usd = d.unaccounted_usd as number | undefined;
+    if (item && usd != null) return `${item} — $${usd.toFixed(2)} unaccounted`;
+    if (item) return item;
+  }
+  if (action.startsWith("ordering")) {
+    const vendor = d.vendor as string | undefined;
+    const total = d.total as number | undefined;
+    const lines = d.lines as number | undefined;
+    if (vendor && total != null) return `${vendor} · $${(total as number).toFixed(2)}`;
+    if (vendor && lines != null) return `${vendor} · ${lines} items`;
+    if (vendor) return vendor;
+  }
+  if (action.startsWith("ingest")) {
+    const rows = d.rows_imported as number | undefined;
+    const skipped = d.rows_skipped as number | undefined;
+    const source = d.source as string | undefined;
+    if (rows != null) return `${rows.toLocaleString()} sales records imported${source ? ` (${source})` : ""}`;
+    if (skipped != null) return `${skipped} rows skipped — ${d.reason ?? "unknown reason"}`;
+  }
+  if (action.startsWith("inventory")) {
+    const count = d.item_count as number | undefined;
+    const by = d.counted_by as string | undefined;
+    if (count != null) return `${count} items counted${by ? ` by ${by}` : ""}`;
+  }
+  // fallback: summarise the first 2 keys
+  const entries = Object.entries(d).slice(0, 2);
+  return entries.map(([k, v]) => `${k}: ${String(v)}`).join(" · ").slice(0, 80);
+}
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -120,7 +196,7 @@ export default function AuditPage() {
           style={{ background: "#0b1016", border: "1px solid #2a3240", borderRadius: 7, color: "#f0f6fc", padding: "7px 14px", fontSize: 13, outline: "none", cursor: "pointer" }}
         >
           <option value="">All actions</option>
-          {uniqueActions.map((a) => <option key={a} value={a}>{a}</option>)}
+          {uniqueActions.map((a) => <option key={a} value={a}>{actionLabel(a)}</option>)}
         </select>
         <select
           value={filterEntity}
@@ -128,7 +204,7 @@ export default function AuditPage() {
           style={{ background: "#0b1016", border: "1px solid #2a3240", borderRadius: 7, color: "#f0f6fc", padding: "7px 14px", fontSize: 13, outline: "none", cursor: "pointer" }}
         >
           <option value="">All entity types</option>
-          {uniqueEntities.map((e) => <option key={e} value={e}>{e}</option>)}
+          {uniqueEntities.map((e) => <option key={e} value={e}>{entityLabel(e)}</option>)}
         </select>
         {(filterAction || filterEntity) && (
           <button
@@ -162,7 +238,7 @@ export default function AuditPage() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--enterprise-border)" }}>
-                    {["Time", "Action", "Entity", "Entity ID", "User", "Details"].map((h) => (
+                    {["Time", "What Happened", "Type", "Record", "Who", "Details"].map((h) => (
                       <th key={h} style={{
                         padding: "10px 16px",
                         textAlign: "left",
@@ -190,15 +266,16 @@ export default function AuditPage() {
                           background: actionColor(log.action) + "22",
                           color: actionColor(log.action),
                           borderRadius: 4,
-                          padding: "2px 6px",
+                          padding: "2px 8px",
                           fontWeight: 600,
                           fontSize: 11,
+                          whiteSpace: "nowrap",
                         }}>
-                          {log.action}
+                          {actionLabel(log.action)}
                         </span>
                       </td>
                       <td style={{ padding: "10px 16px", color: "var(--enterprise-fg)" }}>
-                        {log.entity_type}
+                        {entityLabel(log.entity_type)}
                       </td>
                       <td style={{ padding: "10px 16px", color: "var(--enterprise-muted)", fontFamily: "monospace", fontSize: 11 }}>
                         {log.entity_id ? log.entity_id.slice(0, 8) + "…" : "—"}
@@ -206,15 +283,15 @@ export default function AuditPage() {
                       <td style={{ padding: "10px 16px", color: "var(--enterprise-muted)" }}>
                         {log.user_profiles?.email ?? (log.user_id ? log.user_id.slice(0, 8) + "…" : "system")}
                       </td>
-                      <td style={{ padding: "10px 16px", color: "var(--enterprise-muted)", maxWidth: 220 }}>
+                      <td style={{ padding: "10px 16px", color: "var(--enterprise-muted)", maxWidth: 260 }}>
                         <span title={JSON.stringify(log.details)} style={{
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                           display: "block",
-                          maxWidth: 200,
+                          maxWidth: 240,
                         }}>
-                          {log.details ? JSON.stringify(log.details).slice(0, 80) : "—"}
+                          {renderDetails(log.action, log.details)}
                         </span>
                       </td>
                     </tr>

@@ -3,10 +3,13 @@ import { runAiFeature, hashInput } from "@/ai/run";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildInsightContext } from "@/ai/context-builder";
 import { detectMarketTier, getBenchmarksForTier, scoreItemPricing } from "@/lib/ai/competitive-pricing";
+import { demoAiCompetitivePricing } from "@/lib/demo";
 
 export async function GET(request: Request) {
   const scope = await getUserScope(request);
   if (!scope.ok) return scope.response;
+
+  if (scope.isDemo) return Response.json(demoAiCompetitivePricing);
 
   if (scope.scopedLocationIds.length === 0) {
     return Response.json({ suggestions: [], market_tier: "value", city: "Unknown", error: "No locations available." });

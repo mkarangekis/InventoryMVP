@@ -3,10 +3,13 @@ import { runAiFeature, hashInput } from "@/ai/run";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildInsightContext } from "@/ai/context-builder";
 import { buildSeasonalContext } from "@/lib/ai/seasonal-specials";
+import { demoAiSeasonalSpecials } from "@/lib/demo";
 
 export async function GET(request: Request) {
   const scope = await getUserScope(request);
   if (!scope.ok) return scope.response;
+
+  if (scope.isDemo) return Response.json(demoAiSeasonalSpecials);
 
   if (scope.scopedLocationIds.length === 0) {
     return Response.json({ specials: [], error: "No locations available." });

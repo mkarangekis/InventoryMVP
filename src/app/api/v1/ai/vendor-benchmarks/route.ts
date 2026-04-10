@@ -4,10 +4,13 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { buildInsightContext } from "@/ai/context-builder";
 import { detectMarketTier, normalizeCategory } from "@/lib/ai/competitive-pricing";
 import { scoreVendorPrice } from "@/lib/ai/vendor-benchmarks";
+import { demoAiVendorBenchmarks } from "@/lib/demo";
 
 export async function GET(request: Request) {
   const scope = await getUserScope(request);
   if (!scope.ok) return scope.response;
+
+  if (scope.isDemo) return Response.json(demoAiVendorBenchmarks);
 
   if (scope.scopedLocationIds.length === 0) {
     return Response.json({ vendor_signals: [], savings_potential: 0, error: "No locations available." });

@@ -224,7 +224,7 @@ export default function DashboardPage() {
   if (!enterpriseEnabled) {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-semibold">Leak & Variance Dashboard</h1>
+        <h1 className="text-2xl font-semibold">Daily Overview</h1>
         <p className="text-sm text-gray-600">
           Latest variance flags across your locations.
         </p>
@@ -294,12 +294,12 @@ export default function DashboardPage() {
               <div className="mt-4 grid gap-4">
                 {varianceView === "charts" ? (
                   <div>
-                    <div className="text-sm font-semibold">Variance over time</div>
+                    <div className="text-sm font-semibold">Shrinkage over time</div>
                     <div className="mt-2">
                       <LineChart
                         series={[
                           {
-                            name: "Abs variance (oz)",
+                            name: "Unaccounted (oz)",
                             color: "#d4a853",
                             data: (analytics.varianceByWeek ?? []).map((row) => ({
                               x: new Date(row.week_start_date).getTime(),
@@ -376,8 +376,8 @@ export default function DashboardPage() {
                   <th className="px-3 py-2">Week</th>
                   <th className="px-3 py-2">Expected</th>
                   <th className="px-3 py-2">Actual</th>
-                  <th className="px-3 py-2">Variance</th>
-                  <th className="px-3 py-2">Severity</th>
+                  <th className="px-3 py-2">Unaccounted</th>
+                  <th className="px-3 py-2">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -389,8 +389,8 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-3 py-2">{flag.expected_remaining_oz}</td>
                     <td className="px-3 py-2">{flag.actual_remaining_oz}</td>
-                    <td className="px-3 py-2">{flag.variance_oz}</td>
-                    <td className="px-3 py-2 font-semibold">{flag.severity}</td>
+                    <td className="px-3 py-2">{flag.variance_oz} oz</td>
+                    <td className="px-3 py-2 font-semibold">{flag.severity === "high" ? "Needs attention" : flag.severity === "med" ? "Investigate" : "Monitor"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -448,15 +448,15 @@ export default function DashboardPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
         {[
           {
-            label: "Variance This Week",
+            label: "Unaccounted Usage",
             value: loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`,
             meta: latestVarianceWeek ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : "No data yet",
             color: loading ? "#d4a853" : varianceTotalOz > 0 ? "#ef4444" : "#22c55e",
           },
           {
-            label: "Active Flags",
+            label: "Items Needing Attention",
             value: loading ? "—" : String(flags.length),
-            meta: loading ? "" : highSeverityCount > 0 ? `${highSeverityCount} high severity` : "None critical",
+            meta: loading ? "" : highSeverityCount > 0 ? `${highSeverityCount} need immediate action` : "None critical right now",
             color: loading ? "#d4a853" : flags.length > 0 ? "#ef4444" : "#22c55e",
           },
           {
@@ -492,9 +492,9 @@ export default function DashboardPage() {
               : null
         }
         primaryMetrics={[
-          { label: "Variance this week", value: loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`, meta: latestVarianceWeek ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString()}` : "No variance week yet" },
-          { label: "Active flags", value: loading ? "—" : String(flags.length), meta: "Awaiting review" },
-          { label: "Items tracked", value: loading ? "—" : trackedItems ? String(trackedItems) : "—", meta: "Forecast coverage" },
+          { label: "Unaccounted usage", value: loading ? "—" : `${varianceTotalOz.toFixed(1)} oz`, meta: latestVarianceWeek ? `Week of ${new Date(latestVarianceWeek).toLocaleDateString()}` : "No data yet" },
+          { label: "Items to review", value: loading ? "—" : String(flags.length), meta: highSeverityCount > 0 ? `${highSeverityCount} need immediate action` : "None critical" },
+          { label: "Items tracked", value: loading ? "—" : trackedItems ? String(trackedItems) : "—", meta: "14-day forecast active" },
         ]}
         summary={
           weeklyBrief
@@ -520,8 +520,8 @@ export default function DashboardPage() {
         <div style={{ background: "#141a22", border: "1px solid #2a3240", borderRadius: 12, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderBottom: "1px solid #1f2732" }}>
             <div>
-              <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Variance Flags</p>
-              <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Potential shrink and over-pours to review</p>
+              <p style={{ fontWeight: 700, fontSize: 14, color: "#f0f6fc" }}>Unaccounted Usage</p>
+              <p style={{ fontSize: 11, color: "#8b949e", marginTop: 2 }}>Items where poured amounts don&apos;t match what was sold</p>
             </div>
             <Link href="/variance" style={{ fontSize: 12, color: "#d4a853", fontWeight: 600, textDecoration: "none" }}>View all →</Link>
           </div>
@@ -533,11 +533,11 @@ export default function DashboardPage() {
                 ) : analytics?.varianceByWeek?.length ? (
                   <>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                      <p style={{ fontSize: 12, fontWeight: 600, color: "#8b949e", textTransform: "uppercase", letterSpacing: "0.07em" }}>8-Week Variance Trend</p>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: "#8b949e", textTransform: "uppercase", letterSpacing: "0.07em" }}>8-Week Shrinkage Trend</p>
                       <ViewToggle value={varianceView} onChange={setVarianceView} />
                     </div>
                     <LineChart
-                      series={[{ name: "Variance (oz)", color: "#ef4444", data: analytics.varianceByWeek.map((row) => ({ x: new Date(row.week_start_date).getTime(), y: row.total_abs_variance_oz, label: new Date(row.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })) }]}
+                      series={[{ name: "Unaccounted (oz)", color: "#ef4444", data: analytics.varianceByWeek.map((row) => ({ x: new Date(row.week_start_date).getTime(), y: row.total_abs_variance_oz, label: new Date(row.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) })) }]}
                       valueFormat={(v) => `${v.toFixed(1)} oz`}
                       height={180}
                     />
@@ -567,7 +567,7 @@ export default function DashboardPage() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid #1f2732" }}>
-                      {["Item", "Week", "Variance", "Severity"].map((h) => (
+                      {["Item", "Week", "Unaccounted", "Action"].map((h) => (
                         <th key={h} style={{ padding: "8px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#8b949e" }}>{h}</th>
                       ))}
                     </tr>
@@ -581,7 +581,7 @@ export default function DashboardPage() {
                           <td style={{ padding: "10px 16px", fontWeight: 500, color: "#f0f6fc" }}>{flag.item_name}</td>
                           <td style={{ padding: "10px 16px", color: "#8b949e" }}>{new Date(flag.week_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</td>
                           <td style={{ padding: "10px 16px", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: varianceNum < 0 ? "#ef4444" : "#22c55e" }}>{flag.variance_oz} oz</td>
-                          <td style={{ padding: "10px 16px" }}><span className={severityClass}>{flag.severity}</span></td>
+                          <td style={{ padding: "10px 16px" }}><span className={severityClass}>{flag.severity === "high" ? "Needs attention" : flag.severity === "med" ? "Investigate" : "Monitor"}</span></td>
                         </tr>
                       );
                     })}
@@ -614,7 +614,7 @@ export default function DashboardPage() {
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
                       <span style={{ fontWeight: 700, fontSize: 13, color: "#f0f6fc" }}>{item.item}</span>
-                      <span className={item.priority === "high" ? "app-badge app-badge-gold" : "app-badge app-badge-muted"}>{item.priority}</span>
+                      <span className={item.priority === "high" ? "app-badge app-badge-gold" : "app-badge app-badge-muted"}>{item.priority === "high" ? "Spotlight now" : "Optional"}</span>
                     </div>
                     <p style={{ fontSize: 11, color: "#8b949e", marginBottom: 6 }}>{item.why}</p>
                     <p style={{ fontSize: 12, color: "#c9d1d9", fontStyle: "italic" }}>&ldquo;{item.script}&rdquo;</p>
