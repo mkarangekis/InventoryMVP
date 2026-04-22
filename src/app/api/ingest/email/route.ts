@@ -2,9 +2,11 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { SkyTabAdapter } from "@/lib/pos/adapters/skytab";
 import { runImport } from "@/lib/pos/run-import";
 
-// Postmark inbound webhook for SkyTab Lighthouse email exports
+const STORAGE_BUCKET = "pos-imports";
+
+// Postmark inbound webhook for SkyTab Lighthouse email exports.
 // Bar owners subscribe their SkyTab report to {locationId}@ingest.pourdex.com
-// Postmark inbound processes the email and calls this endpoint
+// Postmark inbound processes the email and calls this endpoint.
 export async function POST(request: Request) {
   const webhookToken = request.headers.get("x-postmark-inbound-hash");
   if (
@@ -18,7 +20,6 @@ export async function POST(request: Request) {
   if (!payload) return new Response("Invalid JSON", { status: 400 });
 
   // Postmark delivers to e.g. "abc123@ingest.pourdex.com"
-  // ToFull contains the recipient address
   const toAddress: string = payload.ToFull?.[0]?.Email ?? payload.To ?? "";
   const localPart = toAddress.split("@")[0] ?? "";
 
@@ -56,7 +57,6 @@ export async function POST(request: Request) {
     return new Response("No SkyTab connection found for this email", { status: 404 });
   }
 
-  // Get tenant_id from locations table
   const locationRow = await supabaseAdmin
     .from("locations")
     .select("tenant_id")
@@ -84,7 +84,6 @@ export async function POST(request: Request) {
   if (csvAttachment?.Content) {
     reportCsv = Buffer.from(csvAttachment.Content, "base64").toString("utf-8");
   } else if (payload.TextBody && payload.TextBody.includes(",")) {
-    // Some Lighthouse setups paste CSV inline in the email body
     reportCsv = payload.TextBody;
   } else {
     return new Response("No CSV attachment found in email", { status: 400 });
@@ -92,18 +91,23 @@ export async function POST(request: Request) {
 
   await supabaseAdmin
     .from("pos_connections")
-    .update({
-      last_file_received_at: new Date().toISOString(),
-      files_received_total: supabaseAdmin.rpc("increment", { x: 1 }) as unknown as number,
-    })
+    .update({ last_file_received_at: new Date().toISOString() })
     .eq("location_id", locationId)
     .eq("pos_type", "skytab");
+
+  // Fire-and-forget backup to Supabase Storage for audit / manual replay
+  const today = new Date().toISOString().slice(0, 10);
+  const storageKey = `skytab/${today}/${locationId}/report.csv`;
+  supabaseAdmin.storage
+    .from(STORAGE_BUCKET)
+    .upload(storageKey, Buffer.from(reportCsv, "utf-8"), { contentType: "text/csv", upsert: true })
+    .then(() => console.info("skytab storage backup saved", { locationId, storageKey }))
+    .catch((err) => console.warn("skytab storage backup failed (non-fatal)", { locationId, error: err?.message }));
 
   const adapter = new SkyTabAdapter({ report: reportCsv });
   const baseUrl = new URL(request.url).origin;
 
   try {
-    const today = new Date().toISOString().slice(0, 10);
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
     const result = await runImport({
