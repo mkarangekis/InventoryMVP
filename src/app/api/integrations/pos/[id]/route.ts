@@ -25,22 +25,25 @@ async function getAuthedConnection(request: Request, id: string) {
   return { connection: data };
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const result = await getAuthedConnection(request, params.id);
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function GET(request: Request, context: RouteContext) {
+  const { id } = await context.params;
+  const result = await getAuthedConnection(request, id);
   if (result.error) return result.error;
   if (result.demo) return Response.json({ connection: null });
   return Response.json({ connection: result.connection });
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const result = await getAuthedConnection(request, params.id);
+export async function PATCH(request: Request, context: RouteContext) {
+  const { id } = await context.params;
+  const result = await getAuthedConnection(request, id);
   if (result.error) return result.error;
   if (result.demo) return Response.json({ ok: true });
 
   const body = await request.json().catch(() => null);
   if (!body) return new Response("Invalid JSON", { status: 400 });
 
-  // Only allow updating safe fields
   const allowed = ["status", "square_location_id", "sftp_path"];
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of allowed) {
@@ -50,7 +53,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   const { data, error } = await supabaseAdmin
     .from("pos_connections")
     .update(patch)
-    .eq("id", params.id)
+    .eq("id", id)
     .select()
     .single();
 
@@ -58,12 +61,13 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   return Response.json({ ok: true, connection: data });
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const result = await getAuthedConnection(request, params.id);
+export async function DELETE(request: Request, context: RouteContext) {
+  const { id } = await context.params;
+  const result = await getAuthedConnection(request, id);
   if (result.error) return result.error;
   if (result.demo) return Response.json({ ok: true });
 
-  const { error } = await supabaseAdmin.from("pos_connections").delete().eq("id", params.id);
+  const { error } = await supabaseAdmin.from("pos_connections").delete().eq("id", id);
   if (error) return new Response(error.message, { status: 500 });
   return Response.json({ ok: true });
 }
