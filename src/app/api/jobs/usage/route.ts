@@ -12,6 +12,50 @@ const getDefaultFromDate = () =>
   new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
 export async function POST(request: Request) {
+  const body = (await request.json().catch(() => ({}))) as RequestBody & { tenantId?: string };
+
+  // Internal call from automated POS imports (Toast/SkyTab/Square webhooks)
+  const internalSecret = request.headers.get("x-internal-secret");
+  if (internalSecret) {
+    if (internalSecret !== process.env.INTERNAL_JOB_SECRET || !process.env.INTERNAL_JOB_SECRET) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    const tenantId = body.tenantId;
+    const locationId = body.locationId ?? null;
+    if (!tenantId) return new Response("Missing tenantId", { status: 400 });
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) return new Response("DATABASE_URL is not set", { status: 500 });
+    const sql = postgres(databaseUrl, { prepare: false });
+    const from = body.from ?? getDefaultFromDate();
+    const to = body.to ?? from;
+    try {
+      const [jobRun] = await sql`
+        insert into job_runs (tenant_id, location_id, job_name, status)
+        values (${tenantId}, ${locationId}, 'compute-theoretical-usage', 'running')
+        returning id
+      `;
+      await sql`
+        insert into theoretical_usage_daily (tenant_id,location_id,usage_date,ingredient_id,ounces_used,computed_at)
+        select oi.tenant_id,oi.location_id,o.closed_at::date,dsl.ingredient_id,sum(oi.quantity*dsl.ounces),now()
+        from pos_order_items oi
+        join pos_orders o on o.pos_order_id=oi.pos_order_id and o.location_id=oi.location_id and o.tenant_id=oi.tenant_id
+        join drink_specs ds on ds.menu_item_id=oi.menu_item_id and ds.location_id=oi.location_id and ds.tenant_id=oi.tenant_id and ds.active=1
+        join drink_spec_lines dsl on dsl.drink_spec_id=ds.id
+        where o.closed_at::date between ${from}::date and ${to}::date and o.tenant_id=${tenantId}
+          and (${locationId}::uuid is null or o.location_id=${locationId})
+        group by oi.tenant_id,oi.location_id,o.closed_at::date,dsl.ingredient_id
+        on conflict (tenant_id,location_id,usage_date,ingredient_id)
+        do update set ounces_used=excluded.ounces_used,computed_at=excluded.computed_at
+      `;
+      await sql`update job_runs set status='completed',finished_at=now() where id=${jobRun.id}`;
+      return Response.json({ message: "Theoretical usage computed." });
+    } catch (err) {
+      return new Response(err instanceof Error ? err.message : "Unknown error", { status: 500 });
+    } finally {
+      await sql.end({ timeout: 5 });
+    }
+  }
+
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.replace("Bearer ", "");
 
@@ -49,7 +93,6 @@ export async function POST(request: Request) {
     return Response.json({ message: "No locations available." });
   }
 
-  const body = (await request.json().catch(() => ({}))) as RequestBody;
   const from = body.from ?? getDefaultFromDate();
   const to = body.to ?? from;
   const locationId =

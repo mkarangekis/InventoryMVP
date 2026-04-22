@@ -71,6 +71,15 @@ const AuditIcon = () => (
   </svg>
 );
 
+const IntegrationsIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="7" width="6" height="10" rx="1" />
+    <rect x="16" y="7" width="6" height="10" rx="1" />
+    <path d="M8 12h8" />
+    <path d="M14 9l3 3-3 3" />
+  </svg>
+);
+
 const SettingsIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3" />
@@ -117,6 +126,12 @@ const utilityTabs: UtilityTab[] = [
     href: "/ingest",
     description: "POS imports",
     icon: <IngestIcon />,
+  },
+  {
+    label: "Integrations",
+    href: "/integrations",
+    description: "POS connections",
+    icon: <IntegrationsIcon />,
   },
   {
     label: "Settings",

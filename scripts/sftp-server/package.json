@@ -1,0 +1,15 @@
+{
+  "name": "pourdex-sftp-server",
+  "version": "1.0.0",
+  "description": "SFTP server for Toast nightly CSV ingestion",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ssh2": "^1.15.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
