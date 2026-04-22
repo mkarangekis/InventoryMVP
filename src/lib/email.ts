@@ -195,6 +195,65 @@ export async function sendReorderAlert(payload: ReorderAlertPayload): Promise<vo
   });
 }
 
+// ── Import Failure Alert ───────────────────────────────────────────────────────
+
+export type ImportFailureAlertPayload = {
+  to: string;
+  locationName: string;
+  failures: { posType: string; lastAttempt: string | null; error: string | null }[];
+  date: string;
+};
+
+export async function sendImportFailureAlert(payload: ImportFailureAlertPayload): Promise<void> {
+  const client = getClient();
+
+  const rows = payload.failures
+    .map(
+      (f) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #2a2520;color:#e8e0d0;font-size:14px;font-weight:600">${f.posType.charAt(0).toUpperCase() + f.posType.slice(1)}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #2a2520;color:#9c8070;font-size:13px">${f.lastAttempt ? new Date(f.lastAttempt).toLocaleString() : "Never"}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #2a2520;color:#f87171;font-size:12px;max-width:240px;word-break:break-word">${f.error ?? "No import run found for last night"}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const content = `
+    <h1 style="color:#e8e0d0;font-size:22px;font-weight:700;margin:0 0 4px">⚠️ Nightly Import Failed — ${payload.locationName}</h1>
+    <p style="color:#9c8070;font-size:14px;margin:0 0 24px">
+      ${payload.failures.length} POS connection${payload.failures.length !== 1 ? "s" : ""} did not complete a successful import last night (${payload.date}).
+      Sales data may be out of date until the next successful import.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px">
+      <tr>
+        <th style="color:#6b6560;font-size:11px;font-weight:600;text-align:left;padding-bottom:8px;border-bottom:1px solid #2a2520">POS SYSTEM</th>
+        <th style="color:#6b6560;font-size:11px;font-weight:600;text-align:left;padding-bottom:8px;border-bottom:1px solid #2a2520">LAST ATTEMPT</th>
+        <th style="color:#6b6560;font-size:11px;font-weight:600;text-align:left;padding-bottom:8px;border-bottom:1px solid #2a2520">ERROR</th>
+      </tr>
+      ${rows}
+    </table>
+
+    <div style="padding:16px;background:#1a0f0f;border:1px solid #3a1a1a;border-radius:8px">
+      <p style="color:#f87171;font-size:13px;margin:0 0 8px;font-weight:600">What to check</p>
+      <ul style="color:#e0c8c8;font-size:13px;margin:0;padding-left:20px;line-height:1.8">
+        <li>Toast: check SFTP server logs at /var/pourdex/logs/errors.log on the VPS</li>
+        <li>SkyTab: verify the email subscription is still active in Lighthouse</li>
+        <li>Square: confirm the OAuth token hasn't expired in POS Integrations settings</li>
+        <li>Replay: backup files are saved at /var/pourdex/backups/{date}/{username}/</li>
+      </ul>
+    </div>
+  `;
+
+  await client.emails.send({
+    from: FROM,
+    replyTo: REPLY_TO,
+    to: payload.to,
+    subject: `⚠️ Import Failed — ${payload.locationName} (${payload.date})`,
+    html: baseLayout(content, "Import Failure Alert"),
+  });
+}
+
 // ── Weekly Digest ──────────────────────────────────────────────────────────────
 
 export async function sendWeeklyDigest(payload: WeeklyDigestPayload): Promise<void> {

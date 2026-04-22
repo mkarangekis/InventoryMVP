@@ -9,9 +9,7 @@ export type RunImportOptions = {
   locationId: string;
   source: ImportSource;
   adapter: PosAdapter;
-  // Raw CSV strings for audit row storage (optional — API adapters won't have these)
   rawCsvs?: { type: string; content: string }[];
-  // Relay an internal job call using INTERNAL_JOB_SECRET
   triggerJobs?: {
     baseUrl: string;
     from: string;
@@ -25,11 +23,6 @@ export type ImportResult = {
   items: number;
   modifiers: number;
   voids: number;
-};
-
-const parseNumber = (value: string) => {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 export async function runImport(opts: RunImportOptions): Promise<ImportResult> {
@@ -53,104 +46,92 @@ export async function runImport(opts: RunImportOptions): Promise<ImportResult> {
       adapter.importVoidsComps({ from: "", to: "" }),
     ]);
 
-    // Upsert menu items
-    const existingMenuItems = await supabaseAdmin
-      .from("menu_items")
-      .select("id,pos_menu_item_id")
-      .eq("location_id", locationId)
-      .in("pos_menu_item_id", menuItems.map((i) => i.posMenuItemId));
+    // Menu items — upsert, skip duplicates (idempotent replay safe)
+    if (menuItems.length > 0) {
+      const { data: inserted } = await supabaseAdmin
+        .from("menu_items")
+        .upsert(
+          menuItems.map((i) => ({ tenant_id: tenantId, location_id: locationId, pos_menu_item_id: i.posMenuItemId, name: i.name, is_active: 1 })),
+          { onConflict: "tenant_id,location_id,pos_menu_item_id", ignoreDuplicates: true },
+        )
+        .select("id,pos_menu_item_id");
 
-    const existingMap = new Map<string, string>();
-    for (const item of existingMenuItems.data ?? []) {
-      if (item.pos_menu_item_id) existingMap.set(item.pos_menu_item_id, item.id);
-    }
+      // Also load any that already existed so we can map menu_item_id on order items
+      const { data: existing } = await supabaseAdmin
+        .from("menu_items")
+        .select("id,pos_menu_item_id")
+        .eq("location_id", locationId)
+        .in("pos_menu_item_id", menuItems.map((i) => i.posMenuItemId));
 
-    const menuInserts = menuItems
-      .filter((i) => !existingMap.has(i.posMenuItemId))
-      .map((i) => ({ tenant_id: tenantId, location_id: locationId, pos_menu_item_id: i.posMenuItemId, name: i.name, is_active: 1 }));
-
-    if (menuInserts.length > 0) {
-      const inserted = await supabaseAdmin.from("menu_items").insert(menuInserts).select("id,pos_menu_item_id");
-      for (const item of inserted.data ?? []) {
-        if (item.pos_menu_item_id) existingMap.set(item.pos_menu_item_id, item.id);
+      var menuMap = new Map<string, string>();
+      for (const item of [...(existing ?? []), ...(inserted ?? [])]) {
+        if (item.pos_menu_item_id) menuMap.set(item.pos_menu_item_id, item.id);
       }
+    } else {
+      var menuMap = new Map<string, string>();
     }
 
-    // Orders
+    // Orders — ON CONFLICT (tenant_id, location_id, pos_order_id) DO NOTHING
     if (orders.length > 0) {
-      await supabaseAdmin.from("pos_orders").insert(
-        orders.map((o) => ({
-          tenant_id: tenantId,
-          location_id: locationId,
-          pos_order_id: o.posOrderId,
-          opened_at: o.openedAt,
-          closed_at: o.closedAt,
-          subtotal: o.subtotal,
-          tax: o.tax,
-          total: o.total,
-          status: o.status,
-        })),
-      );
+      await supabaseAdmin
+        .from("pos_orders")
+        .upsert(
+          orders.map((o) => ({
+            tenant_id: tenantId,
+            location_id: locationId,
+            pos_order_id: o.posOrderId,
+            opened_at: o.openedAt,
+            closed_at: o.closedAt,
+            subtotal: o.subtotal,
+            tax: o.tax,
+            total: o.total,
+            status: o.status,
+          })),
+          { onConflict: "tenant_id,location_id,pos_order_id", ignoreDuplicates: true },
+        );
     }
 
-    // Order items
+    // Order items — ON CONFLICT (tenant_id, location_id, pos_item_id) DO NOTHING
     if (orderItems.length > 0) {
-      await supabaseAdmin.from("pos_order_items").insert(
-        orderItems.map((i) => ({
-          tenant_id: tenantId,
-          location_id: locationId,
-          pos_item_id: i.posItemId,
-          pos_order_id: i.posOrderId,
-          menu_item_id: existingMap.get(i.posMenuItemId) ?? null,
-          name: i.itemName,
-          quantity: i.quantity,
-          price_each: i.priceEach,
-          gross: i.quantity * i.priceEach,
-        })),
-      );
+      await supabaseAdmin
+        .from("pos_order_items")
+        .upsert(
+          orderItems.map((i) => ({
+            tenant_id: tenantId,
+            location_id: locationId,
+            pos_item_id: i.posItemId,
+            pos_order_id: i.posOrderId,
+            menu_item_id: menuMap.get(i.posMenuItemId) ?? null,
+            name: i.itemName,
+            quantity: i.quantity,
+            price_each: i.priceEach,
+            gross: i.quantity * i.priceEach,
+          })),
+          { onConflict: "tenant_id,location_id,pos_item_id", ignoreDuplicates: true },
+        );
     }
 
-    // Modifiers
+    // Modifiers — no natural unique key, skip duplicates by catching errors
     if (modifiers.length > 0) {
       await supabaseAdmin.from("pos_modifiers").insert(
-        modifiers.map((m) => ({
-          tenant_id: tenantId,
-          location_id: locationId,
-          pos_item_id: m.posItemId,
-          name: m.name,
-          price_delta: m.priceDelta,
-        })),
+        modifiers.map((m) => ({ tenant_id: tenantId, location_id: locationId, pos_item_id: m.posItemId, name: m.name, price_delta: m.priceDelta })),
       );
     }
 
-    // Voids / comps
+    // Voids/comps — same, no natural unique key
     if (voidsComps.length > 0) {
       await supabaseAdmin.from("pos_voids_comps").insert(
-        voidsComps.map((v) => ({
-          tenant_id: tenantId,
-          location_id: locationId,
-          pos_item_id: v.posItemId,
-          type: v.type,
-          reason: v.reason,
-          amount: v.amount,
-        })),
+        voidsComps.map((v) => ({ tenant_id: tenantId, location_id: locationId, pos_item_id: v.posItemId, type: v.type, reason: v.reason, amount: v.amount })),
       );
     }
 
-    // Raw CSV rows (for audit trail)
+    // Raw CSV rows for audit trail
     if (rawCsvs && rawCsvs.length > 0) {
       const rawRows: object[] = [];
       for (const { type, content } of rawCsvs) {
         const { rows } = parseCsv(content, []);
         rows.forEach((row, index) => {
-          rawRows.push({
-            tenant_id: tenantId,
-            location_id: locationId,
-            import_run_id: importRunId,
-            row_type: type,
-            row_number: index + 1,
-            row_data: row,
-          });
+          rawRows.push({ tenant_id: tenantId, location_id: locationId, import_run_id: importRunId, row_type: type, row_number: index + 1, row_data: row });
         });
       }
       if (rawRows.length > 0) await supabaseAdmin.from("pos_import_rows").insert(rawRows);
@@ -174,16 +155,10 @@ export async function runImport(opts: RunImportOptions): Promise<ImportResult> {
     // Trigger downstream jobs via internal secret
     if (triggerJobs) {
       const { baseUrl, from, to } = triggerJobs;
-      const internalHeaders = {
-        "x-internal-secret": process.env.INTERNAL_JOB_SECRET ?? "",
-        "Content-Type": "application/json",
-      };
-      const body = JSON.stringify({ tenantId, locationId, from, to });
-      const dateBody = JSON.stringify({ tenantId, locationId, date: to });
-
-      await fetch(`${baseUrl}/api/jobs/usage`, { method: "POST", headers: internalHeaders, body });
-      await fetch(`${baseUrl}/api/jobs/forecast`, { method: "POST", headers: internalHeaders, body: dateBody });
-      await fetch(`${baseUrl}/api/jobs/ordering`, { method: "POST", headers: internalHeaders, body: dateBody });
+      const headers = { "x-internal-secret": process.env.INTERNAL_JOB_SECRET ?? "", "Content-Type": "application/json" };
+      await fetch(`${baseUrl}/api/jobs/usage`, { method: "POST", headers, body: JSON.stringify({ tenantId, locationId, from, to }) });
+      await fetch(`${baseUrl}/api/jobs/forecast`, { method: "POST", headers, body: JSON.stringify({ tenantId, locationId, date: to }) });
+      await fetch(`${baseUrl}/api/jobs/ordering`, { method: "POST", headers, body: JSON.stringify({ tenantId, locationId, date: to }) });
     }
 
     return { importRunId, orders: orders.length, items: orderItems.length, modifiers: modifiers.length, voids: voidsComps.length };
