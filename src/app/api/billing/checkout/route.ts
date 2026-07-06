@@ -60,6 +60,9 @@ export async function POST(request: Request) {
       customer: customerId,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
+      subscription_data: {
+        trial_period_days: 14,
+      },
       success_url: `${appUrl}/onboarding?trial=started`,
       cancel_url: `${appUrl}/settings?billing=canceled`,
     });
