@@ -14,11 +14,12 @@ Any GitHub write, Vercel preview/deployment, or Supabase administrative action.
 ## Evidence
 
 On 2026-07-29, personal access tokens for GitHub, Vercel, and Supabase were
-posted in a conversation instead of being entered through an approved local
-login or secret manager. The token values were not used, copied into the
-repository, or placed in a command by Codex. Local verification found an
-existing Supabase CLI session, no authorized Vercel CLI session, and no
-installed GitHub CLI.
+posted repeatedly in a conversation instead of being entered through an
+approved local login or secret manager. The token values were not used, copied
+into the repository, or placed in a command by Codex. Local verification found
+an existing Supabase CLI session and no authorized Vercel or GitHub CLI
+session. GitHub CLI was subsequently installed, but authentication was not
+completed.
 
 ## Why Codex cannot safely proceed
 
@@ -29,8 +30,10 @@ plans to rotate them after release.
 ## Work completed around the blocker
 
 The linked Vercel project, Git remote, current release revision, and visible
-Supabase project were identified without using the exposed tokens. No remote
-write or production mutation occurred.
+Supabase project were identified without using the exposed tokens. A protected
+database release workflow was implemented that needs none of the exposed
+personal access tokens. The owner independently merged the application PR;
+Codex made no remote write or production mutation.
 
 ## Exact owner action
 

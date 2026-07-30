@@ -4,10 +4,13 @@ Last updated: 2026-07-29 (America/New_York)
 
 ## Current phase
 
-Phase 26 — Final verification and handoff: complete locally; external gates
+Phase 26 follow-up — application code is dark-deployed; guarded database
+release automation is implemented locally; database and activation gates remain
 blocked.
 
 Dedicated implementation branch: `codex/operations-center`
+
+Follow-up automation branch: `codex/operations-center-release-automation`
 
 Base revision: `35466821fc33d07bd85b4b2d50d2ede50dcbb90e`
 
@@ -25,8 +28,10 @@ Base revision: `35466821fc33d07bd85b4b2d50d2ede50dcbb90e`
 - Root `README.md`, `PILOT.md`, package/toolchain configuration,
   `.env.example`, Supabase/Vercel entry configuration, and ignore rules are
   active evidence sources.
-- No destructive command, production mutation, deployment, publication,
-  outreach, billing action, permission expansion, or external write occurred.
+- Codex performed no destructive command, production mutation, deployment,
+  publication, outreach, billing action, permission expansion, or external
+  write. The owner later merged PR 1, causing Vercel's configured Git
+  deployment.
 - Source-level environment loading and every known external/mutating command
   class were inspected.
 - Phase 0 passed with a denylist for database, seed, job, deploy, connector,
@@ -70,12 +75,12 @@ Base revision: `35466821fc33d07bd85b4b2d50d2ede50dcbb90e`
 
 ## Next executable tasks
 
-1. Run final secret scan, diff check, targeted format/lint/type/tests/build, and
-   dependency audit.
-2. Reconcile all 104 definition-of-done rows.
-3. Hand off the isolated branch, unapplied migration, blockers, owner actions,
-   and rollback.
-4. After owner action: independent review and non-production rehearsal.
+1. Review and merge the guarded database-release automation.
+2. Revoke all credentials exposed in conversation.
+3. Configure the protected GitHub environment with fresh credentials and exact
+   release variables.
+4. Complete independent review and non-production migration/restore rehearsal.
+5. Run a read-only plan, then separately approve the exact production apply.
 
 ## Tests last run
 
@@ -84,6 +89,7 @@ Current branch, 2026-07-29:
 - `pnpm test:entitlement`: pass
 - `pnpm test:operations`: pass
 - `pnpm test:cron-auth`: pass
+- `pnpm test:release-automation`: pass
 - `pnpm exec tsc --noEmit`: pass
 - Targeted ESLint: zero errors, five pre-existing shell warnings
 - `pnpm exec next build`: pass on Next 16.2.12; 79 pages
@@ -94,6 +100,7 @@ Current branch, 2026-07-29:
 - Changed-file secret scan: pass across 17 scoped targets
 - Git history secret scan: pass across 78 commits
 - Browser/assistive technology: blocked; no browser runtime available
+- GitHub workflow `actionlint` 1.7.12: pass
 
 ## Known failures that predate this work
 
@@ -136,11 +143,17 @@ implementation work is currently blocked.
 ## Migration state
 
 `supabase/migrations/20260729000000_operations_center.sql` is created and
-unapplied. No database command was run.
+unapplied as of the latest public verification. No database command was run by
+Codex. A protected GitHub Actions plan/apply workflow is now available on the
+follow-up branch; it has not run remotely.
 
 ## Deployment state
 
-Not deployed. No preview, staging, or production deployment has been invoked.
+The owner merged PR 1 as commit
+`7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`. Public checks verified the new
+Operations route on both known Vercel production aliases with the Operations
+APIs still feature-off. Codex did not invoke that deployment. No migration,
+flag enablement, administrator grant, or connector activation occurred.
 
 ## Rollback readiness
 

@@ -5,13 +5,16 @@
 An additive, owner-only, feature-flagged Operations Center is implemented on
 branch `codex/operations-center`. It is a read-only repository-evidence control
 plane with policy, schema, mock/provider boundaries, runbooks, and tests. It is
-not deployed or production ready.
+dark-deployed on Vercel after the owner merged PR 1, but its database schema,
+administrator grant, and feature flags are not activated or production ready.
 
 ## Current production status
 
-No production action occurred. No migration was applied, no feature was
-enabled, no connector/model/email/job/billing/vendor/public action ran, and no
-customer data was accessed or changed.
+The owner merged PR 1, and the configured Vercel Git integration served the new
+route on both known production aliases. Public checks verified feature-off API
+responses. Codex did not invoke the deployment. No migration was applied by
+Codex, no feature was enabled, no administrator was granted, and no
+connector/model/email/job/billing/vendor/public action ran.
 
 ## What was reverse engineered
 
@@ -85,10 +88,12 @@ changed or invoked.
 
 ## Migrations and deployment
 
-One additive migration exists and is unapplied. There is no backfill. Release
-sequence is migration rehearsal, RLS negatives, restore, preview with flags
-off, staging read-only enablement, independent review, then an exact owner
-production decision. Nothing was deployed.
+One additive migration exists and was still unapplied at the latest public
+verification. There is no backfill. The application revision is dark-deployed;
+database release remains migration rehearsal, RLS negatives, restore evidence,
+a protected read-only plan, and an exact approved apply. The follow-up branch
+adds a protected GitHub Actions workflow described in
+`25-automated-database-release.md`; it has not run remotely.
 
 ## Open blockers
 

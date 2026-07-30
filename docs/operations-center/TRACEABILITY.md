@@ -55,7 +55,7 @@ is never promoted to `verified` without direct evidence.
 |  42 | Independent code review                                                           | blocked     | implementer cannot self-approve                                      | Human reviewer                 |
 |  43 | Attach QA and security results                                                    | implemented | execution status, baseline, a11y audit, final report                 | Manual QA blocked              |
 |  44 | Release manifests and rollback plans                                              | verified    | `21-compatibility-and-release-manifest.md`                           | None                           |
-|  45 | Post-release observation                                                          | blocked     | Requires an approved release                                         | Owner production authority     |
+|  45 | Post-release observation                                                          | blocked     | Dark deploy verified; required observation window not completed      | Owner production authority     |
 |  46 | Threat model includes Operations Center                                           | verified    | `09-security-and-privacy-threat-model.md`                            | None                           |
 |  47 | Authorization matrix complete                                                     | verified    | `20-authorization-matrix.md`                                         | None                           |
 |  48 | Cross-tenant negative tests pass                                                  | blocked     | server derives tenant; RLS migration unapplied                       | Disposable DB/two tenants      |
@@ -107,11 +107,11 @@ is never promoted to `verified` without direct evidence.
 |  94 | Reproducible local setup                                                          | verified    | `19-local-setup-and-configuration.md`; commands executed             | None                           |
 |  95 | Synthetic seed demonstrates system                                                | verified    | resettable code fixture/mock; no database seed needed                | None                           |
 |  96 | Staging rehearsal passes                                                          | blocked     | No staging authority/environment established                         | Owner/platform operator        |
-|  97 | Migration and rollback rehearsed                                                  | blocked     | unapplied additive SQL; rollback documented                          | Disposable DB/owner            |
+|  97 | Migration and rollback rehearsed                                                  | blocked     | guarded plan/apply workflow; restore rehearsal still required        | Disposable DB/owner            |
 |  98 | Emergency pause rehearsed                                                         | verified    | default-on and Tier B pause unit test                                | Staging operational test later |
 |  99 | Explicit connector status/credentials                                             | implemented | UI registry shows disabled/unconfigured/unverified; no secrets       | Owner for credentials          |
 | 100 | Exact owner action for every blocker                                              | verified    | required template in `BLOCKERS.md`                                   | Owner as listed                |
 | 101 | Traceability covers every requirement                                             | verified    | all 104 rows present with evidence/status                            | None                           |
 | 102 | Execution status matches state                                                    | verified    | `EXECUTION_STATUS.md` reconciled                                     | None                           |
-| 103 | Never claim production without evidence                                           | verified    | Not deployed; status explicitly recorded                             | None                           |
+| 103 | Never claim production without evidence                                           | verified    | merge/live-route/feature-off API evidence recorded                   | None                           |
 | 104 | Final report and 30-day plan                                                      | verified    | `24-final-execution-report.md`; `23-first-30-days.md`                | None                           |
