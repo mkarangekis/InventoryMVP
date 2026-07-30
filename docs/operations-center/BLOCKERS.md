@@ -5,6 +5,68 @@ Last updated: 2026-07-29
 No blocker prevents further local review of the branch. The following items
 block staging, production, external connections, or claims.
 
+# Blocker: Exposed access tokens and secure reauthentication
+
+## Blocked requirement
+
+Any GitHub write, Vercel preview/deployment, or Supabase administrative action.
+
+## Evidence
+
+On 2026-07-29, personal access tokens for GitHub, Vercel, and Supabase were
+posted in a conversation instead of being entered through an approved local
+login or secret manager. The token values were not used, copied into the
+repository, or placed in a command by Codex. Local verification found an
+existing Supabase CLI session, no authorized Vercel CLI session, and no
+installed GitHub CLI.
+
+## Why Codex cannot safely proceed
+
+Conversation content and tool history are not an approved secret transport.
+Credentials exposed there must be treated as compromised even if the owner
+plans to rotate them after release.
+
+## Work completed around the blocker
+
+The linked Vercel project, Git remote, current release revision, and visible
+Supabase project were identified without using the exposed tokens. No remote
+write or production mutation occurred.
+
+## Exact owner action
+
+**ACTION:** revoke all three exposed tokens immediately and establish fresh
+least-privilege access through local CLI login or an approved secret manager.
+**Why it is required:** compromised credentials cannot be used as a release
+control.
+**Exact system or account:** the owner-controlled GitHub, Vercel, and Supabase
+accounts used for Pourdex.
+**Exact value, permission, or decision needed:** new short-lived credentials
+with only the scopes required for a reviewed staging rehearsal; do not send
+their values to Codex or place them in chat.
+**Where to obtain it:** each provider's access-token/security settings.
+**Where to enter or approve it:** `gh auth login`, `vercel login`, and
+`supabase login`, or an owner-approved local secret manager.
+**Security scope:** staging first, least privilege, short expiry, no unrelated
+projects or organizations.
+**Expected cost:** none known.
+**Verification steps:** each CLI reports the intended account without printing
+the credential; the revoked credentials no longer authenticate; access scope
+is reviewed before any write.
+**Rollback or revoke steps:** revoke the fresh credentials and remove local
+sessions after the release workflow.
+**What remains blocked until complete:** remote branch publication, preview,
+database rehearsal, and every production action.
+
+## How to verify resolution
+
+Record revocation time, provider token identifiers (never values), authenticated
+account names, scope review, expiry, and secure-session verification output.
+
+## Work that resumes afterward
+
+Publish a draft branch/PR, create or select an isolated staging target, and run
+the non-production release rehearsal.
+
 # Blocker: Staging and production environment authority
 
 ## Blocked requirement
@@ -14,9 +76,12 @@ production smoke tests, alerts, and post-release observation.
 
 ## Evidence
 
-No Vercel project/branch/region, Supabase project/region, staging account,
-deployment credential, production telemetry, or `.openai/hosting.json` exists
-in the available repository/session.
+The owner identified the existing `inventory-mvp` Vercel production project,
+GitHub `mkarangekis/InventoryMVP` repository, and Pourdex Supabase production
+project. The local Vercel link matches `inventory-mvp`; the Supabase project is
+in East US (Ohio). No isolated Supabase staging project, branch/preview
+mapping, approved staging account, secure Vercel session, production telemetry
+access, or `.openai/hosting.json` exists in the available repository/session.
 
 ## Why Codex cannot safely proceed
 
@@ -35,10 +100,13 @@ documented.
 rehearsal.
 **Why it is required:** environment identity and deployment rights cannot be
 inferred.
-**Exact system or account:** the owner-controlled Vercel and Supabase projects.
-**Exact value, permission, or decision needed:** project IDs, regions, branch
-mapping, read-only observability access, and approval for a staging preview of
-the exact reviewed revision with Operations flags off.
+**Exact system or account:** the owner-controlled `inventory-mvp` Vercel
+project and a separate/disposable Supabase staging project; the identified
+Pourdex database remains production.
+**Exact value, permission, or decision needed:** a non-production database
+target, branch/preview mapping, read-only observability access, and approval
+for a staging preview of exact revision
+`a5662b74adec9baf25f5aa4647d8b7bb1c0b0b42` with Operations flags off.
 **Where to obtain it:** Vercel/Supabase project settings.
 **Where to enter or approve it:** secure deployment configuration and release
 approval system, never chat.

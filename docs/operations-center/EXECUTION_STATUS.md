@@ -113,7 +113,13 @@ verification remain blocked and are not claimed.
 
 ## Open approvals
 
-- Production enablement: not requested; Tier C owner action.
+- The owner expressed general intent to launch and supplied credentials through
+  an unsafe channel. This does not satisfy the exact Tier C approval gate for a
+  reviewed revision/environment/payload, and the exposed credentials must be
+  revoked before use.
+- Production enablement: requested in general, but exact approval remains
+  blocked behind staging, independent review, restore evidence, and risk
+  disposition.
 - Production migration or backfill: not requested; Tier C owner action.
 - Connector credentials/scopes: not requested; sensitive connections remain
   disabled or mock-only.
@@ -123,8 +129,9 @@ verification remain blocked and are not claimed.
 ## External blockers
 
 See [`BLOCKERS.md`](BLOCKERS.md). Production and external account verification
-remain blocked without owner-controlled access. No safe local implementation
-work is currently blocked.
+remain blocked until the exposed tokens are revoked, secure sessions are
+established, and the staging/review gates are complete. No safe local
+implementation work is currently blocked.
 
 ## Migration state
 
