@@ -12,6 +12,8 @@ Dedicated implementation branch: `codex/operations-center`
 
 Follow-up automation branch: `codex/operations-center-release-automation`
 
+Dedicated account branch: `codex/operations-center-dedicated-login`
+
 Base revision: `35466821fc33d07bd85b4b2d50d2ede50dcbb90e`
 
 ## Completed acceptance criteria
@@ -46,6 +48,10 @@ Base revision: `35466821fc33d07bd85b4b2d50d2ede50dcbb90e`
   tenant profile, exact tenant-owner role, explicit server-controlled
   Operations-owner grant, and demo denial on the server.
 - Navigation is conditional on a successful server access check.
+- A dedicated Operations login and invite activation flow reuse Supabase Auth,
+  prohibit self-registration from the Operations entry, validate the access API
+  before redirect, and never handle the administrator's password outside
+  Supabase Auth.
 - Master and module flags default off; execution defaults off; emergency pause
   defaults on; unknown environments fail safe.
 - Tier A–D policy, exact payload hashing, expiry, fresh authentication,
@@ -88,11 +94,14 @@ Current branch, 2026-07-29:
 
 - `pnpm test:entitlement`: pass
 - `pnpm test:operations`: pass
+- `pnpm test:operations-account`: pass
 - `pnpm test:cron-auth`: pass
 - `pnpm test:release-automation`: pass
 - `pnpm exec tsc --noEmit`: pass
-- Targeted ESLint: zero errors, five pre-existing shell warnings
-- `pnpm exec next build`: pass on Next 16.2.12; 79 pages
+- Dedicated-login targeted ESLint: zero errors
+- `pnpm exec next build`: pass on Next 16.2.12; 80 pages
+- HTTP dedicated login: `200`, Operations heading present, signup absent
+- HTTP unsafe return target: ordinary login preserved, Operations intent denied
 - HTTP feature off: Operations access/overview `404`
 - HTTP feature on without token: Operations access/overview `401`
 - HTTP missing cron secret: nightly/nightly-check `401`

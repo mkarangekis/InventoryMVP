@@ -19,7 +19,7 @@ is never promoted to `verified` without direct evidence.
 |   6 | Preserve unrelated user changes                                                   | verified    | `evidence/phase-0-preflight.md`; clean initial tree                  | None                           |
 |   7 | No unjustified rewrite                                                            | verified    | decisions `0001`; native modular-monolith extension                  | None                           |
 |   8 | Preserve compatibility or explicitly migrate                                      | verified    | `21-compatibility-and-release-manifest.md`; build/tests              | Tier C if migration            |
-|   9 | Integrate with existing login                                                     | implemented | `(authed)/layout.tsx`; Supabase browser session reused               | None                           |
+|   9 | Integrate with existing login                                                     | implemented | Supabase session; `/operations-login`; invite activation             | Account staging test blocked   |
 |  10 | Explicit server-side Operations permission                                        | verified    | `operations/auth/server.ts`; access tests/HTTP 401                   | None                           |
 |  11 | Deny unauthorized UI/API/stream/job/cache/export access                           | implemented | owner guard; no stream/job/export; private no-store                  | DB cross-tenant test blocked   |
 |  12 | Fresh authentication for high-risk actions                                        | verified    | `domain/policy.ts`; `test:operations`                                | None                           |

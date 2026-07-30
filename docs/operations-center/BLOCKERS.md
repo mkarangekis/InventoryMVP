@@ -152,22 +152,25 @@ permission expansion that requires exact owner authority.
 ## Work completed around the blocker
 
 The server guard, matching RLS JWT check, demo denial, unknown-role denial,
-conditional navigation, revocation behavior, and negative unit/HTTP tests are
-implemented.
+conditional navigation, revocation behavior, dedicated `/operations-login`
+entry, private password-activation page, dry-run invitation command, and
+negative unit/HTTP tests are implemented.
 
 ## Exact owner action
 
-**ACTION:** approve one named staging account for the exact Operations-owner
-grant.
+**ACTION:** provide one non-secret staging email and approve its exact
+tenant/account Operations-owner grant.
 **Why it is required:** all existing customer owners intentionally remain
 denied.
-**Exact system or account:** the owner-selected staging Supabase Auth user.
-**Exact value, permission, or decision needed:** set only
-`app_metadata.operations_center_role = 'owner'`; do not place the grant in
-user-editable metadata.
+**Exact system or account:** one new owner-selected staging Supabase Auth user.
+**Exact value, permission, or decision needed:** the invitation email and
+tenant UUID, plus approval to create a new profile with role `owner` and set
+only `app_metadata.operations_center_role = 'owner'`; do not provide a password
+or place the grant in user-editable metadata.
 **Where to obtain it:** Supabase Auth user administration.
-**Where to enter or approve it:** secure admin/API workflow and approval record,
-never chat.
+**Where to enter or approve it:** email/tenant may be provided as non-secret
+identifiers; credentials stay in a secure admin/CI environment and the password
+is set privately through the invitation page.
 **Security scope:** one staging account, least privilege, time-bounded.
 **Expected cost:** none known.
 **Verification steps:** refresh session, positive access, second tenant and

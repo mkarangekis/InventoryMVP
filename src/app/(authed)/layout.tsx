@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { PRODUCT_NAME } from "@/config/brand";
 import {
@@ -20,6 +20,7 @@ export default function AuthedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [locations, setLocations] = useState<Location[]>([]);
   const [activeLocation, setActiveLocation] = useState("");
   const [loading, setLoading] = useState(true);
@@ -98,74 +99,82 @@ export default function AuthedLayout({
   }
 
   if (isEnterpriseUIEnabled()) {
-    return (
-      <SubscriptionGuard token={token}>
-        <EnterpriseShell
-          locations={locations}
-          activeLocation={activeLocation}
-          onLocationChange={(next) => {
-            setActiveLocation(next);
-            if (typeof window !== "undefined") {
-              window.localStorage.setItem("barops.locationId", next);
-              window.dispatchEvent(
-                new CustomEvent("location-change", {
-                  detail: { locationId: next },
-                }),
-              );
-            }
-          }}
-          operationsAccess={operationsAccess}
-        >
-          {children}
-        </EnterpriseShell>
-      </SubscriptionGuard>
+    const shell = (
+      <EnterpriseShell
+        locations={locations}
+        activeLocation={activeLocation}
+        onLocationChange={(next) => {
+          setActiveLocation(next);
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem("barops.locationId", next);
+            window.dispatchEvent(
+              new CustomEvent("location-change", {
+                detail: { locationId: next },
+              }),
+            );
+          }
+        }}
+        operationsAccess={operationsAccess}
+      >
+        {children}
+      </EnterpriseShell>
+    );
+
+    return pathname === "/operations" && operationsAccess ? (
+      shell
+    ) : (
+      <SubscriptionGuard token={token}>{shell}</SubscriptionGuard>
     );
   }
 
-  return (
-    <SubscriptionGuard token={token}>
-      <div className="min-h-screen bg-zinc-50 text-gray-900">
-        <header className="border-b bg-white">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-semibold">{PRODUCT_NAME}</span>
-              <nav className="flex gap-3 text-sm text-gray-600">
-                <Link href="/dashboard">Dashboard</Link>
-                <Link href="/inventory">Inventory</Link>
-                <Link href="/ingest">Ingest</Link>
-                <Link href="/ordering">Ordering</Link>
-                <Link href="/profit">Profit</Link>
-                {operationsAccess ? (
-                  <Link href="/operations">Operations</Link>
-                ) : null}
-              </nav>
-            </div>
-            <select
-              className="rounded border border-gray-300 px-2 py-1 text-sm"
-              value={activeLocation}
-              onChange={(e) => {
-                const next = e.target.value;
-                setActiveLocation(next);
-                if (typeof window !== "undefined") {
-                  window.localStorage.setItem("barops.locationId", next);
-                  window.dispatchEvent(
-                    new CustomEvent("location-change", {
-                      detail: { locationId: next },
-                    }),
-                  );
-                }
-              }}
-            >
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
+  const basicShell = (
+    <div className="min-h-screen bg-zinc-50 text-gray-900">
+      <header className="border-b bg-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-semibold">{PRODUCT_NAME}</span>
+            <nav className="flex gap-3 text-sm text-gray-600">
+              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/inventory">Inventory</Link>
+              <Link href="/ingest">Ingest</Link>
+              <Link href="/ordering">Ordering</Link>
+              <Link href="/profit">Profit</Link>
+              {operationsAccess ? (
+                <Link href="/operations">Operations</Link>
+              ) : null}
+            </nav>
           </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
-      </div>
-    </SubscriptionGuard>
+          <select
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            value={activeLocation}
+            onChange={(e) => {
+              const next = e.target.value;
+              setActiveLocation(next);
+              if (typeof window !== "undefined") {
+                window.localStorage.setItem("barops.locationId", next);
+                window.dispatchEvent(
+                  new CustomEvent("location-change", {
+                    detail: { locationId: next },
+                  }),
+                );
+              }
+            }}
+          >
+            {locations.map((location) => (
+              <option key={location.id} value={location.id}>
+                {location.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </header>
+      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+    </div>
+  );
+
+  return pathname === "/operations" && operationsAccess ? (
+    basicShell
+  ) : (
+    <SubscriptionGuard token={token}>{basicShell}</SubscriptionGuard>
   );
 }
