@@ -1,6 +1,16 @@
 type RuntimeFlags = Partial<
   Record<
-    "ENTERPRISE_UI" | "AI_TOP_PANEL" | "GRAPHS_OVERVIEW" | "SUBSCRIPTION_GATING",
+    | "ENTERPRISE_UI"
+    | "AI_TOP_PANEL"
+    | "GRAPHS_OVERVIEW"
+    | "SUBSCRIPTION_GATING"
+    | "OPERATIONS_CENTER"
+    | "OPERATIONS_OVERVIEW"
+    | "OPERATIONS_APPROVALS"
+    | "OPERATIONS_AGENTS"
+    | "OPERATIONS_CONNECTORS"
+    | "OPERATIONS_EXECUTION"
+    | "OPERATIONS_EMERGENCY_PAUSE",
     string | undefined
   >
 >;
@@ -37,3 +47,25 @@ export const isGraphsOverviewEnabled = () =>
 
 export const isSubscriptionGatingEnabled = () =>
   isEnabled(readRuntimeFlag("SUBSCRIPTION_GATING"), false);
+
+export const isOperationsCenterEnabled = () =>
+  isEnabled(readRuntimeFlag("OPERATIONS_CENTER"), false);
+
+export const isOperationsOverviewEnabled = () =>
+  isEnabled(readRuntimeFlag("OPERATIONS_OVERVIEW"), false);
+
+export const isOperationsApprovalsEnabled = () =>
+  isEnabled(readRuntimeFlag("OPERATIONS_APPROVALS"), false);
+
+export const isOperationsAgentsEnabled = () =>
+  isEnabled(readRuntimeFlag("OPERATIONS_AGENTS"), false);
+
+export const isOperationsConnectorsEnabled = () =>
+  isEnabled(readRuntimeFlag("OPERATIONS_CONNECTORS"), false);
+
+export const isOperationsExecutionEnabled = () =>
+  isEnabled(readRuntimeFlag("OPERATIONS_EXECUTION"), false);
+
+// A missing or malformed value pauses execution. This flag is fail-safe.
+export const isOperationsEmergencyPaused = () =>
+  isEnabled(readRuntimeFlag("OPERATIONS_EMERGENCY_PAUSE"), true);
