@@ -1,15 +1,100 @@
 # Operations Center Blockers
 
-Last updated: 2026-07-29
+Last updated: 2026-07-30
 
 No blocker prevents further local review of the branch. The following items
 block staging, production, external connections, or claims.
+
+# Blocker: Production Supabase migration-history drift
+
+## Blocked requirement
+
+Applying the Operations schema and enabling the Operations Center against the
+Pourdex production Supabase project.
+
+## Evidence
+
+Read-only checks on 2026-07-30 verified the configured project
+`sbfurrspsnpkaonmufwt`: Supabase Auth returned `200`, the existing `tenants`
+table returned `200`, and `ops_workspaces` returned PostgREST `PGRST205`
+(missing table). The pinned Supabase CLI `2.110.0` connected through the secure
+local database configuration and reported seven local migrations absent from
+the remote migration ledger:
+
+- `20260401000000_ai_upgrade.sql`
+- `20260402000000_webhooks.sql`
+- `20260402000001_user_prefs.sql`
+- `20260422000000_pos_connections.sql`
+- `20260422000001_pos_idempotency.sql`
+- `20260422000002_pos_storage_bucket.sql`
+- `20260729000000_operations_center.sql`
+
+A direct read-only catalog inspection found the AI-upgrade objects and the
+`pos-imports` storage bucket already present despite their versions being absent
+from the ledger. The webhook, notification-preference, POS-connection,
+idempotency-constraint, and Operations objects inspected were absent. The
+repository release workflow correctly refuses this unapproved multi-migration
+set.
+
+## Why Codex cannot safely proceed
+
+Running `supabase db push` would attempt six unrelated historical migrations
+before the Operations migration. Some contain non-idempotent policy or
+constraint creation, while corresponding objects already exist outside the
+ledger. Blind application could fail mid-release, duplicate constraints, or
+change existing production behavior.
+
+## Work completed around the blocker
+
+The Supabase project, Auth service, existing tenant schema, database endpoint,
+migration ledger, and relevant catalog objects were verified read-only without
+printing or using the access token exposed in conversation. No database row,
+schema object, migration record, Auth user, or feature flag was changed.
+
+## Exact owner action
+
+**ACTION:** authorize an isolated restore/staging rehearsal that reconciles the
+six historical migration versions before the Operations migration is approved.
+**Why it is required:** production history must match actual schema state before
+an automated migration can be trusted.
+**Exact system or account:** a disposable restore or Supabase branch cloned
+from the Pourdex project, followed by the production project only after review.
+**Exact value, permission, or decision needed:** backup/restore reference,
+reviewed per-version disposition (`apply`, `repair as applied`, or supersede),
+independent reviewer, and approval for the exact resulting migration plan.
+**Where to obtain it:** Supabase backups/branches and the repository release
+review.
+**Where to enter or approve it:** the protected `operations-production`
+GitHub environment and release record; never in chat.
+**Security scope:** database migration only, flags off, no seed data, no Auth
+user creation, and no unrelated provider access.
+**Expected cost:** owner must confirm any Supabase branch/restore charge.
+**Verification steps:** restore to isolation; compare catalog and migration
+ledger; rehearse each disposition; run the RLS matrix and schema verifier;
+prove rollback/forward repair; then generate a one-migration production plan.
+**Rollback or revoke steps:** discard the isolated target; leave production
+unchanged and Operations flags off.
+**What remains blocked until complete:** Operations schema application,
+administrator provisioning, and production feature activation.
+
+## How to verify resolution
+
+Attach the isolated target identifier, backup/restore reference, before/after
+migration list, object-level comparison, rehearsal logs, reviewer approval,
+and an exact production plan containing only the approved Operations change.
+
+## Work that resumes afterward
+
+Run the protected production plan, separately approve the exact apply, verify
+the schema, provision one dedicated owner account, and enable only the overview
+flags.
 
 # Blocker: Exposed access tokens and secure reauthentication
 
 ## Blocked requirement
 
-Any GitHub write, Vercel preview/deployment, or Supabase administrative action.
+Any use of the exposed credentials and any unreviewed Vercel or Supabase
+administrative action.
 
 ## Evidence
 
@@ -17,9 +102,10 @@ On 2026-07-29, personal access tokens for GitHub, Vercel, and Supabase were
 posted repeatedly in a conversation instead of being entered through an
 approved local login or secret manager. The token values were not used, copied
 into the repository, or placed in a command by Codex. Local verification found
-an existing Supabase CLI session and no authorized Vercel or GitHub CLI
+an existing Supabase configuration and no authorized Vercel or GitHub CLI
 session. GitHub CLI was subsequently installed, but authentication was not
-completed.
+completed. A separately connected GitHub application was later used to publish
+draft PR 2 without handling the exposed token.
 
 ## Why Codex cannot safely proceed
 
@@ -29,11 +115,12 @@ plans to rotate them after release.
 
 ## Work completed around the blocker
 
-The linked Vercel project, Git remote, current release revision, and visible
-Supabase project were identified without using the exposed tokens. A protected
-database release workflow was implemented that needs none of the exposed
-personal access tokens. The owner independently merged the application PR;
-Codex made no remote write or production mutation.
+The linked Vercel project, Git remote, current release revision, and Supabase
+project were identified without using the exposed tokens. A protected database
+release workflow was implemented that needs none of the exposed personal access
+tokens. The owner independently merged application PR 1. A secure GitHub
+connector published draft PR 2 and Vercel built its protected preview; Codex
+made no production deployment or production mutation.
 
 ## Exact owner action
 
@@ -57,8 +144,8 @@ the credential; the revoked credentials no longer authenticate; access scope
 is reviewed before any write.
 **Rollback or revoke steps:** revoke the fresh credentials and remove local
 sessions after the release workflow.
-**What remains blocked until complete:** remote branch publication, preview,
-database rehearsal, and every production action.
+**What remains blocked until complete:** credential-based Vercel/Supabase
+administration, database rehearsal, and every production action.
 
 ## How to verify resolution
 
@@ -67,8 +154,8 @@ account names, scope review, expiry, and secure-session verification output.
 
 ## Work that resumes afterward
 
-Publish a draft branch/PR, create or select an isolated staging target, and run
-the non-production release rehearsal.
+Create or select an isolated staging target and run the non-production release
+rehearsal.
 
 # Blocker: Staging and production environment authority
 

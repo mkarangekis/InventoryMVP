@@ -48,8 +48,8 @@ is never promoted to `verified` without direct evidence.
 |  35 | Production/public/outbound/financial/pricing owner-controlled                     | verified    | policy, disabled connectors, `BLOCKERS.md`                           | Owner                          |
 |  36 | Isolated coding workspaces                                                        | verified    | branch plus detached baseline worktree                               | None                           |
 |  37 | Coding runs have no production data access                                        | verified    | synthetic localhost runner; Phase 0 denylist                         | None                           |
-|  38 | Coding runs produce patch/branch/draft PR                                         | verified    | dedicated unmerged branch and working-tree patch                     | None                           |
-|  39 | Coding runs cannot merge/deploy                                                   | implemented | no merge/deploy capability used; release owner gate                  | Owner for merge/deploy         |
+|  38 | Coding runs produce patch/branch/draft PR                                         | verified    | draft PR 2; published tree matched locally tested tree               | None                           |
+|  39 | Coding runs cannot merge/deploy                                                   | implemented | PR 2 remains draft; no merge/production deployment by Codex          | Owner for merge/deploy         |
 |  40 | Load and record repository instructions                                           | verified    | `evidence/phase-0-preflight.md`                                      | None                           |
 |  41 | Proportionate tests for changes                                                   | verified    | entitlement, Operations, cron auth, type, lint, build, HTTP          | None                           |
 |  42 | Independent code review                                                           | blocked     | implementer cannot self-approve                                      | Human reviewer                 |
@@ -106,8 +106,8 @@ is never promoted to `verified` without direct evidence.
 |  93 | No placeholder production behavior                                                | verified    | repository evidence, mock, disabled, unverified, not-deployed labels | None                           |
 |  94 | Reproducible local setup                                                          | verified    | `19-local-setup-and-configuration.md`; commands executed             | None                           |
 |  95 | Synthetic seed demonstrates system                                                | verified    | resettable code fixture/mock; no database seed needed                | None                           |
-|  96 | Staging rehearsal passes                                                          | blocked     | No staging authority/environment established                         | Owner/platform operator        |
-|  97 | Migration and rollback rehearsed                                                  | blocked     | guarded plan/apply workflow; restore rehearsal still required        | Disposable DB/owner            |
+|  96 | Staging rehearsal passes                                                          | blocked     | Vercel preview built but is protected; no isolated Supabase target    | Owner/platform operator        |
+|  97 | Migration and rollback rehearsed                                                  | blocked     | production connected read-only; seven-version ledger drift found     | Disposable restore/reviewer    |
 |  98 | Emergency pause rehearsed                                                         | verified    | default-on and Tier B pause unit test                                | Staging operational test later |
 |  99 | Explicit connector status/credentials                                             | implemented | UI registry shows disabled/unconfigured/unverified; no secrets       | Owner for credentials          |
 | 100 | Exact owner action for every blocker                                              | verified    | required template in `BLOCKERS.md`                                   | Owner as listed                |

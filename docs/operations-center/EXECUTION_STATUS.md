@@ -1,12 +1,13 @@
 # Operations Center Execution Status
 
-Last updated: 2026-07-29 (America/New_York)
+Last updated: 2026-07-30 (America/New_York)
 
 ## Current phase
 
 Phase 26 follow-up — application code is dark-deployed; guarded database
-release automation is implemented locally; database and activation gates remain
-blocked.
+release automation and the dedicated owner login are published in draft PR 2;
+the Vercel preview build passed; database reconciliation and activation gates
+remain blocked.
 
 Dedicated implementation branch: `codex/operations-center`
 
@@ -14,7 +15,11 @@ Follow-up automation branch: `codex/operations-center-release-automation`
 
 Dedicated account branch: `codex/operations-center-dedicated-login`
 
-Base revision: `35466821fc33d07bd85b4b2d50d2ede50dcbb90e`
+Draft pull request: `https://github.com/mkarangekis/InventoryMVP/pull/2`
+
+Published head revision: `530e705a2246ffc3c26f11338f649852938c8870`
+
+Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
 ## Completed acceptance criteria
 
@@ -72,25 +77,38 @@ Base revision: `35466821fc33d07bd85b4b2d50d2ede50dcbb90e`
 - Accessibility static audit, release/rollback manifest, schema catalog,
   authorization matrix, critical runbooks, configuration guide, and first
   30-day plan are complete.
+- The secure GitHub connector published draft PR 2 from a remote tree whose SHA
+  exactly matched the locally tested tree.
+- Vercel's PR build completed successfully. Direct preview HTTP inspection is
+  protected by Vercel authentication.
+- Read-only production checks verified Supabase Auth and the existing tenant
+  schema are connected and healthy.
+- The Operations schema remains absent. Supabase CLI `2.110.0` reported seven
+  pending repository migrations, and catalog inspection proved migration-ledger
+  drift; no database mutation was performed.
 
 ## In progress
 
-- Final traceability reconciliation
-- Final branch diff/secret/format/security verification
-- Completion report
+- Reconcile historical Supabase migration versions in an isolated restore or
+  branch.
+- Obtain independent review and backup/restore evidence.
+- Produce an exact one-migration Operations release plan.
 
 ## Next executable tasks
 
-1. Review and merge the guarded database-release automation.
+1. Review draft PR 2 and the recorded migration-drift evidence.
 2. Revoke all credentials exposed in conversation.
-3. Configure the protected GitHub environment with fresh credentials and exact
+3. Create an isolated Supabase restore/branch and reconcile the six historical
+   migration versions against actual schema state.
+4. Configure the protected GitHub environment with fresh credentials and exact
    release variables.
-4. Complete independent review and non-production migration/restore rehearsal.
-5. Run a read-only plan, then separately approve the exact production apply.
+5. Complete independent review and non-production migration/restore rehearsal.
+6. Run a one-migration read-only plan, then separately approve the exact
+   production apply.
 
 ## Tests last run
 
-Current branch, 2026-07-29:
+Current branch and connected-service checks, through 2026-07-30:
 
 - `pnpm test:entitlement`: pass
 - `pnpm test:operations`: pass
@@ -110,6 +128,12 @@ Current branch, 2026-07-29:
 - Git history secret scan: pass across 78 commits
 - Browser/assistive technology: blocked; no browser runtime available
 - GitHub workflow `actionlint` 1.7.12: pass
+- GitHub PR 2 Vercel status: success
+- Production Supabase Auth health: `200`
+- Production Supabase `tenants` read-only probe: `200`
+- Production Supabase `ops_workspaces` probe: `404 PGRST205` (expected missing
+  schema)
+- Supabase migration list: seven pending versions; unsafe multi-migration set
 
 ## Known failures that predate this work
 
