@@ -188,8 +188,11 @@ GitHub `mkarangekis/InventoryMVP` repository, and Pourdex Supabase production
 project. The local Vercel link matches `inventory-mvp`; the Supabase project is
 in East US (Ohio). Secure GitHub, Vercel, and Supabase CLI sessions are
 connected. Vercel production aliases and the dark deployment revision were
-verified read-only. Supabase reports no database branch. No isolated hosted
-restore, approved staging account, independent reviewer, browser session, or
+verified read-only. Supabase reports no database branch. GitHub reports only
+the existing `Preview` and `Production` environments;
+`operations-production` is absent. Vercel production has no `OPERATIONS_*`
+variables, so code defaults keep the feature off. No isolated hosted restore,
+approved staging account, independent reviewer, browser session, or
 `.openai/hosting.json` exists in the available repository/session.
 
 ## Why Codex cannot safely proceed
@@ -203,7 +206,10 @@ payload, reviewer, and backup approvals required by the master specification.
 The application builds locally with synthetic settings; feature-off and
 unauthorized production HTTP behavior are verified. The production-shaped
 database rehearsal, provider topology audit, protected workflows, release, and
-rollback steps are complete.
+rollback steps are complete. The protected Vercel preview serves
+`/operations-login` as a redirect to `/login?next=%2Foperations`; that login
+returns `200` with `noindex`, while both Operations APIs return the intended
+feature-off JSON.
 
 ## Exact owner action
 
@@ -365,8 +371,10 @@ verification, and NVDA/VoiceOver evidence.
 
 ## Evidence
 
-The isolated browser controller reported no available browser. No independent
-reviewer identity or pull request approval is available.
+The isolated browser controller reported no available browser. GitHub reports
+only one direct repository collaborator, `mkarangekis`, with admin access. No
+second reviewer identity or pull request approval is available, so the required
+environment reviewer and self-review prevention cannot yet be configured.
 
 ## Why Codex cannot safely proceed
 
@@ -387,8 +395,9 @@ matrix.
 WCAG coverage.
 **Exact system or account:** reviewed branch/PR and supported desktop/mobile
 browsers with NVDA or VoiceOver.
-**Exact value, permission, or decision needed:** approve/reject findings and
-record keyboard, 200% zoom, screen-reader, responsive, and error-state results.
+**Exact value, permission, or decision needed:** a second GitHub username with
+appropriate repository review access, plus approve/reject findings and recorded
+keyboard, 200% zoom, screen-reader, responsive, and error-state results.
 **Where to obtain it:** engineering/security/design reviewer and staging QA.
 **Where to enter or approve it:** PR review and evidence record.
 **Security scope:** preview/staging only.

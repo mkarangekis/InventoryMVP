@@ -149,6 +149,13 @@ Current branch and connected-service checks, through 2026-07-30:
 - Browser/assistive technology: blocked; no completed interactive matrix
 - GitHub workflow `actionlint` 1.7.7: pass
 - GitHub PR 2 Vercel status: success
+- Protected PR preview `/operations-login`: `307` to
+  `/login?next=%2Foperations`; target login `200`, `noindex`
+- Protected PR preview Operations access/overview APIs: feature-off
+  `{"error":"not_found"}`
+- GitHub direct collaborators: one (`mkarangekis`); independent reviewer absent
+- GitHub environments: `Preview`, `Production`; `operations-production` absent
+- Vercel production `OPERATIONS_*` variables: none; fail-safe defaults active
 - Production Supabase Auth health: `200`
 - Production Supabase `tenants` read-only probe: `200`
 - Production Supabase `ops_workspaces` probe: `404 PGRST205` (expected missing
