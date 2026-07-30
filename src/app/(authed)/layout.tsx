@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { PRODUCT_NAME } from "@/config/brand";
-import { isEnterpriseUIEnabled } from "@/config/flags";
+import {
+  isEnterpriseUIEnabled,
+  isOperationsCenterEnabled,
+} from "@/config/flags";
 import EnterpriseShell from "@/components/enterprise/EnterpriseShell";
 import { SubscriptionGuard } from "@/components/billing/SubscriptionGuard";
 
@@ -21,6 +24,7 @@ export default function AuthedLayout({
   const [activeLocation, setActiveLocation] = useState("");
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [operationsAccess, setOperationsAccess] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -55,6 +59,14 @@ export default function AuthedLayout({
         if (nextId && typeof window !== "undefined") {
           window.localStorage.setItem("barops.locationId", nextId);
         }
+      }
+
+      if (isOperationsCenterEnabled()) {
+        const operationsResponse = await fetch("/api/v1/operations/access", {
+          headers: { Authorization: `Bearer ${sessionToken}` },
+          cache: "no-store",
+        });
+        setOperationsAccess(operationsResponse.ok);
       }
 
       setLoading(false);
@@ -102,6 +114,7 @@ export default function AuthedLayout({
               );
             }
           }}
+          operationsAccess={operationsAccess}
         >
           {children}
         </EnterpriseShell>
@@ -122,6 +135,9 @@ export default function AuthedLayout({
                 <Link href="/ingest">Ingest</Link>
                 <Link href="/ordering">Ordering</Link>
                 <Link href="/profit">Profit</Link>
+                {operationsAccess ? (
+                  <Link href="/operations">Operations</Link>
+                ) : null}
               </nav>
             </div>
             <select

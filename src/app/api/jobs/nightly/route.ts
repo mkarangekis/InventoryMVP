@@ -8,12 +8,13 @@
  */
 import { publishJob } from "@/lib/qstash";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isCronRequestAuthorized } from "@/lib/cron-auth";
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!isCronRequestAuthorized(authHeader, cronSecret)) {
     return new Response("Unauthorized", { status: 401 });
   }
 

@@ -87,6 +87,22 @@ const SettingsIcon = () => (
   </svg>
 );
 
+const OperationsIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 4h16v16H4z" />
+    <path d="M8 9h8M8 13h5M8 17h8" />
+  </svg>
+);
+
 const LocationPinIcon = () => (
   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -146,6 +162,7 @@ type EnterpriseShellProps = {
   locations: Location[];
   activeLocation: string;
   onLocationChange: (nextId: string) => void;
+  operationsAccess?: boolean;
 };
 
 export default function EnterpriseShell({
@@ -153,6 +170,7 @@ export default function EnterpriseShell({
   locations,
   activeLocation,
   onLocationChange,
+  operationsAccess = false,
 }: EnterpriseShellProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -227,7 +245,19 @@ export default function EnterpriseShell({
 
             <div className="app-tab-divider" />
 
-            {utilityTabs.map((tab) => {
+            {[
+              ...utilityTabs,
+              ...(operationsAccess
+                ? [
+                    {
+                      label: "Operations",
+                      href: "/operations",
+                      description: "Owner control center",
+                      icon: <OperationsIcon />,
+                    },
+                  ]
+                : []),
+            ].map((tab) => {
               const isActive = pathname.startsWith(tab.href);
               return (
                 <Link

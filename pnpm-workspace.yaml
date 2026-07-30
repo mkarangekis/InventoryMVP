@@ -1,5 +1,13 @@
 packages:
   - .
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - postcss@8.5.25
+
+overrides:
+  postcss: 8.5.25
+  qs: 6.15.2
