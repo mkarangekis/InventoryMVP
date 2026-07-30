@@ -22,6 +22,8 @@ the instructions recorded in
 - [`23-first-30-days.md`](23-first-30-days.md): bounded operating plan
 - [`26-dedicated-operations-account.md`](26-dedicated-operations-account.md):
   isolated administrator invitation, activation, and revocation
+- [`27-production-database-reconciliation.md`](27-production-database-reconciliation.md):
+  live drift evidence, isolated rehearsal, and protected repair sequence
 - `evidence/`: reproducible command and inspection evidence
 - `decisions/`: material decisions, conflicts, and deviations
 - `runbooks/`: operational response and rollback procedures

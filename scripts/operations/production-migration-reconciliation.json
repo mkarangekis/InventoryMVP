@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "repair_existing": [
+    {
+      "version": "20260401000000",
+      "file": "20260401000000_ai_upgrade.sql",
+      "sha256": "4b13c183cfde5978273a95e7baa50ea1849d73e282f43fd0cc152fbbcb8d57b6"
+    }
+  ],
+  "apply_before_operations": [
+    {
+      "version": "20260402000000",
+      "file": "20260402000000_webhooks.sql",
+      "sha256": "d1afcc8d9cd1c423f3d1a37d69e53241be455c8bc7dcb9c39f07873fa057642a"
+    },
+    {
+      "version": "20260402000001",
+      "file": "20260402000001_user_prefs.sql",
+      "sha256": "26921eec5c4cd699fe37ad7083d3188822ce048deb5e0d6d96ded6106c2aee0b"
+    },
+    {
+      "version": "20260422000000",
+      "file": "20260422000000_pos_connections.sql",
+      "sha256": "d4766420ea0bbcb81851b84e641b0fa3561fb292afb7251496f453079b8a1015"
+    },
+    {
+      "version": "20260422000001",
+      "file": "20260422000001_pos_idempotency.sql",
+      "sha256": "3ef5f447beeff418549760506c440581f84457c885cf302f54b1310024f1f68f"
+    },
+    {
+      "version": "20260422000002",
+      "file": "20260422000002_pos_storage_bucket.sql",
+      "sha256": "2bf992a821b052bb0d02210ac837fad5395c7deb51948e615eee8ae757af081f"
+    },
+    {
+      "version": "20260422000003",
+      "file": "20260422000003_pos_storage_bucket_limits.sql",
+      "sha256": "cd7efd7284e003020a889ac0a3620ecb94510f68e5349af038bb86d40e0b831e"
+    }
+  ],
+  "deferred_operations_migration": {
+    "version": "20260729000000",
+    "file": "20260729000000_operations_center.sql",
+    "sha256": "f3121638eaf9e92dd79f941123b95a6d8fa39b5648c32309c8c6d8eff24d828d"
+  }
+}

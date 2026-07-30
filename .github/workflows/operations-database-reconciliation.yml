@@ -1,0 +1,409 @@
+name: Operations database reconciliation
+
+run-name: >-
+  Operations database reconciliation ${{ inputs.mode }} · ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Plan is read-only; apply repairs and applies only the approved historical set.
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operations-production-database
+  cancel-in-progress: false
+
+jobs:
+  verify-release:
+    name: Verify reconciliation revision
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the triggering revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require the production branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Database reconciliation may run only from main."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::The triggering revision is not on origin/main."
+            exit 1
+          fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 11.5.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run release checks
+        env:
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: synthetic-release-check-anon-key
+          NEXT_PUBLIC_SUPABASE_URL: https://supabase.local.invalid
+        run: |
+          pnpm test:entitlement
+          pnpm test:operations
+          pnpm test:operations-account
+          pnpm test:cron-auth
+          pnpm test:release-automation
+          pnpm exec tsc --noEmit
+          pnpm exec next build
+
+  database-reconciliation:
+    name: Plan or apply historical reconciliation
+    needs: verify-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: operations-production
+    env:
+      APPROVED_BACKUP_REFERENCE: ${{ vars.APPROVED_BACKUP_REFERENCE }}
+      APPROVED_CHANGE_RECORD: ${{ vars.APPROVED_CHANGE_RECORD }}
+      APPROVED_RECONCILIATION_SHA256: ${{ vars.APPROVED_RECONCILIATION_SHA256 }}
+      APPROVED_RELEASE_SHA: ${{ vars.APPROVED_RELEASE_SHA }}
+      REQUESTED_MODE: ${{ inputs.mode }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Check out the approved revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate the exact reconciliation payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="scripts/operations/production-migration-reconciliation.json"
+
+          if [[ "$REQUESTED_MODE" != "plan" && "$REQUESTED_MODE" != "apply" ]]; then
+            echo "::error::Unknown reconciliation mode."
+            exit 1
+          fi
+          if [[ ! "$APPROVED_RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::APPROVED_RELEASE_SHA must be an exact 40-character commit."
+            exit 1
+          fi
+          if [[ "$APPROVED_RELEASE_SHA" != "$GITHUB_SHA" ]]; then
+            echo "::error::The approved revision does not match the triggering revision."
+            exit 1
+          fi
+          if [[ ! "$APPROVED_RECONCILIATION_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::APPROVED_RECONCILIATION_SHA256 must be an exact SHA-256."
+            exit 1
+          fi
+          actual_manifest_hash="$(sha256sum "$manifest" | awk '{print $1}')"
+          if [[ "$actual_manifest_hash" != "$APPROVED_RECONCILIATION_SHA256" ]]; then
+            echo "::error::The approved reconciliation hash does not match the manifest."
+            exit 1
+          fi
+          if [[ -z "$APPROVED_CHANGE_RECORD" || "$APPROVED_CHANGE_RECORD" == "pending" ]]; then
+            echo "::error::APPROVED_CHANGE_RECORD must identify the reviewed change."
+            exit 1
+          fi
+          if [[ "$REQUESTED_MODE" == "apply" ]]; then
+            if [[ -z "$APPROVED_BACKUP_REFERENCE" || "$APPROVED_BACKUP_REFERENCE" == "pending" ]]; then
+              echo "::error::Apply mode requires an approved backup/restore reference."
+              exit 1
+            fi
+          fi
+          if [[ -z "$SUPABASE_DB_URL" ]]; then
+            echo "::error::The protected SUPABASE_DB_URL secret is not configured."
+            exit 1
+          fi
+          if [[ "$SUPABASE_DB_URL" != postgres://* && "$SUPABASE_DB_URL" != postgresql://* ]]; then
+            echo "::error::SUPABASE_DB_URL must be a Postgres connection URL."
+            exit 1
+          fi
+          echo "::add-mask::$SUPABASE_DB_URL"
+
+          jq -r '
+            .repair_existing[],
+            .apply_before_operations[],
+            .deferred_operations_migration
+            | [.file, .sha256]
+            | @tsv
+          ' "$manifest" |
+          while IFS=$'\t' read -r file expected_hash; do
+            migration_path="supabase/migrations/$file"
+            if [[ ! -f "$migration_path" ]]; then
+              echo "::error::Manifest migration is absent: $file"
+              exit 1
+            fi
+            actual_hash="$(sha256sum "$migration_path" | awk '{print $1}')"
+            if [[ "$actual_hash" != "$expected_hash" ]]; then
+              echo "::error::Manifest hash mismatch for $file"
+              exit 1
+            fi
+          done
+
+      - name: Set up the pinned Supabase CLI
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1
+        with:
+          version: 2.110.0
+
+      - name: Generate the read-only reconciliation plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="scripts/operations/production-migration-reconciliation.json"
+          mkdir -p reconciliation-evidence
+
+          if ! command -v psql >/dev/null 2>&1; then
+            echo "::error::The runner does not provide the PostgreSQL client."
+            exit 1
+          fi
+
+          psql "$SUPABASE_DB_URL" \
+            --set ON_ERROR_STOP=1 \
+            --file scripts/operations/verify-ai-upgrade.sql
+
+          supabase migration list \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            --output json \
+            > reconciliation-evidence/migration-list-before.json
+
+          expected_versions="$(
+            jq -c '[
+              .repair_existing[].version,
+              .apply_before_operations[].version,
+              .deferred_operations_migration.version
+            ]' "$manifest"
+          )"
+          actual_versions="$(
+            jq -c '[
+              .migrations[]
+              | select(.remote == "")
+              | .local
+            ]' reconciliation-evidence/migration-list-before.json
+          )"
+          if [[ "$actual_versions" != "$expected_versions" ]]; then
+            echo "::error::Production pending migrations do not match the approved reconciliation set."
+            echo "Expected: $expected_versions"
+            echo "Observed: $actual_versions"
+            exit 1
+          fi
+
+          supabase db push \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            --include-all \
+            --dry-run \
+            --yes \
+            --output json \
+            > reconciliation-evidence/full-plan-before.json
+
+          expected_files="$(
+            jq -c '[
+              .repair_existing[].file,
+              .apply_before_operations[].file,
+              .deferred_operations_migration.file
+            ]' "$manifest"
+          )"
+          actual_files="$(
+            jq -c '.migrations' reconciliation-evidence/full-plan-before.json
+          )"
+          if [[ "$actual_files" != "$expected_files" ]]; then
+            echo "::error::The dry run does not match the approved reconciliation files."
+            echo "Expected: $expected_files"
+            echo "Observed: $actual_files"
+            exit 1
+          fi
+
+      - name: Apply the approved historical reconciliation
+        if: env.REQUESTED_MODE == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="scripts/operations/production-migration-reconciliation.json"
+
+          mapfile -t repair_versions < <(
+            jq -r '.repair_existing[].version' "$manifest"
+          )
+          supabase migration repair \
+            "${repair_versions[@]}" \
+            --status applied \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir .
+
+          copy_version() {
+            local version="$1"
+            local destination="$2"
+            local matches=()
+            mapfile -t matches < <(
+              compgen -G "supabase/migrations/${version}_*.sql" || true
+            )
+            if (( ${#matches[@]} != 1 )); then
+              echo "::error::Expected one migration file for version $version."
+              exit 1
+            fi
+            cp -- "${matches[0]}" "$destination/"
+          }
+
+          while IFS= read -r target_file; do
+            target_version="${target_file%%_*}"
+            temp_workdir="$(mktemp -d "${RUNNER_TEMP}/ops-reconcile.XXXXXX")"
+            if [[ "$temp_workdir" != "${RUNNER_TEMP}/ops-reconcile."* ]]; then
+              echo "::error::Unexpected temporary worktree path."
+              exit 1
+            fi
+            mkdir -p "$temp_workdir/supabase/migrations"
+            cp -- supabase/config.toml "$temp_workdir/supabase/config.toml"
+
+            supabase migration list \
+              --db-url "$SUPABASE_DB_URL" \
+              --workdir . \
+              --output json \
+              > "$temp_workdir/migration-list.json"
+
+            while IFS= read -r applied_version; do
+              copy_version "$applied_version" "$temp_workdir/supabase/migrations"
+            done < <(
+              jq -r '
+                .migrations[]
+                | select(.remote != "")
+                | .remote
+              ' "$temp_workdir/migration-list.json"
+            )
+            copy_version "$target_version" "$temp_workdir/supabase/migrations"
+
+            supabase db push \
+              --db-url "$SUPABASE_DB_URL" \
+              --workdir "$temp_workdir" \
+              --include-all \
+              --dry-run \
+              --yes \
+              --output json \
+              > "$temp_workdir/target-plan.json"
+            if ! jq -e --arg target "$target_file" \
+              '.migrations == [$target]' \
+              "$temp_workdir/target-plan.json" >/dev/null; then
+              echo "::error::The single-migration plan is not exact for $target_file."
+              exit 1
+            fi
+
+            cp -- "$temp_workdir/target-plan.json" \
+              "reconciliation-evidence/plan-$target_version.json"
+
+            supabase db push \
+              --db-url "$SUPABASE_DB_URL" \
+              --workdir "$temp_workdir" \
+              --include-all \
+              --yes \
+              --output json \
+              > "$temp_workdir/target-apply.json"
+            if ! jq -e --arg target "$target_file" \
+              '.migrations == [$target]' \
+              "$temp_workdir/target-apply.json" >/dev/null; then
+              echo "::error::The single-migration apply result is not exact for $target_file."
+              exit 1
+            fi
+
+            cp -- "$temp_workdir/target-apply.json" \
+              "reconciliation-evidence/apply-$target_version.json"
+            rm -rf -- "$temp_workdir"
+          done < <(
+            jq -r '.apply_before_operations[].file' "$manifest"
+          )
+
+      - name: Verify reconciliation postflight
+        if: env.REQUESTED_MODE == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest="scripts/operations/production-migration-reconciliation.json"
+
+          psql "$SUPABASE_DB_URL" \
+            --set ON_ERROR_STOP=1 \
+            --file scripts/operations/verify-ai-upgrade.sql
+          psql "$SUPABASE_DB_URL" \
+            --set ON_ERROR_STOP=1 \
+            --file scripts/operations/verify-historical-migrations.sql
+
+          supabase migration list \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            --output json \
+            > reconciliation-evidence/migration-list-after.json
+          expected_version="$(
+            jq -r '.deferred_operations_migration.version' "$manifest"
+          )"
+          if ! jq -e --arg expected "$expected_version" '
+            [
+              .migrations[]
+              | select(.remote == "")
+              | .local
+            ] == [$expected]
+          ' reconciliation-evidence/migration-list-after.json >/dev/null; then
+            echo "::error::Reconciliation did not leave only the Operations migration pending."
+            exit 1
+          fi
+
+          supabase db push \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            --include-all \
+            --dry-run \
+            --yes \
+            --output json \
+            > reconciliation-evidence/postflight-plan.json
+          expected_file="$(
+            jq -r '.deferred_operations_migration.file' "$manifest"
+          )"
+          if ! jq -e --arg expected "$expected_file" \
+            '.migrations == [$expected]' \
+            reconciliation-evidence/postflight-plan.json >/dev/null; then
+            echo "::error::Postflight does not contain only the Operations migration."
+            exit 1
+          fi
+
+      - name: Upload reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: operations-reconciliation-${{ github.sha }}-${{ inputs.mode }}
+          path: reconciliation-evidence
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Write reconciliation summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Operations database reconciliation"
+            echo
+            echo "- Mode: \`$REQUESTED_MODE\`"
+            echo "- Revision: \`$GITHUB_SHA\`"
+            echo "- Change record: \`$APPROVED_CHANGE_RECORD\`"
+            echo "- Backup reference recorded: $([[ -n "$APPROVED_BACKUP_REFERENCE" ]] && echo yes || echo no)"
+            echo "- Operations migration applied: no"
+            echo "- Feature flags changed: no"
+            echo "- Seed data requested: no"
+          } >> "$GITHUB_STEP_SUMMARY"

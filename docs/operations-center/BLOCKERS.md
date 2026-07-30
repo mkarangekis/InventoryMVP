@@ -31,37 +31,53 @@ the remote migration ledger:
 
 A direct read-only catalog inspection found the AI-upgrade objects and the
 `pos-imports` storage bucket already present despite their versions being absent
-from the ledger. The webhook, notification-preference, POS-connection,
-idempotency-constraint, and Operations objects inspected were absent. The
-repository release workflow correctly refuses this unapproved multi-migration
-set.
+from the ledger. The AI objects match their migration. The bucket is private
+and has the expected MIME allowlist, but its file-size limit is `NULL` instead
+of 100 MB; it currently contains zero objects. The webhook,
+notification-preference, POS-connection, idempotency-constraint, and Operations
+objects inspected were absent.
+
+The follow-up branch adds an idempotent bucket-correction migration, making the
+approved pre-reconciliation manifest eight exact versions. The repository
+release workflow correctly refuses the unapproved multi-migration set.
 
 ## Why Codex cannot safely proceed
 
-Running `supabase db push` would attempt six unrelated historical migrations
-before the Operations migration. Some contain non-idempotent policy or
-constraint creation, while corresponding objects already exist outside the
-ledger. Blind application could fail mid-release, duplicate constraints, or
-change existing production behavior.
+Running `supabase db push` would attempt unrelated historical migrations before
+the Operations migration. Some contain non-idempotent policy or constraint
+creation, while corresponding objects exist outside the ledger. Blind
+application could fail mid-release, duplicate constraints, or mark the
+incompatible bucket state as complete.
 
 ## Work completed around the blocker
 
 The Supabase project, Auth service, existing tenant schema, database endpoint,
-migration ledger, and relevant catalog objects were verified read-only without
-printing or using the access token exposed in conversation. No database row,
-schema object, migration record, Auth user, or feature flag was changed.
+migration ledger, backup list, bucket properties, object counts, and relevant
+catalog objects were verified read-only without printing or using the access
+token exposed in conversation.
+
+A separate local Supabase database reproduced the production drift and passed
+the exact manifest sequence: AI object verification/history repair, six
+single-file historical plans/applies, bucket correction, one-file Operations
+plan/apply, 18-table schema verification, cross-tenant and negative-access RLS,
+audit immutability, and an empty postflight. Protected manual workflows and the
+exact manifest are documented in
+`27-production-database-reconciliation.md`. No production database row, schema
+object, migration record, Auth user, or feature flag was changed.
 
 ## Exact owner action
 
-**ACTION:** authorize an isolated restore/staging rehearsal that reconciles the
-six historical migration versions before the Operations migration is approved.
+**ACTION:** assign an independent reviewer, restore backup `1239233937` or a
+newer backup to an isolated target, and approve the exact reconciliation
+manifest before the Operations migration is approved.
 **Why it is required:** production history must match actual schema state before
 an automated migration can be trusted.
 **Exact system or account:** a disposable restore or Supabase branch cloned
 from the Pourdex project, followed by the production project only after review.
-**Exact value, permission, or decision needed:** backup/restore reference,
-reviewed per-version disposition (`apply`, `repair as applied`, or supersede),
-independent reviewer, and approval for the exact resulting migration plan.
+**Exact value, permission, or decision needed:** successful isolated restore
+reference, independent reviewer, exact `main` revision, manifest SHA-256
+`aa4f1cb6ea441e886ae889f985dc6f1971d3ea50a6a1eef215aac0fd355bdf58`,
+and separate approvals for reconciliation and the one-file Operations plan.
 **Where to obtain it:** Supabase backups/branches and the repository release
 review.
 **Where to enter or approve it:** the protected `operations-production`
@@ -69,8 +85,8 @@ GitHub environment and release record; never in chat.
 **Security scope:** database migration only, flags off, no seed data, no Auth
 user creation, and no unrelated provider access.
 **Expected cost:** owner must confirm any Supabase branch/restore charge.
-**Verification steps:** restore to isolation; compare catalog and migration
-ledger; rehearse each disposition; run the RLS matrix and schema verifier;
+**Verification steps:** restore to isolation; rerun both protected plans;
+compare catalog and migration ledger; run the RLS matrix and schema verifier;
 prove rollback/forward repair; then generate a one-migration production plan.
 **Rollback or revoke steps:** discard the isolated target; leave production
 unchanged and Operations flags off.
@@ -101,11 +117,11 @@ administrative action.
 On 2026-07-29, personal access tokens for GitHub, Vercel, and Supabase were
 posted repeatedly in a conversation instead of being entered through an
 approved local login or secret manager. The token values were not used, copied
-into the repository, or placed in a command by Codex. Local verification found
-an existing Supabase configuration and no authorized Vercel or GitHub CLI
-session. GitHub CLI was subsequently installed, but authentication was not
-completed. A separately connected GitHub application was later used to publish
-draft PR 2 without handling the exposed token.
+into the repository, or placed in a command by Codex. The owner subsequently
+completed secure browser/device logins for GitHub CLI, Vercel CLI, and Supabase
+CLI. Each reports the intended owner account/project without printing a
+credential. Revocation of the three values exposed in conversation has not been
+confirmed.
 
 ## Why Codex cannot safely proceed
 
@@ -115,24 +131,25 @@ plans to rotate them after release.
 
 ## Work completed around the blocker
 
-The linked Vercel project, Git remote, current release revision, and Supabase
-project were identified without using the exposed tokens. A protected database
-release workflow was implemented that needs none of the exposed personal access
-tokens. The owner independently merged application PR 1. A secure GitHub
-connector published draft PR 2 and Vercel built its protected preview; Codex
-made no production deployment or production mutation.
+The linked Vercel project, Git remote, current release revision, Supabase
+project, backups, and migration state were identified through secure sessions
+without using the exposed tokens. Protected database workflows need none of the
+exposed personal access tokens. The owner independently merged application PR
+
+1. A secure GitHub connector published draft PR 2 and Vercel built its protected
+   preview; Codex made no production deployment or production mutation.
 
 ## Exact owner action
 
-**ACTION:** revoke all three exposed tokens immediately and establish fresh
-least-privilege access through local CLI login or an approved secret manager.
+**ACTION:** revoke all three exposed tokens immediately, record confirmation,
+and retain only the fresh least-privilege CLI/secret-manager sessions.
 **Why it is required:** compromised credentials cannot be used as a release
 control.
 **Exact system or account:** the owner-controlled GitHub, Vercel, and Supabase
 accounts used for Pourdex.
-**Exact value, permission, or decision needed:** new short-lived credentials
-with only the scopes required for a reviewed staging rehearsal; do not send
-their values to Codex or place them in chat.
+**Exact value, permission, or decision needed:** revocation timestamps/token
+identifiers plus fresh short-lived credentials with only the scopes required
+for a reviewed staging rehearsal; never send their values in chat.
 **Where to obtain it:** each provider's access-token/security settings.
 **Where to enter or approve it:** `gh auth login`, `vercel login`, and
 `supabase login`, or an owner-approved local secret manager.
@@ -144,8 +161,8 @@ the credential; the revoked credentials no longer authenticate; access scope
 is reviewed before any write.
 **Rollback or revoke steps:** revoke the fresh credentials and remove local
 sessions after the release workflow.
-**What remains blocked until complete:** credential-based Vercel/Supabase
-administration, database rehearsal, and every production action.
+**What remains blocked until complete:** use of the protected credentials for
+any production mutation and every final production action.
 
 ## How to verify resolution
 
@@ -169,20 +186,24 @@ production smoke tests, alerts, and post-release observation.
 The owner identified the existing `inventory-mvp` Vercel production project,
 GitHub `mkarangekis/InventoryMVP` repository, and Pourdex Supabase production
 project. The local Vercel link matches `inventory-mvp`; the Supabase project is
-in East US (Ohio). No isolated Supabase staging project, branch/preview
-mapping, approved staging account, secure Vercel session, production telemetry
-access, or `.openai/hosting.json` exists in the available repository/session.
+in East US (Ohio). Secure GitHub, Vercel, and Supabase CLI sessions are
+connected. Vercel production aliases and the dark deployment revision were
+verified read-only. Supabase reports no database branch. No isolated hosted
+restore, approved staging account, independent reviewer, browser session, or
+`.openai/hosting.json` exists in the available repository/session.
 
 ## Why Codex cannot safely proceed
 
-Inventing a target or using a discovered credential could mutate an unknown
-production system. Deployment and production authority were not granted.
+Creating a Supabase branch/restore can incur cost and requires a target/retention
+decision. General launch intent does not replace the exact revision,
+payload, reviewer, and backup approvals required by the master specification.
 
 ## Work completed around the blocker
 
-The application builds locally with synthetic localhost settings; feature-off
-and unauthorized HTTP behavior are verified; release and rollback steps are
-documented.
+The application builds locally with synthetic settings; feature-off and
+unauthorized production HTTP behavior are verified. The production-shaped
+database rehearsal, provider topology audit, protected workflows, release, and
+rollback steps are complete.
 
 ## Exact owner action
 
@@ -193,10 +214,10 @@ inferred.
 **Exact system or account:** the owner-controlled `inventory-mvp` Vercel
 project and a separate/disposable Supabase staging project; the identified
 Pourdex database remains production.
-**Exact value, permission, or decision needed:** a non-production database
-target, branch/preview mapping, read-only observability access, and approval
-for a staging preview of exact revision
-`a5662b74adec9baf25f5aa4647d8b7bb1c0b0b42` with Operations flags off.
+**Exact value, permission, or decision needed:** an approved non-production
+restore target/cost, branch/preview mapping, read-only observability access,
+independent reviewer, and approval for the exact merged revision with
+Operations flags off.
 **Where to obtain it:** Vercel/Supabase project settings.
 **Where to enter or approve it:** secure deployment configuration and release
 approval system, never chat.
@@ -215,8 +236,8 @@ URL, smoke results, and revoked temporary access.
 
 ## Work that resumes afterward
 
-Migration rehearsal, two-tenant RLS tests, browser/accessibility testing,
-preview QA, alert verification, and release review.
+Hosted restore verification, browser/accessibility testing, preview QA, alert
+verification, and release review.
 
 # Blocker: Explicit Operations administrator grant
 
@@ -286,35 +307,41 @@ data compatibility, and destructive recovery rehearsal.
 
 ## Evidence
 
-The additive migration exists but was not applied. No disposable Supabase
-target, backup ID, restore target, RPO/RTO, or database authority is available.
+The additive migration remains unapplied in production. A disposable local
+Supabase database completed the production-shaped migration and RLS rehearsal.
+Seven completed production physical backups were listed read-only; the newest
+observed backup is `1239233937` from `2026-07-29T07:46:06.313Z`. No Supabase
+backup has been restored to an isolated hosted target, and PITR is disabled.
 
 ## Why Codex cannot safely proceed
 
-Database commands can mutate data and the available environment may be
-production-connected.
+The local rehearsal does not prove that Supabase's hosted backup can be
+restored or that the restored production data is compatible. Restore authority,
+target cost, and destructive recovery remain owner/platform decisions.
 
 ## Work completed around the blocker
 
 The schema, constraints, RLS, immutable audit trigger, indexes, migration
-sequence, rollback strategy, and restore runbook are complete.
+sequence, rollback strategy, restore runbook, production-shaped reconciliation,
+two-tenant negative RLS matrix, and postflight are complete.
 
 ## Exact owner action
 
-**ACTION:** provide a disposable/staging Supabase project and approve migration
-plus restore rehearsal.
+**ACTION:** restore backup `1239233937` or a newer backup into a disposable
+Supabase project/branch and rerun the protected plan plus verification suite.
 **Why it is required:** SQL/RLS/restore behavior requires a real isolated
 database.
 **Exact system or account:** owner-controlled non-production Supabase project.
-**Exact value, permission, or decision needed:** temporary migration access,
-two synthetic tenants with owner/non-owner users, and a backup eligible for
-isolated restore.
+**Exact value, permission, or decision needed:** approved restore target/cost,
+restore job/reference, temporary migration access, two synthetic tenants with
+owner/non-owner users, and independent reviewer disposition.
 **Where to obtain it:** Supabase project and backup settings.
 **Where to enter or approve it:** secure CI/staging secrets and release record.
 **Security scope:** non-production, synthetic data only.
 **Expected cost:** platform owner must confirm.
-**Verification steps:** apply migration, run positive/negative RLS matrix,
-restore, compare schema/counts, destroy temporary credentials.
+**Verification steps:** restore; compare schema/counts; run reconciliation,
+Operations, positive/negative RLS, and rollback/forward-repair checks; revoke
+temporary credentials.
 **Rollback or revoke steps:** delete disposable project/credentials; migration
 remains unapplied elsewhere.
 **What remains blocked until complete:** database and restore readiness gates.
@@ -503,9 +530,10 @@ A zero-advisory production dependency gate.
 ## Evidence
 
 After bounded upgrades the audit reports two findings: one high inherited
-`sharp` advisory and one low inherited Babel advisory. Next 16.2.12 declares
-`sharp ^0.34.5`, while the patch is `>=0.35.0`; the named Babel patch
-`7.29.1` is not published. The branch reduced findings from 43 to 2.
+`sharp` advisory (`1124066`) and one low inherited Babel advisory (`1123528`).
+The current published Next 16.2.12 declares `sharp ^0.34.5`, while the patch is
+`>=0.35.0`; the named Babel patch `7.29.1` is not published. The branch reduced
+findings from 43 to 2.
 
 ## Why Codex cannot safely proceed
 

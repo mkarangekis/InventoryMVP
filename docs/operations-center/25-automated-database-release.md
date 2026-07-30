@@ -36,12 +36,12 @@ Do not reuse any credential sent through chat. Revoke exposed credentials
 before configuring the environment. GitHub encrypts environment secrets and
 does not expose them to the job until the environment's protection rules pass.
 
-## Automatic behavior
+## Protected manual behavior
 
-A merge to `main` that changes a Supabase migration, this workflow, or its
-schema verifier starts the release checks automatically. It does not reach the
-database until the `operations-production` reviewer approves the waiting job.
-After approval it:
+The workflow is manual-only. A merge never starts a database apply. An
+authorized operator selects `plan` or `apply` through `workflow_dispatch`, and
+the job cannot receive the database secret until the `operations-production`
+reviewer approves it. After approval it:
 
 1. requires the event revision to match `APPROVED_RELEASE_SHA`;
 2. requires the exact migration filename and SHA-256;
@@ -56,21 +56,25 @@ After approval it:
    immutable-audit trigger;
 10. confirms the migration is no longer pending.
 
-The `workflow_dispatch` control can run the same workflow in `plan` mode. A
-push to `main` requests `apply`, but environment protection and exact-payload
-checks still prevent unattended mutation.
+The separate
+`.github/workflows/operations-database-reconciliation.yml` must run first for
+the currently observed production drift. Its exact payload and rehearsal
+evidence are recorded in `27-production-database-reconciliation.md`. It repairs
+and applies only the reviewed historical set, then proves this workflow will
+see exactly one pending Operations migration.
 
 ## First release
 
 Before approving the first production job:
 
 1. revoke the credentials exposed in conversation;
-2. rehearse the migration and restore against an isolated Supabase branch or
-   staging project;
+2. review the successful local production-shaped rehearsal, then restore a
+   current Supabase backup to an isolated branch/project and verify it;
 3. record the backup/restore reference and independent review;
 4. set `APPROVED_RELEASE_SHA` to the exact follow-up merge commit;
-5. inspect the workflow's checks and waiting environment deployment;
-6. approve only if the migration plan contains exactly
+5. run and approve the protected reconciliation plan/apply first;
+6. inspect this workflow's checks and waiting environment deployment;
+7. approve only if the migration plan contains exactly
    `20260729000000_operations_center.sql`.
 
 After application, leave these Vercel production values in their safe state

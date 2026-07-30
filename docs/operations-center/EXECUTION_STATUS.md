@@ -4,10 +4,10 @@ Last updated: 2026-07-30 (America/New_York)
 
 ## Current phase
 
-Phase 26 follow-up — application code is dark-deployed; guarded database
-release automation and the dedicated owner login are published in draft PR 2;
-the Vercel preview build passed; database reconciliation and activation gates
-remain blocked.
+Phase 27 follow-up — application code is dark-deployed; the dedicated owner
+login, protected database reconciliation, and protected Operations release are
+prepared in draft PR 2. The production-shaped local database rehearsal passed;
+independent review, a real backup restore, and activation gates remain blocked.
 
 Dedicated implementation branch: `codex/operations-center`
 
@@ -17,7 +17,8 @@ Dedicated account branch: `codex/operations-center-dedicated-login`
 
 Draft pull request: `https://github.com/mkarangekis/InventoryMVP/pull/2`
 
-Published head revision: `530e705a2246ffc3c26f11338f649852938c8870`
+Published PR head before this reconciliation patch:
+`9ddbb8682cb9707f21e112b3cb40842c6f5a1a2b`
 
 Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
@@ -86,25 +87,40 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 - The Operations schema remains absent. Supabase CLI `2.110.0` reported seven
   pending repository migrations, and catalog inspection proved migration-ledger
   drift; no database mutation was performed.
+- Seven completed physical production backups were listed read-only. The newest
+  observed backup was `1239233937` at `2026-07-29T07:46:06.313Z`; PITR is off
+  and no restore was invoked.
+- A separate local Supabase/Postgres project reproduced the live ledger/object
+  drift. The exact repair and six historical single-migration applies passed,
+  including the `pos-imports` bucket correction.
+- The resulting local plan contained only the Operations migration. Its apply,
+  18-table verifier, two-tenant RLS matrix, negative access checks, read-only
+  grants, service-role access, immutable-audit checks, and empty postflight all
+  passed. The disposable database and volume were removed.
+- The new reconciliation and Operations database workflows are manual-only,
+  share one production concurrency group, verify exact hashes/pending sets, and
+  require the protected `operations-production` environment.
 
 ## In progress
 
-- Reconcile historical Supabase migration versions in an isolated restore or
-  branch.
-- Obtain independent review and backup/restore evidence.
-- Produce an exact one-migration Operations release plan.
+- Obtain independent review and a real Supabase backup-restore rehearsal.
+- Configure the protected GitHub environment with fresh, non-chat credentials.
+- Resolve or explicitly accept the two remaining dependency advisories.
 
 ## Next executable tasks
 
-1. Review draft PR 2 and the recorded migration-drift evidence.
-2. Revoke all credentials exposed in conversation.
-3. Create an isolated Supabase restore/branch and reconcile the six historical
-   migration versions against actual schema state.
-4. Configure the protected GitHub environment with fresh credentials and exact
-   release variables.
-5. Complete independent review and non-production migration/restore rehearsal.
-6. Run a one-migration read-only plan, then separately approve the exact
-   production apply.
+1. Review draft PR 2 and `27-production-database-reconciliation.md`.
+2. Revoke all credentials exposed in conversation and record confirmation.
+3. Assign an independent GitHub reviewer and configure
+   `operations-production` with self-review prevention and no bypass.
+4. Restore backup `1239233937` or a newer backup into an isolated target and
+   rerun the reconciliation/Operations/RLS sequence there.
+5. Record an expiring dependency-risk disposition or wait for supported
+   upstream patches.
+6. Approve the reconciliation manifest hash, run its protected `plan`, then
+   separately approve `apply`.
+7. Run the Operations migration workflow in `plan`; approve `apply` only when
+   it contains exactly `20260729000000_operations_center.sql`.
 
 ## Tests last run
 
@@ -118,6 +134,10 @@ Current branch and connected-service checks, through 2026-07-30:
 - `pnpm exec tsc --noEmit`: pass
 - Dedicated-login targeted ESLint: zero errors
 - `pnpm exec next build`: pass on Next 16.2.12; 80 pages
+- Production-shaped local migration reconciliation: pass
+- Operations schema verifier: 18 tables/policies/trigger pass
+- Two-tenant RLS and negative-access SQL matrix: pass
+- Local migration postflight: zero pending versions after rehearsal
 - HTTP dedicated login: `200`, Operations heading present, signup absent
 - HTTP unsafe return target: ordinary login preserved, Operations intent denied
 - HTTP feature off: Operations access/overview `404`
@@ -126,14 +146,15 @@ Current branch and connected-service checks, through 2026-07-30:
 - Production dependency audit: nonzero, 2 known findings (1 high, 1 low)
 - Changed-file secret scan: pass across 17 scoped targets
 - Git history secret scan: pass across 78 commits
-- Browser/assistive technology: blocked; no browser runtime available
-- GitHub workflow `actionlint` 1.7.12: pass
+- Browser/assistive technology: blocked; no completed interactive matrix
+- GitHub workflow `actionlint` 1.7.7: pass
 - GitHub PR 2 Vercel status: success
 - Production Supabase Auth health: `200`
 - Production Supabase `tenants` read-only probe: `200`
 - Production Supabase `ops_workspaces` probe: `404 PGRST205` (expected missing
   schema)
-- Supabase migration list: seven pending versions; unsafe multi-migration set
+- Supabase production migration list: seven pending versions before the new
+  correction migration; protected reconciliation required
 
 ## Known failures that predate this work
 
@@ -143,13 +164,15 @@ Current branch and connected-service checks, through 2026-07-30:
 - Baseline production audit reported 43 advisories (18 high, 20 moderate,
   5 low).
 - Next inferred the wrong workspace root due an external lockfile.
-- Browser runtime and database-backed integration tests were unavailable.
+- Browser runtime and database-backed integration tests were unavailable in
+  the untouched baseline.
 
 ## New failures introduced by this work
 
 None observed in available checks. The final audit remains nonzero but improved
-from 43 to 2 findings. Interactive browser, database, staging, and production
-verification remain blocked and are not claimed.
+from 43 to 2 findings. Local database integration now passes; interactive
+browser, real Supabase restore/staging, independent review, and production
+mutation verification remain blocked and are not claimed.
 
 ## Open approvals
 
@@ -160,7 +183,8 @@ verification remain blocked and are not claimed.
 - Production enablement: requested in general, but exact approval remains
   blocked behind staging, independent review, restore evidence, and risk
   disposition.
-- Production migration or backfill: not requested; Tier C owner action.
+- Production reconciliation and Operations migration: requested in general but
+  not exact-approved by revision/manifest/backup/reviewer; Tier C actions.
 - Connector credentials/scopes: not requested; sensitive connections remain
   disabled or mock-only.
 - Public publication, outbound activation, billing, pricing, and financial
@@ -168,17 +192,17 @@ verification remain blocked and are not claimed.
 
 ## External blockers
 
-See [`BLOCKERS.md`](BLOCKERS.md). Production and external account verification
-remain blocked until the exposed tokens are revoked, secure sessions are
-established, and the staging/review gates are complete. No safe local
-implementation work is currently blocked.
+See [`BLOCKERS.md`](BLOCKERS.md). Secure GitHub, Vercel, and Supabase sessions
+are connected, but production mutation remains blocked until exposed tokens
+are confirmed revoked and the restore/review/security gates are complete. No
+safe local implementation work is currently blocked.
 
 ## Migration state
 
-`supabase/migrations/20260729000000_operations_center.sql` is created and
-unapplied as of the latest public verification. No database command was run by
-Codex. A protected GitHub Actions plan/apply workflow is now available on the
-follow-up branch; it has not run remotely.
+`supabase/migrations/20260729000000_operations_center.sql` remains unapplied in
+production. No production database command was run by Codex. The exact
+reconciliation and Operations workflows are prepared on the follow-up branch;
+neither has run remotely. See `27-production-database-reconciliation.md`.
 
 ## Deployment state
 

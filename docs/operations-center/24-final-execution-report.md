@@ -80,26 +80,31 @@ changed or invoked.
   dependency audit failed as documented.
 - Current branch: entitlement, Operations, cron-auth, TypeScript, targeted
   lint, and Next production build pass.
+- A disposable local Supabase database reproduced the production drift and
+  passed exact per-migration reconciliation, the Operations apply, all 18
+  schema checks, two-tenant RLS negatives, audit immutability, and postflight.
 - HTTP: feature-off Operations APIs 404; feature-on unauthenticated APIs 401;
   cron without secret 401.
 - Dependency audit improved from 43 to 2 findings and remains nonzero.
-- Browser/assistive technology, DB/RLS integration, staging, restore,
-  independent review, and production checks are blocked and not claimed.
+- Browser/assistive technology, hosted staging/restore, independent review, and
+  production mutation checks are blocked and not claimed.
 
 ## Migrations and deployment
 
-One additive migration exists and was still unapplied at the latest public
-verification. There is no backfill. The application revision is dark-deployed;
-database release remains migration rehearsal, RLS negatives, restore evidence,
-a protected read-only plan, and an exact approved apply. The follow-up branch
-adds a protected GitHub Actions workflow described in
-`25-automated-database-release.md`; it has not run remotely.
+The Operations migration remains unapplied in production. There is no backfill.
+The application revision is dark-deployed. Production has historical
+migration-ledger drift; the exact repair passed locally and is encoded in a
+manual protected workflow and manifest. A separate manual workflow applies the
+Operations migration only after reconciliation proves it is the sole pending
+file. See `25-automated-database-release.md` and
+`27-production-database-reconciliation.md`. Neither workflow has run remotely.
 
 ## Open blockers
 
-See `BLOCKERS.md`: environment authority, database/restore rehearsal,
-independent review/browser QA, provider credentials/budget/two-person approval,
-alerts/legal/claims ownership, and two upstream dependency advisories.
+See `BLOCKERS.md`: exposed-token revocation confirmation, hosted backup restore,
+independent review/browser QA, exact production approvals, owner account
+identifiers, provider budget/two-person approval, alerts/legal/claims
+ownership, and two upstream dependency advisories.
 
 ## Owner actions
 

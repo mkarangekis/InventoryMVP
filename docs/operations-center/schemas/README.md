@@ -1,6 +1,6 @@
 # Operations Center Schema Catalog
 
-The durable contract is the unapplied additive migration
+The durable contract is the production-unapplied additive migration
 `supabase/migrations/20260729000000_operations_center.sql`. Application domain
 contracts live in `src/operations/domain`.
 
@@ -30,6 +30,7 @@ All Operations tables:
 - contain no plaintext credential column; and
 - remain inert while feature flags are off.
 
-The migration has not been applied to any database. SQL execution, RLS
-integration tests, and rollback rehearsal require a disposable/staging Supabase
-project.
+The migration was applied only to a disposable local Supabase database. Schema,
+two-tenant RLS, negative access, and immutable-audit checks passed, followed by
+an empty postflight. Production and hosted staging remain unapplied; a real
+backup restore and independent review are still required.

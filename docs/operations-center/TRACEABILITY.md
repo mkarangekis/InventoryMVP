@@ -1,6 +1,6 @@
 # Operations Center Traceability
 
-Last updated: 2026-07-29
+Last updated: 2026-07-30
 
 Status values: `not started`, `in progress`, `implemented`, `verified`,
 `blocked`, `not applicable`.
@@ -21,7 +21,7 @@ is never promoted to `verified` without direct evidence.
 |   8 | Preserve compatibility or explicitly migrate                                      | verified    | `21-compatibility-and-release-manifest.md`; build/tests              | Tier C if migration            |
 |   9 | Integrate with existing login                                                     | implemented | Supabase session; `/operations-login`; invite activation             | Account staging test blocked   |
 |  10 | Explicit server-side Operations permission                                        | verified    | `operations/auth/server.ts`; access tests/HTTP 401                   | None                           |
-|  11 | Deny unauthorized UI/API/stream/job/cache/export access                           | implemented | owner guard; no stream/job/export; private no-store                  | DB cross-tenant test blocked   |
+|  11 | Deny unauthorized UI/API/stream/job/cache/export access                           | verified    | owner guard; private no-store; local two-tenant RLS negatives        | Production enablement later    |
 |  12 | Fresh authentication for high-risk actions                                        | verified    | `domain/policy.ts`; `test:operations`                                | None                           |
 |  13 | Unambiguous environment                                                           | verified    | `operations/config.ts`; trust rail; unknown fails safe               | None                           |
 |  14 | Emergency pause works                                                             | verified    | default true; policy pause test                                      | Staging rehearsal later        |
@@ -51,21 +51,21 @@ is never promoted to `verified` without direct evidence.
 |  38 | Coding runs produce patch/branch/draft PR                                         | verified    | draft PR 2; published tree matched locally tested tree               | None                           |
 |  39 | Coding runs cannot merge/deploy                                                   | implemented | PR 2 remains draft; no merge/production deployment by Codex          | Owner for merge/deploy         |
 |  40 | Load and record repository instructions                                           | verified    | `evidence/phase-0-preflight.md`                                      | None                           |
-|  41 | Proportionate tests for changes                                                   | verified    | entitlement, Operations, cron auth, type, lint, build, HTTP          | None                           |
+|  41 | Proportionate tests for changes                                                   | verified    | unit/account/release, type/lint/build, migration, RLS, HTTP          | None                           |
 |  42 | Independent code review                                                           | blocked     | implementer cannot self-approve                                      | Human reviewer                 |
 |  43 | Attach QA and security results                                                    | implemented | execution status, baseline, a11y audit, final report                 | Manual QA blocked              |
 |  44 | Release manifests and rollback plans                                              | verified    | `21-compatibility-and-release-manifest.md`                           | None                           |
 |  45 | Post-release observation                                                          | blocked     | Dark deploy verified; required observation window not completed      | Owner production authority     |
 |  46 | Threat model includes Operations Center                                           | verified    | `09-security-and-privacy-threat-model.md`                            | None                           |
 |  47 | Authorization matrix complete                                                     | verified    | `20-authorization-matrix.md`                                         | None                           |
-|  48 | Cross-tenant negative tests pass                                                  | blocked     | server derives tenant; RLS migration unapplied                       | Disposable DB/two tenants      |
+|  48 | Cross-tenant negative tests pass                                                  | verified    | `verify-operations-rls.sql`; two tenants and denial matrix           | Hosted restore rerun later     |
 |  49 | Prompt-injection evals pass                                                       | implemented | untrusted evidence envelope; unknown-citation negative test          | Real model eval blocked        |
 |  50 | No secrets in prompts/logs/artifacts/UI/source                                    | verified    | redaction test; changed-file and 78-commit scans pass                | None                           |
 |  51 | Connector credentials encrypted/scoped/revocable/model-excluded                   | implemented | encrypted bytes/scopes/revoke fields; no connector active            | Owner for connection           |
 |  52 | Approval integrity tested                                                         | verified    | canonical hash, mutation, expiry, separation tests                   | None                           |
 |  53 | Runner isolation verified                                                         | verified    | detached baseline worktree, synthetic settings, no prod commands     | None                           |
 |  54 | Dependency/secret scans meet policy                                               | blocked     | secret scans pass; audit remains at 1 high and 1 low                 | Security risk disposition      |
-|  55 | Recent backup restore evidence                                                    | blocked     | Production/platform evidence unavailable                             | Owner/platform operator        |
+|  55 | Recent backup restore evidence                                                    | blocked     | backup `1239233937` listed; no hosted restore performed              | Owner/platform operator        |
 |  56 | Critical runbooks exist                                                           | verified    | `runbooks/README.md`                                                 | Owner fills routing            |
 |  57 | Actionable routed alerts                                                          | blocked     | Production alerting destination unknown                              | Owner/platform operator        |
 |  58 | Append-only/equivalent audit protection                                           | implemented | mutation-rejection trigger and event hash chain                      | DB test blocked                |
@@ -95,7 +95,7 @@ is never promoted to `verified` without direct evidence.
 |  82 | No transaction authority for business agents                                      | verified    | execution off; Tier D denied; no action endpoint                     | Owner                          |
 |  83 | Vendor recommendations cannot execute commitments                                 | verified    | no Operations vendor connector/action; financial gate                | Owner                          |
 |  84 | Operating actions have owners/outcomes                                            | implemented | work item owner, acceptance, verification, status contracts          | None                           |
-|  85 | Required test layers pass                                                         | blocked     | local unit/type/lint/build pass; DB/E2E/browser/review absent        | Staging/reviewer               |
+|  85 | Required test layers pass                                                         | blocked     | unit/type/lint/build/migration/RLS pass; browser/review absent       | Staging/reviewer               |
 |  86 | WCAG 2.2 AA admin routes                                                          | blocked     | `22-accessibility-audit.md` static pass; manual AT/zoom absent       | Browser/QA                     |
 |  87 | Lint/type/format/build gates pass                                                 | blocked     | targeted pass; pre-existing whole-repo lint/format fail              | Remediation decision           |
 |  88 | No material customer performance regression                                       | blocked     | route split/build pass; no runtime performance environment           | Staging                        |
@@ -106,8 +106,8 @@ is never promoted to `verified` without direct evidence.
 |  93 | No placeholder production behavior                                                | verified    | repository evidence, mock, disabled, unverified, not-deployed labels | None                           |
 |  94 | Reproducible local setup                                                          | verified    | `19-local-setup-and-configuration.md`; commands executed             | None                           |
 |  95 | Synthetic seed demonstrates system                                                | verified    | resettable code fixture/mock; no database seed needed                | None                           |
-|  96 | Staging rehearsal passes                                                          | blocked     | Vercel preview built but is protected; no isolated Supabase target    | Owner/platform operator        |
-|  97 | Migration and rollback rehearsed                                                  | blocked     | production connected read-only; seven-version ledger drift found     | Disposable restore/reviewer    |
+|  96 | Staging rehearsal passes                                                          | blocked     | Vercel preview built but is protected; no isolated Supabase target   | Owner/platform operator        |
+|  97 | Migration and rollback rehearsed                                                  | in progress | production-shaped local repair/apply passed; hosted restore absent   | Disposable restore/reviewer    |
 |  98 | Emergency pause rehearsed                                                         | verified    | default-on and Tier B pause unit test                                | Staging operational test later |
 |  99 | Explicit connector status/credentials                                             | implemented | UI registry shows disabled/unconfigured/unverified; no secrets       | Owner for credentials          |
 | 100 | Exact owner action for every blocker                                              | verified    | required template in `BLOCKERS.md`                                   | Owner as listed                |
