@@ -243,43 +243,57 @@ control plane.
 
 The new guard requires both tenant ownership and server-controlled Supabase
 Auth `app_metadata.operations_center_role = 'owner'`. No account has been
-granted that permission, and Codex did not broaden any user's access.
+granted that permission, and Codex did not broaden any user's access. The owner
+selected one production email and the existing `Demo Bar Group` tenant. A
+production dry-run generated exact payload hash
+`0a4c4f6c3ac3e2487fd8755b733e06b06a0d321c60c17912d2611a921f02f94f`
+without connecting to Supabase or recording the email in this public release
+document. A password posted in conversation is intentionally excluded and must
+not be used.
 
 ## Why Codex cannot safely proceed
 
-Selecting a platform administrator and changing Auth app metadata is a
-permission expansion that requires exact owner authority.
+Changing Auth app metadata is a permission expansion that requires the exact
+reviewed approval record. The production activation route is not deployed and
+the protected database/release gates remain incomplete, so sending the invite
+now would create an unusable production identity and an incomplete activation
+flow.
 
 ## Work completed around the blocker
 
 The server guard, matching RLS JWT check, demo denial, unknown-role denial,
 conditional navigation, revocation behavior, dedicated `/operations-login`
 entry, private password-activation page, dry-run invitation command, and
-negative unit/HTTP tests are implemented.
+negative unit/HTTP tests are implemented. The owner-selected production
+identity/tenant dry-run passed and produced a deterministic review hash.
 
 ## Exact owner action
 
-**ACTION:** provide one non-secret staging email and approve its exact
-tenant/account Operations-owner grant.
+**ACTION:** complete the protected restore, independent review, dependency-risk,
+database, and application deployment gates; then approve the exact account plan
+hash and create the reviewed approval record.
 **Why it is required:** all existing customer owners intentionally remain
 denied.
-**Exact system or account:** one new owner-selected staging Supabase Auth user.
-**Exact value, permission, or decision needed:** the invitation email and
-tenant UUID, plus approval to create a new profile with role `owner` and set
-only `app_metadata.operations_center_role = 'owner'`; do not provide a password
-or place the grant in user-editable metadata.
+**Exact system or account:** one new owner-selected production Supabase Auth
+user.
+**Exact value, permission, or decision needed:** independent reviewer approval
+of payload hash
+`0a4c4f6c3ac3e2487fd8755b733e06b06a0d321c60c17912d2611a921f02f94f`
+and its approval-record identifier. The email and tenant are selected; no
+password input is required or permitted.
 **Where to obtain it:** Supabase Auth user administration.
 **Where to enter or approve it:** email/tenant may be provided as non-secret
 identifiers; credentials stay in a secure admin/CI environment and the password
 is set privately through the invitation page.
-**Security scope:** one staging account, least privilege, time-bounded.
+**Security scope:** one production account, least privilege, time-bounded
+invitation, password chosen privately in Supabase Auth.
 **Expected cost:** none known.
 **Verification steps:** refresh session, positive access, second tenant and
 ordinary-owner negatives, audit record.
 **Rollback or revoke steps:** remove the app-metadata key, revoke sessions, and
 verify API 403/navigation hidden.
-**What remains blocked until complete:** positive staging access and interactive
-owner QA.
+**What remains blocked until complete:** invitation apply, positive access, and
+interactive owner QA.
 
 ## How to verify resolution
 

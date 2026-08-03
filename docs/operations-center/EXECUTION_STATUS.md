@@ -58,6 +58,10 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
   prohibit self-registration from the Operations entry, validate the access API
   before redirect, and never handle the administrator's password outside
   Supabase Auth.
+- The owner selected the production Operations email and `Demo Bar Group`
+  tenant. The deterministic account dry-run passed with payload hash
+  `0a4c4f6c3ac3e2487fd8755b733e06b06a0d321c60c17912d2611a921f02f94f`;
+  no invite, account, profile, metadata grant, or password mutation occurred.
 - Master and module flags default off; execution defaults off; emergency pause
   defaults on; unknown environments fail safe.
 - Tier A–D policy, exact payload hashing, expiry, fresh authentication,

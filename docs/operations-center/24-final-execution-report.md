@@ -104,9 +104,11 @@ file. See `25-automated-database-release.md` and
 ## Open blockers
 
 See `BLOCKERS.md`: hosted backup restore, independent review/browser QA, exact
-production approvals, owner account identifiers, provider budget/two-person
+production approvals, account-plan approval record, provider budget/two-person
 approval, alerts/legal/claims ownership, and one upstream Sharp dependency
-advisory. Exposed-token revocation was confirmed on 2026-08-02 and is resolved.
+advisory. The owner account identifiers are selected and their dry-run passed;
+no account was created. Exposed-token revocation was confirmed on 2026-08-02
+and is resolved.
 
 ## Owner actions
 
