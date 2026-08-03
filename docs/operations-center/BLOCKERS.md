@@ -1,6 +1,6 @@
 # Operations Center Blockers
 
-Last updated: 2026-07-30
+Last updated: 2026-08-02
 
 No blocker prevents further local review of the branch. The following items
 block staging, production, external connections, or claims.
@@ -85,7 +85,9 @@ review.
 GitHub environment and release record; never in chat.
 **Security scope:** database migration only, flags off, no seed data, no Auth
 user creation, and no unrelated provider access.
-**Expected cost:** owner must confirm any Supabase branch/restore charge.
+**Expected cost:** up to USD 2.00 is approved for one disposable restore; stop
+before creation if Supabase displays a higher estimate. Delete the target 24
+hours after creation.
 **Verification steps:** restore to isolation; rerun both protected plans;
 compare catalog and migration ledger; run the RLS matrix and schema verifier;
 prove rollback/forward repair; then generate a one-migration production plan.
@@ -177,14 +179,19 @@ verified read-only. Supabase reports no database branch. GitHub reports only
 the existing `Preview` and `Production` environments;
 `operations-production` is absent. Vercel production has no `OPERATIONS_*`
 variables, so code defaults keep the feature off. No isolated hosted restore,
-approved staging account, independent reviewer, browser session, or
+approved staging account, independent reviewer, attached browser session, or
 `.openai/hosting.json` exists in the available repository/session.
 
 ## Why Codex cannot safely proceed
 
-Creating a Supabase branch/restore can incur cost and requires a target/retention
-decision. General launch intent does not replace the exact revision,
-payload, reviewer, and backup approvals required by the master specification.
+The owner approved one disposable Restore to a New Project operation up to USD
+2.00 and deletion after 24 hours. Current Supabase documentation exposes this
+operation through the Dashboard; the CLI and documented Management API do not
+provide an equivalent. The isolated browser controller has no attached
+browser, so the provider-displayed cost cannot be inspected and the supported
+restore cannot be started from this session. General launch intent does not
+replace the exact revision, payload, reviewer, and backup approvals required by
+the master specification.
 
 ## Work completed around the blocker
 
@@ -207,15 +214,17 @@ inferred.
 **Exact system or account:** the owner-controlled `inventory-mvp` Vercel
 project and a separate/disposable Supabase staging project; the identified
 Pourdex database remains production.
-**Exact value, permission, or decision needed:** an approved non-production
-restore target/cost, branch/preview mapping, read-only observability access,
-independent reviewer, and approval for the exact merged revision with
-Operations flags off.
+**Exact value, permission, or decision needed:** attach an authenticated browser
+to this session for the already approved non-production restore (USD 2.00
+maximum; delete after 24 hours), plus the branch/preview mapping, read-only
+observability access, independent reviewer, and approval for the exact merged
+revision with Operations flags off.
 **Where to obtain it:** Vercel/Supabase project settings.
 **Where to enter or approve it:** secure deployment configuration and release
 approval system, never chat.
 **Security scope:** staging first, least privilege, no production write.
-**Expected cost:** owner/platform operator must confirm.
+**Expected cost:** restore is approved up to USD 2.00; no other cost is
+approved.
 **Verification steps:** confirm project/region/branch, deploy flags off, inspect
 revision, run smoke/negative tests.
 **Rollback or revoke steps:** revoke temporary access and remove preview.
@@ -323,11 +332,20 @@ The connected CLI identity can list projects, branches, and backups, but its
 generated login-role endpoint returns `403`; direct read-only database access
 independently confirmed the migration ledger and object state.
 
+The owner approved up to USD 2.00 for a Restore to a New Project operation and
+approved deletion 24 hours after target creation. Current Supabase docs and CLI
+discovery confirm the supported clone is Dashboard-only. No browser is attached
+to the isolated browser controller, no documented CLI/Management API clone
+operation exists, no target was created, and the 24-hour deletion timer has not
+started. See `evidence/2026-08-02-owner-decisions.md`.
+
 ## Why Codex cannot safely proceed
 
 The local rehearsal does not prove that Supabase's hosted backup can be
-restored or that the restored production data is compatible. Restore authority,
-target cost, and destructive recovery remain owner/platform decisions.
+restored or that the restored production data is compatible. Cost and retention
+are approved, but the supported Dashboard operation cannot be driven until a
+browser is attached. An undocumented platform endpoint is not an acceptable
+substitute for the supported restore flow.
 
 ## Work completed around the blocker
 
@@ -343,13 +361,16 @@ the protected plan plus verification suite.
 **Why it is required:** SQL/RLS/restore behavior requires a real isolated
 database.
 **Exact system or account:** owner-controlled non-production Supabase project.
-**Exact value, permission, or decision needed:** approved restore target/cost,
-restore job/reference, temporary migration access, two synthetic tenants with
-owner/non-owner users, and independent reviewer disposition.
+**Exact value, permission, or decision needed:** an attached authenticated
+browser; provider-displayed estimate no greater than the approved USD 2.00;
+restore job/reference; temporary migration access; two synthetic tenants with
+owner/non-owner users; and independent reviewer disposition. The proposed
+target name is `pourdex-ops-restore-20260802`, with deletion 24 hours after
+creation.
 **Where to obtain it:** Supabase project and backup settings.
 **Where to enter or approve it:** secure CI/staging secrets and release record.
 **Security scope:** non-production, synthetic data only.
-**Expected cost:** platform owner must confirm.
+**Expected cost:** approved up to USD 2.00 for this disposable target only.
 **Verification steps:** restore; compare schema/counts; run reconciliation,
 Operations, positive/negative RLS, and rollback/forward-repair checks; revoke
 temporary credentials.
@@ -380,6 +401,9 @@ The isolated browser controller reported no available browser. GitHub reports
 only one direct repository collaborator, `mkarangekis`, with admin access. No
 second reviewer identity or pull request approval is available, so the required
 environment reviewer and self-review prevention cannot yet be configured.
+The owner nominated `mkarangekis` as reviewer on 2026-08-02, but authenticated
+GitHub checks confirm that identity is also PR 2's author, the repository owner,
+and the only direct collaborator. It cannot count as independent review.
 
 ## Why Codex cannot safely proceed
 
@@ -535,11 +559,12 @@ privacy rehearsal, and claims manifest.
 Alert tests, retention enforcement, privacy workflow tests, and draft-only
 go-to-market validation.
 
-# Blocker: Upstream Sharp production dependency advisory
+# Accepted exception: Upstream Sharp production dependency advisory
 
 ## Blocked requirement
 
-A zero-advisory production dependency gate.
+A zero-advisory production dependency gate after the temporary exception
+expires.
 
 ## Evidence
 
@@ -552,10 +577,19 @@ imports, `<Image>` usage, `/_next/image` calls, or configured image remote
 patterns. Sharp remains installed transitively by Next, so this reduces known
 application exposure but does not clear the dependency gate.
 
-## Why Codex cannot safely proceed
+On 2026-08-02 the owner explicitly accepted advisory
+`GHSA-f88m-g3jw-g9cj` / finding `1124066` through 2026-08-05 inclusive. The
+record expires at 2026-08-05 23:59:59 America/New_York. This time-bounded
+exception clears only the Sharp risk-disposition decision until expiry; it does
+not waive any independent review, restore, migration, accessibility, exact
+approval, or production observation gate. See
+`evidence/2026-08-02-owner-decisions.md`.
+
+## Why the residual risk remains tracked
 
 Forcing Sharp outside Next's declared compatibility range would weaken
-compatibility rather than prove security.
+compatibility rather than prove security. The accepted exception is deliberately
+short and must not silently roll over.
 
 ## Work completed around the blocker
 
@@ -565,14 +599,15 @@ targeted lint, and production build pass.
 
 ## Exact owner action
 
-**ACTION:** accept the time-bounded upstream risk or wait for a Next/styled-jsx
-release that declares the patched versions.
+**ACTION:** install and verify a Next-supported patched Sharp line when one is
+available, or issue a new explicit disposition before the current exception
+expires.
 **Why it is required:** production risk acceptance belongs to the owner/security
 reviewer.
 **Exact system or account:** repository dependency policy and release gate.
-**Exact value, permission, or decision needed:** expiry date and reviewer
-disposition for advisory `1124066`, or approval for a supported upstream
-update.
+**Exact value, permission, or decision needed:** no additional acceptance is
+needed before 2026-08-05 23:59:59 America/New_York. A supported upstream update
+or new explicit disposition is required after that instant.
 **Where to obtain it:** security/dependency review.
 **Where to enter or approve it:** PR/release risk record.
 **Security scope:** no forced transitive major override; keep the currently
@@ -582,8 +617,9 @@ unused image-optimization path unconfigured during any acceptance window.
 build/test gates on the supported update.
 **Rollback or revoke steps:** revert dependency revision if compatibility
 regresses.
-**What remains blocked until complete:** clean dependency scan and production
-security gate.
+**What remains blocked until complete:** a permanent clean dependency scan. The
+temporary exception does not block the security disposition gate before its
+expiry, but every other production gate remains in force.
 
 ## How to verify resolution
 

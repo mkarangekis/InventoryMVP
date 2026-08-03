@@ -18,7 +18,7 @@ Dedicated account branch: `codex/operations-center-dedicated-login`
 Draft pull request: `https://github.com/mkarangekis/InventoryMVP/pull/2`
 
 Last audited PR head before this status update:
-`401b50fdb71306f8b84dd3d0c501e30a7bafa440`
+`02f506457bad502f7349a85b1c1ddb2bb0099a33`
 
 Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
@@ -100,6 +100,16 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 - Seven completed physical production backups were listed read-only. The newest
   observed backup was `1270201856` at `2026-08-02T07:34:09.924Z`; PITR is off
   and no restore was invoked.
+- The owner approved one disposable Supabase Restore to a New Project operation
+  up to USD 2.00 and deletion 24 hours after creation. Current documentation
+  confirms the operation is Dashboard-only; no browser is attached, no target
+  was created, and the deletion clock has not started.
+- The owner accepted the remaining Sharp advisory through 2026-08-05 inclusive
+  (2026-08-05 23:59:59 America/New_York). The unused image-optimization path
+  remains unconfigured. The exception does not waive any other launch gate.
+- The supplied reviewer username, `mkarangekis`, is PR 2's author, repository
+  owner, and only direct collaborator, so it does not satisfy independent
+  review or separation of duties.
 - A separate local Supabase/Postgres project reproduced the live ledger/object
   drift. The exact repair and six historical single-migration applies passed,
   including the `pos-imports` bucket correction.
@@ -115,18 +125,21 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
 - Obtain independent review and a real Supabase backup-restore rehearsal.
 - Configure the protected GitHub environment with fresh, non-chat credentials.
-- Resolve or explicitly accept the remaining high Sharp dependency advisory.
+- Monitor the expiring Sharp exception and apply a supported patch when
+  available.
 
 ## Next executable tasks
 
 1. Review draft PR 2 and `27-production-database-reconciliation.md`.
-2. Assign an independent GitHub reviewer and configure
+2. Assign a GitHub reviewer other than `mkarangekis` and configure
    `operations-production` with self-review prevention and no bypass.
-3. Restore the latest completed backup available at execution time (currently
-   `1270201856`) into an isolated target and rerun the
-   reconciliation/Operations/RLS sequence there.
-4. Record an expiring dependency-risk disposition or wait for supported
-   upstream patches.
+3. Attach an authenticated browser, inspect the displayed cost, and—only when
+   it is no more than the approved USD 2.00—restore the latest completed backup
+   available at execution time into `pourdex-ops-restore-20260802`; rerun the
+   reconciliation/Operations/RLS sequence and delete the target 24 hours after
+   creation.
+4. Apply a Next-supported Sharp patch when available; otherwise stop at the
+   2026-08-05 23:59:59 America/New_York exception expiry.
 5. Approve the reconciliation manifest hash, run its protected `plan`, then
    separately approve `apply`.
 6. Run the Operations migration workflow in `plan`; approve `apply` only when
@@ -153,8 +166,9 @@ Current branch and connected-service checks, through 2026-08-02:
 - HTTP feature off: Operations access/overview `404`
 - HTTP feature on without token: Operations access/overview `401`
 - HTTP missing cron secret: nightly/nightly-check `401`
-- Production dependency audit: nonzero, 1 known high Sharp finding; the low
-  Babel finding is remediated with compatible `@babel/core` 7.29.7
+- Production dependency audit: nonzero, 1 known high Sharp finding under an
+  owner-accepted exception through 2026-08-05; the low Babel finding is
+  remediated with compatible `@babel/core` 7.29.7
 - Changed-file secret scan: pass across 17 scoped targets
 - Git history secret scan: pass across 78 commits
 - Browser/assistive technology: blocked; no completed interactive matrix
@@ -193,7 +207,8 @@ Current branch and connected-service checks, through 2026-08-02:
 ## New failures introduced by this work
 
 None observed in available checks. The final audit remains nonzero but improved
-from 43 to 1 high finding. Local database integration now passes; interactive
+from 43 to 1 high finding; the remaining finding has a time-bounded owner
+exception through 2026-08-05. Local database integration now passes; interactive
 browser, real Supabase restore/staging, independent review, and production
 mutation verification remain blocked and are not claimed.
 
@@ -202,9 +217,14 @@ mutation verification remain blocked and are not claimed.
 - The owner confirmed the exposed credentials were revoked. General launch
   intent still does not satisfy the exact Tier C approval gate for a reviewed
   revision, environment, and payload.
+- The USD 2.00 restore budget and 24-hour deletion are approved. The supported
+  restore remains unexecuted because no browser is attached to operate the
+  Dashboard and inspect its cost screen.
+- The Sharp exception is accepted only through 2026-08-05 23:59:59
+  America/New_York. It does not approve deployment.
 - Production enablement: requested in general, but exact approval remains
-  blocked behind staging, independent review, restore evidence, and risk
-  disposition.
+  blocked behind staging, independent review, restore evidence, accessibility,
+  and exact release evidence.
 - Production reconciliation and Operations migration: requested in general but
   not exact-approved by revision/manifest/backup/reviewer; Tier C actions.
 - Connector credentials/scopes: not requested; sensitive connections remain
@@ -217,7 +237,9 @@ mutation verification remain blocked and are not claimed.
 See [`BLOCKERS.md`](BLOCKERS.md). Secure GitHub, Vercel, and Supabase sessions
 are connected and exposed-token revocation is confirmed, but production
 mutation remains blocked until the restore/review/security gates are complete.
-No safe local implementation work is currently blocked.
+The current concrete owner actions are to attach a browser and provide a
+different reviewer identity. No safe local implementation work is currently
+blocked.
 
 ## Migration state
 

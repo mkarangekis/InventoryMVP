@@ -86,7 +86,8 @@ changed or invoked.
 - HTTP: feature-off Operations APIs 404; feature-on unauthenticated APIs 401;
   cron without secret 401.
 - Dependency audit improved from 43 to 1 high Sharp finding and remains
-  nonzero; the low Babel finding is remediated with compatible
+  nonzero; the owner accepted the remaining finding through 2026-08-05
+  inclusive, and the low Babel finding is remediated with compatible
   `@babel/core` 7.29.7.
 - Browser/assistive technology, hosted staging/restore, independent review, and
   production mutation checks are blocked and not claimed.
@@ -105,10 +106,13 @@ file. See `25-automated-database-release.md` and
 
 See `BLOCKERS.md`: hosted backup restore, independent review/browser QA, exact
 production approvals, account-plan approval record, provider budget/two-person
-approval, alerts/legal/claims ownership, and one upstream Sharp dependency
-advisory. The owner account identifiers are selected and their dry-run passed;
-no account was created. Exposed-token revocation was confirmed on 2026-08-02
-and is resolved.
+approval, and alerts/legal/claims ownership. The restore has a USD 2.00 cap and
+24-hour deletion approval but cannot start until a browser is attached to the
+Dashboard-only supported flow. The supplied reviewer identity is the PR author
+and is not independent. The Sharp advisory has a temporary owner exception
+through 2026-08-05 and remains tracked. The owner account identifiers are
+selected and their dry-run passed; no account was created. Exposed-token
+revocation was confirmed on 2026-08-02 and is resolved.
 
 ## Owner actions
 
