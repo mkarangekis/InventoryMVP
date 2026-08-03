@@ -103,10 +103,10 @@ file. See `25-automated-database-release.md` and
 
 ## Open blockers
 
-See `BLOCKERS.md`: exposed-token revocation confirmation, hosted backup restore,
-independent review/browser QA, exact production approvals, owner account
-identifiers, provider budget/two-person approval, alerts/legal/claims
-ownership, and one upstream Sharp dependency advisory.
+See `BLOCKERS.md`: hosted backup restore, independent review/browser QA, exact
+production approvals, owner account identifiers, provider budget/two-person
+approval, alerts/legal/claims ownership, and one upstream Sharp dependency
+advisory. Exposed-token revocation was confirmed on 2026-08-02 and is resolved.
 
 ## Owner actions
 

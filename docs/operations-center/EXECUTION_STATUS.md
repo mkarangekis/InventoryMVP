@@ -81,6 +81,9 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
   30-day plan are complete.
 - The secure GitHub connector published draft PR 2 from a remote tree whose SHA
   exactly matched the locally tested tree.
+- On 2026-08-02 the owner confirmed that the GitHub, Vercel, and Supabase tokens
+  previously exposed in conversation were revoked. Only secure device/CLI
+  sessions remain eligible for release work.
 - Vercel's PR build completed successfully. The current preview is protected by
   Vercel SSO; direct unauthenticated requests receive the protection redirect.
 - Read-only production checks verified Supabase Auth and the existing tenant
@@ -113,17 +116,16 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 ## Next executable tasks
 
 1. Review draft PR 2 and `27-production-database-reconciliation.md`.
-2. Revoke all credentials exposed in conversation and record confirmation.
-3. Assign an independent GitHub reviewer and configure
+2. Assign an independent GitHub reviewer and configure
    `operations-production` with self-review prevention and no bypass.
-4. Restore the latest completed backup available at execution time (currently
+3. Restore the latest completed backup available at execution time (currently
    `1270201856`) into an isolated target and rerun the
    reconciliation/Operations/RLS sequence there.
-5. Record an expiring dependency-risk disposition or wait for supported
+4. Record an expiring dependency-risk disposition or wait for supported
    upstream patches.
-6. Approve the reconciliation manifest hash, run its protected `plan`, then
+5. Approve the reconciliation manifest hash, run its protected `plan`, then
    separately approve `apply`.
-7. Run the Operations migration workflow in `plan`; approve `apply` only when
+6. Run the Operations migration workflow in `plan`; approve `apply` only when
    it contains exactly `20260729000000_operations_center.sql`.
 
 ## Tests last run
@@ -193,10 +195,9 @@ mutation verification remain blocked and are not claimed.
 
 ## Open approvals
 
-- The owner expressed general intent to launch and supplied credentials through
-  an unsafe channel. This does not satisfy the exact Tier C approval gate for a
-  reviewed revision/environment/payload, and the exposed credentials must be
-  revoked before use.
+- The owner confirmed the exposed credentials were revoked. General launch
+  intent still does not satisfy the exact Tier C approval gate for a reviewed
+  revision, environment, and payload.
 - Production enablement: requested in general, but exact approval remains
   blocked behind staging, independent review, restore evidence, and risk
   disposition.
@@ -210,9 +211,9 @@ mutation verification remain blocked and are not claimed.
 ## External blockers
 
 See [`BLOCKERS.md`](BLOCKERS.md). Secure GitHub, Vercel, and Supabase sessions
-are connected, but production mutation remains blocked until exposed tokens
-are confirmed revoked and the restore/review/security gates are complete. No
-safe local implementation work is currently blocked.
+are connected and exposed-token revocation is confirmed, but production
+mutation remains blocked until the restore/review/security gates are complete.
+No safe local implementation work is currently blocked.
 
 ## Migration state
 

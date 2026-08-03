@@ -106,12 +106,14 @@ Run the protected production plan, separately approve the exact apply, verify
 the schema, provision one dedicated owner account, and enable only the overview
 flags.
 
-# Blocker: Exposed access tokens and secure reauthentication
+# Resolved: Exposed access tokens and secure reauthentication
 
-## Blocked requirement
+## Resolution
 
-Any use of the exposed credentials and any unreviewed Vercel or Supabase
-administrative action.
+The owner confirmed on 2026-08-02 that all GitHub, Vercel, and Supabase tokens
+previously exposed in conversation were revoked. Their values remain prohibited
+from release use. Secure CLI/device sessions continue to provide access without
+placing credentials in source, commands, logs, or chat.
 
 ## Evidence
 
@@ -121,14 +123,15 @@ approved local login or secret manager. The token values were not used, copied
 into the repository, or placed in a command by Codex. The owner subsequently
 completed secure browser/device logins for GitHub CLI, Vercel CLI, and Supabase
 CLI. Each reports the intended owner account/project without printing a
-credential. Revocation of the three values exposed in conversation has not been
-confirmed.
+credential. The owner subsequently attested that all three exposed values were
+revoked.
 
-## Why Codex cannot safely proceed
+## Residual control
 
 Conversation content and tool history are not an approved secret transport.
-Credentials exposed there must be treated as compromised even if the owner
-plans to rotate them after release.
+The revoked values remain treated as compromised and must never be restored or
+reused. Provider-side revocation timestamps and token identifiers may be kept
+privately as audit evidence, but their values must not be recorded.
 
 ## Work completed around the blocker
 
@@ -140,40 +143,21 @@ exposed personal access tokens. The owner independently merged application PR
 1. A secure GitHub connector published draft PR 2 and Vercel built its protected
    preview; Codex made no production deployment or production mutation.
 
-## Exact owner action
+## Owner action completed
 
-**ACTION:** revoke all three exposed tokens immediately, record confirmation,
-and retain only the fresh least-privilege CLI/secret-manager sessions.
-**Why it is required:** compromised credentials cannot be used as a release
-control.
-**Exact system or account:** the owner-controlled GitHub, Vercel, and Supabase
-accounts used for Pourdex.
-**Exact value, permission, or decision needed:** revocation timestamps/token
-identifiers plus fresh short-lived credentials with only the scopes required
-for a reviewed staging rehearsal; never send their values in chat.
-**Where to obtain it:** each provider's access-token/security settings.
-**Where to enter or approve it:** `gh auth login`, `vercel login`, and
-`supabase login`, or an owner-approved local secret manager.
-**Security scope:** staging first, least privilege, short expiry, no unrelated
-projects or organizations.
-**Expected cost:** none known.
-**Verification steps:** each CLI reports the intended account without printing
-the credential; the revoked credentials no longer authenticate; access scope
-is reviewed before any write.
-**Rollback or revoke steps:** revoke the fresh credentials and remove local
-sessions after the release workflow.
-**What remains blocked until complete:** use of the protected credentials for
-any production mutation and every final production action.
+**ACTION:** revoke all three exposed tokens and retain only secure
+least-privilege sessions.
+**Completion evidence:** owner attestation dated 2026-08-02 plus authenticated
+GitHub, Vercel, and Supabase CLI sessions that do not print credential values.
+**Residual verification:** retain provider audit entries privately if required
+by the owner's security policy.
+**What remains blocked:** nothing under this credential-exposure blocker.
 
-## How to verify resolution
+## Work resumed
 
-Record revocation time, provider token identifiers (never values), authenticated
-account names, scope review, expiry, and secure-session verification output.
-
-## Work that resumes afterward
-
-Create or select an isolated staging target and run the non-production release
-rehearsal.
+Read-only provider verification and draft-PR publication use the secure
+sessions. Production writes remain separately gated by restore, review,
+security, and exact-approval requirements.
 
 # Blocker: Staging and production environment authority
 
