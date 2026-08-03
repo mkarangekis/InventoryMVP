@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { resolveSafeAuthTarget } from "@/operations/auth/redirect";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function AuthCallbackPage() {
     const handleAuth = async () => {
       const url = new URL(window.location.href);
       const code = url.searchParams.get("code");
+      const next = resolveSafeAuthTarget(url.searchParams.get("next"));
 
       if (code) {
         await supabaseBrowser.auth.exchangeCodeForSession(code);
@@ -30,7 +32,7 @@ export default function AuthCallbackPage() {
         }
       }
 
-      router.replace("/onboarding");
+      router.replace(next ?? "/onboarding");
     };
 
     void handleAuth();

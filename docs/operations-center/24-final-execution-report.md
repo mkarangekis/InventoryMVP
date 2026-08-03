@@ -5,13 +5,22 @@
 An additive, owner-only, feature-flagged Operations Center is implemented on
 branch `codex/operations-center`. It is a read-only repository-evidence control
 plane with policy, schema, mock/provider boundaries, runbooks, and tests. It is
-not deployed or production ready.
+dark-deployed on Vercel after the owner merged PR 1, but its database schema,
+administrator grant, and feature flags are not activated or production ready.
 
 ## Current production status
 
-No production action occurred. No migration was applied, no feature was
-enabled, no connector/model/email/job/billing/vendor/public action ran, and no
-customer data was accessed or changed.
+The owner merged PR 1, and the configured Vercel Git integration served the new
+route on both known production aliases. Public checks verified feature-off API
+responses. Codex did not invoke the deployment. No migration was applied by
+Codex, no feature was enabled, no administrator was granted, and no
+connector/model/email/job/billing/vendor/public action ran.
+The owner requested another production push on 2026-08-03. Revalidation found
+no independent review, no hosted restore evidence, no protected Operations
+environment, and no attached browser for Supabase's supported restore flow. No
+production action was performed. The production Vercel project remains
+`inventory-mvp`; the isolated worktree's different `production-release` link
+must not be used for production.
 
 ## What was reverse engineered
 
@@ -77,24 +86,39 @@ changed or invoked.
   dependency audit failed as documented.
 - Current branch: entitlement, Operations, cron-auth, TypeScript, targeted
   lint, and Next production build pass.
+- A disposable local Supabase database reproduced the production drift and
+  passed exact per-migration reconciliation, the Operations apply, all 18
+  schema checks, two-tenant RLS negatives, audit immutability, and postflight.
 - HTTP: feature-off Operations APIs 404; feature-on unauthenticated APIs 401;
   cron without secret 401.
-- Dependency audit improved from 43 to 2 findings and remains nonzero.
-- Browser/assistive technology, DB/RLS integration, staging, restore,
-  independent review, and production checks are blocked and not claimed.
+- Dependency audit improved from 43 to 1 high Sharp finding and remains
+  nonzero; the owner accepted the remaining finding through 2026-08-05
+  inclusive, and the low Babel finding is remediated with compatible
+  `@babel/core` 7.29.7.
+- Browser/assistive technology, hosted staging/restore, independent review, and
+  production mutation checks are blocked and not claimed.
 
 ## Migrations and deployment
 
-One additive migration exists and is unapplied. There is no backfill. Release
-sequence is migration rehearsal, RLS negatives, restore, preview with flags
-off, staging read-only enablement, independent review, then an exact owner
-production decision. Nothing was deployed.
+The Operations migration remains unapplied in production. There is no backfill.
+The application revision is dark-deployed. Production has historical
+migration-ledger drift; the exact repair passed locally and is encoded in a
+manual protected workflow and manifest. A separate manual workflow applies the
+Operations migration only after reconciliation proves it is the sole pending
+file. See `25-automated-database-release.md` and
+`27-production-database-reconciliation.md`. Neither workflow has run remotely.
 
 ## Open blockers
 
-See `BLOCKERS.md`: environment authority, database/restore rehearsal,
-independent review/browser QA, provider credentials/budget/two-person approval,
-alerts/legal/claims ownership, and two upstream dependency advisories.
+See `BLOCKERS.md`: hosted backup restore, independent review/browser QA, exact
+production approvals, account-plan approval record, provider budget/two-person
+approval, and alerts/legal/claims ownership. The restore has a USD 2.00 cap and
+24-hour deletion approval but cannot start until a browser is attached to the
+Dashboard-only supported flow. The supplied reviewer identity is the PR author
+and is not independent. The Sharp advisory has a temporary owner exception
+through 2026-08-05 and remains tracked. The owner account identifiers are
+selected and their dry-run passed; no account was created. Exposed-token
+revocation was confirmed on 2026-08-02 and is resolved.
 
 ## Owner actions
 

@@ -1,0 +1,260 @@
+name: Operations database release
+
+run-name: Operations database ${{ inputs.mode }} · ${{ github.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Plan is read-only; apply runs approved pending migrations.
+        required: true
+        default: plan
+        type: choice
+        options:
+          - plan
+          - apply
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operations-production-database
+  cancel-in-progress: false
+
+jobs:
+  verify-release:
+    name: Verify release revision
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the triggering revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Require the production branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Database releases may run only from main."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::The triggering revision is not on origin/main."
+            exit 1
+          fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 11.5.2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run release checks
+        env:
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: synthetic-release-check-anon-key
+          NEXT_PUBLIC_SUPABASE_URL: https://supabase.local.invalid
+        run: |
+          pnpm test:entitlement
+          pnpm test:operations
+          pnpm test:cron-auth
+          pnpm test:release-automation
+          pnpm exec tsc --noEmit
+          pnpm exec next build
+
+  database-release:
+    name: Plan or apply the database migration
+    needs: verify-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: operations-production
+    env:
+      APPROVED_BACKUP_REFERENCE: ${{ vars.APPROVED_BACKUP_REFERENCE }}
+      APPROVED_CHANGE_RECORD: ${{ vars.APPROVED_CHANGE_RECORD }}
+      APPROVED_MIGRATION_FILE: ${{ vars.APPROVED_MIGRATION_FILE }}
+      APPROVED_MIGRATION_SHA256: ${{ vars.APPROVED_MIGRATION_SHA256 }}
+      APPROVED_RELEASE_SHA: ${{ vars.APPROVED_RELEASE_SHA }}
+      REQUESTED_MODE: ${{ inputs.mode }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Check out the approved revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate the exact approval payload
+        id: approval
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$REQUESTED_MODE" != "plan" && "$REQUESTED_MODE" != "apply" ]]; then
+            echo "::error::Unknown database release mode."
+            exit 1
+          fi
+          if [[ ! "$APPROVED_RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::APPROVED_RELEASE_SHA must be an exact 40-character commit."
+            exit 1
+          fi
+          if [[ "$APPROVED_RELEASE_SHA" != "$GITHUB_SHA" ]]; then
+            echo "::error::The approved revision does not match the triggering revision."
+            exit 1
+          fi
+          if [[ ! "$APPROVED_MIGRATION_FILE" =~ ^[0-9]{14}_[A-Za-z0-9_-]+\.sql$ ]]; then
+            echo "::error::APPROVED_MIGRATION_FILE is invalid."
+            exit 1
+          fi
+          migration_path="supabase/migrations/$APPROVED_MIGRATION_FILE"
+          if [[ ! -f "$migration_path" ]]; then
+            echo "::error::The approved migration file is absent from the revision."
+            exit 1
+          fi
+          actual_hash="$(sha256sum "$migration_path" | awk '{print $1}')"
+          if [[ "$actual_hash" != "$APPROVED_MIGRATION_SHA256" ]]; then
+            echo "::error::The approved migration hash does not match the file."
+            exit 1
+          fi
+          if [[ -z "$APPROVED_CHANGE_RECORD" || "$APPROVED_CHANGE_RECORD" == "pending" ]]; then
+            echo "::error::APPROVED_CHANGE_RECORD must identify the reviewed change."
+            exit 1
+          fi
+          if [[ "$REQUESTED_MODE" == "apply" ]]; then
+            if [[ -z "$APPROVED_BACKUP_REFERENCE" || "$APPROVED_BACKUP_REFERENCE" == "pending" ]]; then
+              echo "::error::Apply mode requires an approved backup/restore reference."
+              exit 1
+            fi
+          fi
+          if [[ -z "$SUPABASE_DB_URL" ]]; then
+            echo "::error::The protected SUPABASE_DB_URL secret is not configured."
+            exit 1
+          fi
+          if [[ "$SUPABASE_DB_URL" != postgres://* && "$SUPABASE_DB_URL" != postgresql://* ]]; then
+            echo "::error::SUPABASE_DB_URL must be a Postgres connection URL."
+            exit 1
+          fi
+          echo "::add-mask::$SUPABASE_DB_URL"
+          echo "migration_path=$migration_path" >> "$GITHUB_OUTPUT"
+
+      - name: Set up the pinned Supabase CLI
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1
+        with:
+          version: 2.110.0
+
+      - name: Generate the remote migration plan
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            | tee migration-list.txt
+          supabase db push \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            --dry-run \
+            --yes \
+            2>&1 | tee migration-plan.txt
+
+          mapfile -t planned_migrations < <(
+            grep -Eo '[0-9]{14}_[A-Za-z0-9_-]+\.sql' migration-plan.txt \
+              | sort -u
+          )
+
+          if (( ${#planned_migrations[@]} == 0 )); then
+            if grep -Eqi 'up[ -]to[ -]date|no migrations|finished.*db push' migration-plan.txt; then
+              echo "already_applied=true" >> "$GITHUB_OUTPUT"
+              echo "No pending migration was reported."
+            else
+              echo "::error::The dry run could not be interpreted safely."
+              exit 1
+            fi
+          elif (( ${#planned_migrations[@]} == 1 )) \
+            && [[ "${planned_migrations[0]}" == "$APPROVED_MIGRATION_FILE" ]]; then
+            echo "already_applied=false" >> "$GITHUB_OUTPUT"
+            echo "The dry run contains only the approved migration."
+          else
+            echo "::error::The dry run includes an unapproved migration set."
+            printf 'Observed: %s\n' "${planned_migrations[*]}"
+            exit 1
+          fi
+
+      - name: Upload the read-only migration plan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: operations-database-plan-${{ github.sha }}
+          path: |
+            migration-list.txt
+            migration-plan.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Apply the approved migration
+        if: >-
+          env.REQUESTED_MODE == 'apply' &&
+          steps.plan.outputs.already_applied != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db push \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            --yes
+
+      - name: Verify the Operations schema
+        if: env.REQUESTED_MODE == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            echo "::error::The runner does not provide the PostgreSQL client."
+            exit 1
+          fi
+          psql "$SUPABASE_DB_URL" \
+            --set ON_ERROR_STOP=1 \
+            --file scripts/operations/verify-operations-schema.sql
+
+      - name: Confirm no migration remains pending
+        if: env.REQUESTED_MODE == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db push \
+            --db-url "$SUPABASE_DB_URL" \
+            --workdir . \
+            --dry-run \
+            --yes \
+            2>&1 | tee migration-postflight.txt
+          if grep -Eo '[0-9]{14}_[A-Za-z0-9_-]+\.sql' migration-postflight.txt \
+            | grep -Fqx "$APPROVED_MIGRATION_FILE"; then
+            echo "::error::The approved migration is still pending after apply."
+            exit 1
+          fi
+
+      - name: Write release summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Operations database release"
+            echo
+            echo "- Mode: \`$REQUESTED_MODE\`"
+            echo "- Revision: \`$GITHUB_SHA\`"
+            echo "- Migration: \`$APPROVED_MIGRATION_FILE\`"
+            echo "- Migration hash: \`$APPROVED_MIGRATION_SHA256\`"
+            echo "- Change record: \`$APPROVED_CHANGE_RECORD\`"
+            echo "- Backup reference recorded: $([[ -n "$APPROVED_BACKUP_REFERENCE" ]] && echo yes || echo no)"
+            echo "- Feature flags changed: no"
+            echo "- Seed data requested: no"
+          } >> "$GITHUB_STEP_SUMMARY"

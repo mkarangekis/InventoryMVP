@@ -17,7 +17,13 @@ the instructions recorded in
 - [`24-final-execution-report.md`](24-final-execution-report.md): concise handoff
 - [`21-compatibility-and-release-manifest.md`](21-compatibility-and-release-manifest.md):
   release and rollback sequence
+- [`25-automated-database-release.md`](25-automated-database-release.md):
+  protected migration automation and secure configuration
 - [`23-first-30-days.md`](23-first-30-days.md): bounded operating plan
+- [`26-dedicated-operations-account.md`](26-dedicated-operations-account.md):
+  isolated administrator invitation, activation, and revocation
+- [`27-production-database-reconciliation.md`](27-production-database-reconciliation.md):
+  live drift evidence, isolated rehearsal, and protected repair sequence
 - `evidence/`: reproducible command and inspection evidence
 - `decisions/`: material decisions, conflicts, and deviations
 - `runbooks/`: operational response and rollback procedures
@@ -25,6 +31,7 @@ the instructions recorded in
 
 ## Safety boundary
 
-No document in this directory authorizes production deployment, production
-data mutation, live communication, public publication, financial action, or
-permission expansion. Those remain owner-controlled actions.
+No document in this directory independently authorizes production deployment,
+production data mutation, live communication, public publication, financial
+action, or permission expansion. Those remain owner-controlled, exact-payload
+actions enforced through the release gates.
