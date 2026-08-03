@@ -9,5 +9,6 @@ minimumReleaseAgeExclude:
   - postcss@8.5.25
 
 overrides:
+  "@babel/core": 7.29.7
   postcss: 8.5.25
   qs: 6.15.2

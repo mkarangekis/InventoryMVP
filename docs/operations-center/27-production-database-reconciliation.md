@@ -13,8 +13,9 @@ rehearsal and does not replace independent review.
 
 ## Read-only production evidence
 
-Project `sbfurrspsnpkaonmufwt` reported seven repository versions absent from
-its migration ledger. Object inspection showed:
+Project `sbfurrspsnpkaonmufwt` reported eight repository versions absent from
+its migration ledger: the seven-file reconciliation set and the deferred
+Operations migration. Object inspection showed:
 
 - migration `20260401000000_ai_upgrade.sql` is logically present;
 - the webhook, notification-preference, POS-connection, and POS-idempotency
@@ -25,7 +26,7 @@ its migration ledger. Object inspection showed:
 - the Operations tables are absent.
 
 Seven completed physical backups are visible. The newest observed backup is
-`1239233937`, completed at `2026-07-29T07:46:06.313Z`. Point-in-time recovery
+`1270201856`, completed at `2026-08-02T07:34:09.924Z`. Point-in-time recovery
 is not enabled. No backup was restored or modified.
 
 ## Reconciliation payload
@@ -106,8 +107,8 @@ Production reconciliation and Operations activation remain blocked until:
 
 1. the exposed chat credentials are confirmed revoked;
 2. an independent reviewer approves the exact revision and payload;
-3. backup `1239233937` or a newer backup is restored to an isolated target and
-   the restore is verified;
+3. the latest completed backup available at execution time (currently
+   `1270201856`) is restored to an isolated target and the restore is verified;
 4. the protected GitHub environment is configured with fresh credentials and
    the exact approval variables;
 5. the high Sharp advisory is patched by a supported Next release or receives

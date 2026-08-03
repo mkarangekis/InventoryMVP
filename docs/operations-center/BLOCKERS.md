@@ -67,9 +67,10 @@ object, migration record, Auth user, or feature flag was changed.
 
 ## Exact owner action
 
-**ACTION:** assign an independent reviewer, restore backup `1239233937` or a
-newer backup to an isolated target, and approve the exact reconciliation
-manifest before the Operations migration is approved.
+**ACTION:** assign an independent reviewer, restore the latest completed backup
+available at execution time (currently `1270201856`) to an isolated target,
+and approve the exact reconciliation manifest before the Operations migration
+is approved.
 **Why it is required:** production history must match actual schema state before
 an automated migration can be trusted.
 **Exact system or account:** a disposable restore or Supabase branch cloned
@@ -316,8 +317,11 @@ data compatibility, and destructive recovery rehearsal.
 The additive migration remains unapplied in production. A disposable local
 Supabase database completed the production-shaped migration and RLS rehearsal.
 Seven completed production physical backups were listed read-only; the newest
-observed backup is `1239233937` from `2026-07-29T07:46:06.313Z`. No Supabase
+observed backup is `1270201856` from `2026-08-02T07:34:09.924Z`. No Supabase
 backup has been restored to an isolated hosted target, and PITR is disabled.
+The connected CLI identity can list projects, branches, and backups, but its
+generated login-role endpoint returns `403`; direct read-only database access
+independently confirmed the migration ledger and object state.
 
 ## Why Codex cannot safely proceed
 
@@ -333,8 +337,9 @@ two-tenant negative RLS matrix, and postflight are complete.
 
 ## Exact owner action
 
-**ACTION:** restore backup `1239233937` or a newer backup into a disposable
-Supabase project/branch and rerun the protected plan plus verification suite.
+**ACTION:** restore the latest completed backup available at execution time
+(currently `1270201856`) into a disposable Supabase project/branch and rerun
+the protected plan plus verification suite.
 **Why it is required:** SQL/RLS/restore behavior requires a real isolated
 database.
 **Exact system or account:** owner-controlled non-production Supabase project.
@@ -530,7 +535,7 @@ privacy rehearsal, and claims manifest.
 Alert tests, retention enforcement, privacy workflow tests, and draft-only
 go-to-market validation.
 
-# Blocker: Two upstream production dependency advisories
+# Blocker: Upstream Sharp production dependency advisory
 
 ## Blocked requirement
 
@@ -538,22 +543,22 @@ A zero-advisory production dependency gate.
 
 ## Evidence
 
-After bounded upgrades the audit reports two findings: one high inherited
-`sharp` advisory (`1124066`) and one low inherited Babel advisory (`1123528`).
-The current published Next 16.2.12 declares `sharp ^0.34.5`, while the patch is
-`>=0.35.0`; the named Babel patch `7.29.1` is not published. The branch reduced
-findings from 43 to 2.
+After bounded upgrades the audit reports one high inherited `sharp` advisory
+(`1124066`). Current Next 16.2.12 declares `sharp ^0.34.5`, while the patched
+line is `>=0.35.0`. The previously blocked low Babel advisory (`1123528`) is
+now cleared by a compatible `@babel/core` 7.29.7 override. The branch reduced
+findings from 43 to 1.
 
 ## Why Codex cannot safely proceed
 
-Forcing an unsupported Sharp major or unpublished Babel version would weaken
+Forcing Sharp outside Next's declared compatibility range would weaken
 compatibility rather than prove security.
 
 ## Work completed around the blocker
 
-Next, Supabase, Drizzle, Anthropic, and Resend were upgraded; PostCSS and `qs`
-were pinned to patched compatible versions. Tests, TypeScript, targeted lint,
-and production build pass.
+Next, Supabase, Drizzle, Anthropic, and Resend were upgraded; PostCSS, `qs`, and
+`@babel/core` were pinned to patched compatible versions. Tests, TypeScript,
+targeted lint, and production build pass.
 
 ## Exact owner action
 
@@ -563,7 +568,8 @@ release that declares the patched versions.
 reviewer.
 **Exact system or account:** repository dependency policy and release gate.
 **Exact value, permission, or decision needed:** expiry date and reviewer
-disposition for both advisory IDs, or approval for a supported upstream update.
+disposition for advisory `1124066`, or approval for a supported upstream
+update.
 **Where to obtain it:** security/dependency review.
 **Where to enter or approve it:** PR/release risk record.
 **Security scope:** no forced transitive major override.

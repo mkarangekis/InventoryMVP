@@ -65,7 +65,7 @@ is never promoted to `verified` without direct evidence.
 |  52 | Approval integrity tested                                                         | verified    | canonical hash, mutation, expiry, separation tests                   | None                           |
 |  53 | Runner isolation verified                                                         | verified    | detached baseline worktree, synthetic settings, no prod commands     | None                           |
 |  54 | Dependency/secret scans meet policy                                               | blocked     | secret scans pass; audit remains at 1 high and 1 low                 | Security risk disposition      |
-|  55 | Recent backup restore evidence                                                    | blocked     | backup `1239233937` listed; no hosted restore performed              | Owner/platform operator        |
+|  55 | Recent backup restore evidence                                                    | blocked     | backup `1270201856` listed; no hosted restore performed              | Owner/platform operator        |
 |  56 | Critical runbooks exist                                                           | verified    | `runbooks/README.md`                                                 | Owner fills routing            |
 |  57 | Actionable routed alerts                                                          | blocked     | Production alerting destination unknown                              | Owner/platform operator        |
 |  58 | Append-only/equivalent audit protection                                           | implemented | mutation-rejection trigger and event hash chain                      | DB test blocked                |

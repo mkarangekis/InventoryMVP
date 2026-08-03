@@ -85,7 +85,9 @@ changed or invoked.
   schema checks, two-tenant RLS negatives, audit immutability, and postflight.
 - HTTP: feature-off Operations APIs 404; feature-on unauthenticated APIs 401;
   cron without secret 401.
-- Dependency audit improved from 43 to 2 findings and remains nonzero.
+- Dependency audit improved from 43 to 1 high Sharp finding and remains
+  nonzero; the low Babel finding is remediated with compatible
+  `@babel/core` 7.29.7.
 - Browser/assistive technology, hosted staging/restore, independent review, and
   production mutation checks are blocked and not claimed.
 
@@ -104,7 +106,7 @@ file. See `25-automated-database-release.md` and
 See `BLOCKERS.md`: exposed-token revocation confirmation, hosted backup restore,
 independent review/browser QA, exact production approvals, owner account
 identifiers, provider budget/two-person approval, alerts/legal/claims
-ownership, and two upstream dependency advisories.
+ownership, and one upstream Sharp dependency advisory.
 
 ## Owner actions
 

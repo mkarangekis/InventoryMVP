@@ -1,6 +1,6 @@
 # Operations Center Execution Status
 
-Last updated: 2026-07-30 (America/New_York)
+Last updated: 2026-08-02 (America/New_York)
 
 ## Current phase
 
@@ -17,8 +17,8 @@ Dedicated account branch: `codex/operations-center-dedicated-login`
 
 Draft pull request: `https://github.com/mkarangekis/InventoryMVP/pull/2`
 
-Published PR head before this reconciliation patch:
-`9ddbb8682cb9707f21e112b3cb40842c6f5a1a2b`
+Last audited PR head before this status update:
+`df5a298fa032d822a1c8f3f0555409b724ffc2ad`
 
 Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
@@ -72,9 +72,10 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
   service-only writes, encrypted credential bytes, leases/idempotency,
   dead letters, and immutable audit events. It was not applied.
 - Both cron entry routes now fail closed when `CRON_SECRET` is absent.
-- Production dependency findings were reduced from 43 (18 high) to 2 (1 high,
-  1 low) with bounded compatible upgrades; remaining upstream risks are
-  explicit blockers.
+- Production dependency findings were reduced from 43 (18 high) to 1 high
+  finding with bounded compatible upgrades. The low Babel advisory was cleared
+  by pinning compatible `@babel/core` 7.29.7; the remaining upstream Sharp risk
+  is an explicit blocker.
 - Accessibility static audit, release/rollback manifest, schema catalog,
   authorization matrix, critical runbooks, configuration guide, and first
   30-day plan are complete.
@@ -84,11 +85,13 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
   protected by Vercel authentication.
 - Read-only production checks verified Supabase Auth and the existing tenant
   schema are connected and healthy.
-- The Operations schema remains absent. Supabase CLI `2.110.0` reported seven
-  pending repository migrations, and catalog inspection proved migration-ledger
-  drift; no database mutation was performed.
+- The Operations schema remains absent. Read-only ledger inspection reported
+  eight absent repository migrations, and catalog inspection proved
+  migration-ledger drift; no database mutation was performed. Supabase CLI
+  `2.110.0` can list project recovery metadata but its generated login-role
+  endpoint currently returns `403` for migration listing.
 - Seven completed physical production backups were listed read-only. The newest
-  observed backup was `1239233937` at `2026-07-29T07:46:06.313Z`; PITR is off
+  observed backup was `1270201856` at `2026-08-02T07:34:09.924Z`; PITR is off
   and no restore was invoked.
 - A separate local Supabase/Postgres project reproduced the live ledger/object
   drift. The exact repair and six historical single-migration applies passed,
@@ -105,7 +108,7 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
 - Obtain independent review and a real Supabase backup-restore rehearsal.
 - Configure the protected GitHub environment with fresh, non-chat credentials.
-- Resolve or explicitly accept the two remaining dependency advisories.
+- Resolve or explicitly accept the remaining high Sharp dependency advisory.
 
 ## Next executable tasks
 
@@ -113,8 +116,9 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 2. Revoke all credentials exposed in conversation and record confirmation.
 3. Assign an independent GitHub reviewer and configure
    `operations-production` with self-review prevention and no bypass.
-4. Restore backup `1239233937` or a newer backup into an isolated target and
-   rerun the reconciliation/Operations/RLS sequence there.
+4. Restore the latest completed backup available at execution time (currently
+   `1270201856`) into an isolated target and rerun the
+   reconciliation/Operations/RLS sequence there.
 5. Record an expiring dependency-risk disposition or wait for supported
    upstream patches.
 6. Approve the reconciliation manifest hash, run its protected `plan`, then
@@ -124,7 +128,7 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
 ## Tests last run
 
-Current branch and connected-service checks, through 2026-07-30:
+Current branch and connected-service checks, through 2026-08-02:
 
 - `pnpm test:entitlement`: pass
 - `pnpm test:operations`: pass
@@ -143,7 +147,8 @@ Current branch and connected-service checks, through 2026-07-30:
 - HTTP feature off: Operations access/overview `404`
 - HTTP feature on without token: Operations access/overview `401`
 - HTTP missing cron secret: nightly/nightly-check `401`
-- Production dependency audit: nonzero, 2 known findings (1 high, 1 low)
+- Production dependency audit: nonzero, 1 known high Sharp finding; the low
+  Babel finding is remediated with compatible `@babel/core` 7.29.7
 - Changed-file secret scan: pass across 17 scoped targets
 - Git history secret scan: pass across 78 commits
 - Browser/assistive technology: blocked; no completed interactive matrix
@@ -160,14 +165,16 @@ Current branch and connected-service checks, through 2026-07-30:
 - Production Supabase `tenants` read-only probe: `200`
 - Production Supabase `ops_workspaces` probe: `404 PGRST205` (expected missing
   schema)
-- Supabase production migration list: seven pending versions before the new
-  correction migration; protected reconciliation required
+- Supabase production ledger: eight repository versions absent, comprising the
+  seven-file reconciliation set plus the deferred Operations migration;
+  protected reconciliation required
 
 ## Known failures that predate this work
 
 - Whole-repository format check failed on 171 files.
 - Configured `next lint` is invalid on Next 16.
-- Direct whole-repository ESLint reported 94 findings (51 errors, 43 warnings).
+- Direct whole-repository ESLint remains a pre-existing failure; the 2026-08-02
+  rerun reported 93 findings (50 errors, 43 warnings).
 - Baseline production audit reported 43 advisories (18 high, 20 moderate,
   5 low).
 - Next inferred the wrong workspace root due an external lockfile.
@@ -177,7 +184,7 @@ Current branch and connected-service checks, through 2026-07-30:
 ## New failures introduced by this work
 
 None observed in available checks. The final audit remains nonzero but improved
-from 43 to 2 findings. Local database integration now passes; interactive
+from 43 to 1 high finding. Local database integration now passes; interactive
 browser, real Supabase restore/staging, independent review, and production
 mutation verification remain blocked and are not claimed.
 
