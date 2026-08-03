@@ -207,10 +207,12 @@ payload, reviewer, and backup approvals required by the master specification.
 The application builds locally with synthetic settings; feature-off and
 unauthorized production HTTP behavior are verified. The production-shaped
 database rehearsal, provider topology audit, protected workflows, release, and
-rollback steps are complete. The protected Vercel preview serves
-`/operations-login` as a redirect to `/login?next=%2Foperations`; that login
-returns `200` with `noindex`, while both Operations APIs return the intended
-feature-off JSON.
+rollback steps are complete. An earlier directly accessible Vercel preview
+served `/operations-login` as a redirect to `/login?next=%2Foperations`; that
+login returned `200` with `noindex`, while both Operations APIs returned the
+intended feature-off JSON. The current preview is behind Vercel SSO, so direct
+unauthenticated smoke receives a `302` protection redirect with `noindex`
+before it reaches the application.
 
 ## Exact owner action
 

@@ -18,7 +18,7 @@ Dedicated account branch: `codex/operations-center-dedicated-login`
 Draft pull request: `https://github.com/mkarangekis/InventoryMVP/pull/2`
 
 Last audited PR head before this status update:
-`df5a298fa032d822a1c8f3f0555409b724ffc2ad`
+`401b50fdb71306f8b84dd3d0c501e30a7bafa440`
 
 Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
@@ -81,8 +81,8 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
   30-day plan are complete.
 - The secure GitHub connector published draft PR 2 from a remote tree whose SHA
   exactly matched the locally tested tree.
-- Vercel's PR build completed successfully. Direct preview HTTP inspection is
-  protected by Vercel authentication.
+- Vercel's PR build completed successfully. The current preview is protected by
+  Vercel SSO; direct unauthenticated requests receive the protection redirect.
 - Read-only production checks verified Supabase Auth and the existing tenant
   schema are connected and healthy.
 - The Operations schema remains absent. Read-only ledger inspection reported
@@ -153,10 +153,13 @@ Current branch and connected-service checks, through 2026-08-02:
 - Git history secret scan: pass across 78 commits
 - Browser/assistive technology: blocked; no completed interactive matrix
 - GitHub workflow `actionlint` 1.7.7: pass
-- GitHub PR 2 Vercel status: success
-- Protected PR preview `/operations-login`: `307` to
-  `/login?next=%2Foperations`; target login `200`, `noindex`
-- Protected PR preview Operations access/overview APIs: feature-off
+- GitHub PR 2 Vercel status: success at candidate `401b50f`
+- Current PR preview `/operations-login`, login target, and Operations APIs:
+  `302` to Vercel SSO with `noindex`; unauthenticated smoke cannot pass the
+  provider protection layer
+- Earlier directly accessible PR preview application smoke:
+  `/operations-login` redirected to `/login?next=%2Foperations`, the target
+  login returned `200`/`noindex`, and Operations APIs returned feature-off
   `{"error":"not_found"}`
 - GitHub direct collaborators: one (`mkarangekis`); independent reviewer absent
 - GitHub environments: `Preview`, `Production`; `operations-production` absent
