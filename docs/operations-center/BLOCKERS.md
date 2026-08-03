@@ -533,7 +533,10 @@ After bounded upgrades the audit reports one high inherited `sharp` advisory
 (`1124066`). Current Next 16.2.12 declares `sharp ^0.34.5`, while the patched
 line is `>=0.35.0`. The previously blocked low Babel advisory (`1123528`) is
 now cleared by a compatible `@babel/core` 7.29.7 override. The branch reduced
-findings from 43 to 1.
+findings from 43 to 1. A source-level reachability check found no `next/image`
+imports, `<Image>` usage, `/_next/image` calls, or configured image remote
+patterns. Sharp remains installed transitively by Next, so this reduces known
+application exposure but does not clear the dependency gate.
 
 ## Why Codex cannot safely proceed
 
@@ -558,7 +561,8 @@ disposition for advisory `1124066`, or approval for a supported upstream
 update.
 **Where to obtain it:** security/dependency review.
 **Where to enter or approve it:** PR/release risk record.
-**Security scope:** no forced transitive major override.
+**Security scope:** no forced transitive major override; keep the currently
+unused image-optimization path unconfigured during any acceptance window.
 **Expected cost:** none known beyond review/update effort.
 **Verification steps:** rerun `pnpm audit --prod --audit-level=low` and full
 build/test gates on the supported update.
