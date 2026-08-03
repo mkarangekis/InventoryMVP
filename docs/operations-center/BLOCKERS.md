@@ -1,6 +1,6 @@
 # Operations Center Blockers
 
-Last updated: 2026-08-02
+Last updated: 2026-08-03
 
 No blocker prevents further local review of the branch. The following items
 block staging, production, external connections, or claims.
@@ -68,7 +68,7 @@ object, migration record, Auth user, or feature flag was changed.
 ## Exact owner action
 
 **ACTION:** assign an independent reviewer, restore the latest completed backup
-available at execution time (currently `1270201856`) to an isolated target,
+available at execution time (currently `1278685232`) to an isolated target,
 and approve the exact reconciliation manifest before the Operations migration
 is approved.
 **Why it is required:** production history must match actual schema state before
@@ -181,6 +181,12 @@ the existing `Preview` and `Production` environments;
 variables, so code defaults keep the feature off. No isolated hosted restore,
 approved staging account, independent reviewer, attached browser session, or
 `.openai/hosting.json` exists in the available repository/session.
+
+The Git-integrated production project is Vercel `inventory-mvp`. The isolated
+release worktree's local `.vercel` link points to a different project named
+`production-release`, which has no environment variables. This mismatch makes
+an unqualified CLI deployment unsafe; the production target must be selected
+and verified explicitly.
 
 ## Why Codex cannot safely proceed
 
@@ -325,8 +331,8 @@ data compatibility, and destructive recovery rehearsal.
 
 The additive migration remains unapplied in production. A disposable local
 Supabase database completed the production-shaped migration and RLS rehearsal.
-Seven completed production physical backups were listed read-only; the newest
-observed backup is `1270201856` from `2026-08-02T07:34:09.924Z`. No Supabase
+Eight completed production physical backups were listed read-only; the newest
+observed backup is `1278685232` from `2026-08-03T07:40:46.999Z`. No Supabase
 backup has been restored to an isolated hosted target, and PITR is disabled.
 The connected CLI identity can list projects, branches, and backups, but its
 generated login-role endpoint returns `403`; direct read-only database access
@@ -338,6 +344,12 @@ discovery confirm the supported clone is Dashboard-only. No browser is attached
 to the isolated browser controller, no documented CLI/Management API clone
 operation exists, no target was created, and the 24-hour deletion timer has not
 started. See `evidence/2026-08-02-owner-decisions.md`.
+
+The 2026-08-03 Supabase changelog check found a 2026-07-30 platform fix that
+reapplies current credentials after every physical restore and corrects clone
+status scoping. Supabase CLI 2.111.0 still exposes no Restore to a New Project
+command. Browser discovery again returned no available browser. See
+`evidence/2026-08-03-production-launch-audit.md`.
 
 ## Why Codex cannot safely proceed
 
@@ -356,7 +368,7 @@ two-tenant negative RLS matrix, and postflight are complete.
 ## Exact owner action
 
 **ACTION:** restore the latest completed backup available at execution time
-(currently `1270201856`) into a disposable Supabase project/branch and rerun
+(currently `1278685232`) into a disposable Supabase project/branch and rerun
 the protected plan plus verification suite.
 **Why it is required:** SQL/RLS/restore behavior requires a real isolated
 database.
@@ -365,7 +377,7 @@ database.
 browser; provider-displayed estimate no greater than the approved USD 2.00;
 restore job/reference; temporary migration access; two synthetic tenants with
 owner/non-owner users; and independent reviewer disposition. The proposed
-target name is `pourdex-ops-restore-20260802`, with deletion 24 hours after
+target name is `pourdex-ops-restore-20260803`, with deletion 24 hours after
 creation.
 **Where to obtain it:** Supabase project and backup settings.
 **Where to enter or approve it:** secure CI/staging secrets and release record.
@@ -404,6 +416,8 @@ environment reviewer and self-review prevention cannot yet be configured.
 The owner nominated `mkarangekis` as reviewer on 2026-08-02, but authenticated
 GitHub checks confirm that identity is also PR 2's author, the repository owner,
 and the only direct collaborator. It cannot count as independent review.
+The 2026-08-03 production launch audit confirmed PR 2 still has zero reviews
+and no second collaborator.
 
 ## Why Codex cannot safely proceed
 

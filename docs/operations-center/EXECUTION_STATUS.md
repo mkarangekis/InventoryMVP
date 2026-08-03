@@ -1,6 +1,6 @@
 # Operations Center Execution Status
 
-Last updated: 2026-08-02 (America/New_York)
+Last updated: 2026-08-03 (America/New_York)
 
 ## Current phase
 
@@ -8,6 +8,8 @@ Phase 27 follow-up — application code is dark-deployed; the dedicated owner
 login, protected database reconciliation, and protected Operations release are
 prepared in draft PR 2. The production-shaped local database rehearsal passed;
 independent review, a real backup restore, and activation gates remain blocked.
+The owner requested a production push on 2026-08-03; the mandatory gates were
+revalidated and no production action was performed.
 
 Dedicated implementation branch: `codex/operations-center`
 
@@ -18,7 +20,7 @@ Dedicated account branch: `codex/operations-center-dedicated-login`
 Draft pull request: `https://github.com/mkarangekis/InventoryMVP/pull/2`
 
 Last audited PR head before this status update:
-`02f506457bad502f7349a85b1c1ddb2bb0099a33`
+`15e15c1d1982e2129a0471c30354bdb8d0b6a526`
 
 Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
@@ -79,7 +81,7 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 - Production dependency findings were reduced from 43 (18 high) to 1 high
   finding with bounded compatible upgrades. The low Babel advisory was cleared
   by pinning compatible `@babel/core` 7.29.7; the remaining upstream Sharp risk
-  is an explicit blocker.
+  has an owner-accepted exception through 2026-08-05.
 - Accessibility static audit, release/rollback manifest, schema catalog,
   authorization matrix, critical runbooks, configuration guide, and first
   30-day plan are complete.
@@ -97,8 +99,8 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
   migration-ledger drift; no database mutation was performed. Supabase CLI
   `2.110.0` can list project recovery metadata but its generated login-role
   endpoint currently returns `403` for migration listing.
-- Seven completed physical production backups were listed read-only. The newest
-  observed backup was `1270201856` at `2026-08-02T07:34:09.924Z`; PITR is off
+- Eight completed physical production backups were listed read-only. The newest
+  observed backup was `1278685232` at `2026-08-03T07:40:46.999Z`; PITR is off
   and no restore was invoked.
 - The owner approved one disposable Supabase Restore to a New Project operation
   up to USD 2.00 and deletion 24 hours after creation. Current documentation
@@ -110,6 +112,12 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 - The supplied reviewer username, `mkarangekis`, is PR 2's author, repository
   owner, and only direct collaborator, so it does not satisfy independent
   review or separation of duties.
+- The 2026-08-03 launch audit confirmed PR 2 remains draft with zero reviews,
+  GitHub still lacks the `operations-production` environment, and the supported
+  Supabase restore flow still has no attached browser.
+- Vercel `inventory-mvp` is the production target. The isolated worktree is
+  locally linked to a separate empty `production-release` project, so no
+  deployment command may rely on the worktree-local Vercel link.
 - A separate local Supabase/Postgres project reproduced the live ledger/object
   drift. The exact repair and six historical single-migration applies passed,
   including the `pos-imports` bucket correction.
@@ -135,7 +143,7 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
    `operations-production` with self-review prevention and no bypass.
 3. Attach an authenticated browser, inspect the displayed cost, and—only when
    it is no more than the approved USD 2.00—restore the latest completed backup
-   available at execution time into `pourdex-ops-restore-20260802`; rerun the
+   available at execution time into `pourdex-ops-restore-20260803`; rerun the
    reconciliation/Operations/RLS sequence and delete the target 24 hours after
    creation.
 4. Apply a Next-supported Sharp patch when available; otherwise stop at the
@@ -147,7 +155,7 @@ Base revision: `7bf3ec1780e13f69c1b1f617ff727dcb851ba95b`
 
 ## Tests last run
 
-Current branch and connected-service checks, through 2026-08-02:
+Current branch and connected-service checks, through 2026-08-03:
 
 - `pnpm test:entitlement`: pass
 - `pnpm test:operations`: pass
@@ -156,7 +164,8 @@ Current branch and connected-service checks, through 2026-08-02:
 - `pnpm test:release-automation`: pass
 - `pnpm exec tsc --noEmit`: pass
 - Dedicated-login targeted ESLint: zero errors
-- `pnpm exec next build`: pass on Next 16.2.12; 80 pages
+- `pnpm exec next build`: pass on Next 16.2.12; 80 routes, rerun with the
+  documented synthetic Supabase public values
 - Production-shaped local migration reconciliation: pass
 - Operations schema verifier: 18 tables/policies/trigger pass
 - Two-tenant RLS and negative-access SQL matrix: pass
@@ -169,6 +178,8 @@ Current branch and connected-service checks, through 2026-08-02:
 - Production dependency audit: nonzero, 1 known high Sharp finding under an
   owner-accepted exception through 2026-08-05; the low Babel finding is
   remediated with compatible `@babel/core` 7.29.7
+- Sharp image-path reachability rerun: zero `next/image`, `<Image>`,
+  `/_next/image`, or `remotePatterns` references
 - Changed-file secret scan: pass across 17 scoped targets
 - Git history secret scan: pass across 78 commits
 - Browser/assistive technology: blocked; no completed interactive matrix
@@ -217,6 +228,9 @@ mutation verification remain blocked and are not claimed.
 - The owner confirmed the exposed credentials were revoked. General launch
   intent still does not satisfy the exact Tier C approval gate for a reviewed
   revision, environment, and payload.
+- The owner requested a production push on 2026-08-03. It was not executed
+  because independent review, hosted restore, accessibility, protected
+  environment, and exact release-record gates remain unsatisfied.
 - The USD 2.00 restore budget and 24-hour deletion are approved. The supported
   restore remains unexecuted because no browser is attached to operate the
   Dashboard and inspect its cost screen.
@@ -255,6 +269,8 @@ The owner merged PR 1 as commit
 Operations route on both known Vercel production aliases with the Operations
 APIs still feature-off. Codex did not invoke that deployment. No migration,
 flag enablement, administrator grant, or connector activation occurred.
+The 2026-08-03 production request caused no merge, deployment, environment
+change, database mutation, account grant, or feature activation.
 
 ## Rollback readiness
 

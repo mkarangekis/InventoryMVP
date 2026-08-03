@@ -15,6 +15,12 @@ route on both known production aliases. Public checks verified feature-off API
 responses. Codex did not invoke the deployment. No migration was applied by
 Codex, no feature was enabled, no administrator was granted, and no
 connector/model/email/job/billing/vendor/public action ran.
+The owner requested another production push on 2026-08-03. Revalidation found
+no independent review, no hosted restore evidence, no protected Operations
+environment, and no attached browser for Supabase's supported restore flow. No
+production action was performed. The production Vercel project remains
+`inventory-mvp`; the isolated worktree's different `production-release` link
+must not be used for production.
 
 ## What was reverse engineered
 

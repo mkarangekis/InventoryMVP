@@ -1,6 +1,6 @@
 # Operations Center Traceability
 
-Last updated: 2026-08-02
+Last updated: 2026-08-03
 
 Status values: `not started`, `in progress`, `implemented`, `verified`,
 `blocked`, `not applicable`.
@@ -65,7 +65,7 @@ is never promoted to `verified` without direct evidence.
 |  52 | Approval integrity tested                                                         | verified    | canonical hash, mutation, expiry, separation tests                    | None                           |
 |  53 | Runner isolation verified                                                         | verified    | detached baseline worktree, synthetic settings, no prod commands      | None                           |
 |  54 | Dependency/secret scans meet policy                                               | verified    | secret scans pass; 1 high Sharp exception accepted through 2026-08-05 | Patch or reassess by expiry    |
-|  55 | Recent backup restore evidence                                                    | blocked     | backup `1270201856` listed; USD 2/24h approved; no hosted restore     | Attach browser/platform flow   |
+|  55 | Recent backup restore evidence                                                    | blocked     | backup `1278685232` listed; USD 2/24h approved; no hosted restore     | Attach browser/platform flow   |
 |  56 | Critical runbooks exist                                                           | verified    | `runbooks/README.md`                                                  | Owner fills routing            |
 |  57 | Actionable routed alerts                                                          | blocked     | Production alerting destination unknown                               | Owner/platform operator        |
 |  58 | Append-only/equivalent audit protection                                           | implemented | mutation-rejection trigger and event hash chain                       | DB test blocked                |
